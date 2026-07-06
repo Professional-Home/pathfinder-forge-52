@@ -12,6 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardDomainRouteImport } from './routes/dashboard.$domain'
+import { Route as DashboardDomainIndexRouteImport } from './routes/dashboard.$domain/index'
+import { Route as DashboardDomainSettingsRouteImport } from './routes/dashboard.$domain/settings'
+import { Route as DashboardDomainPaymentsRouteImport } from './routes/dashboard.$domain/payments'
+import { Route as DashboardDomainMentorsRouteImport } from './routes/dashboard.$domain/mentors'
+import { Route as DashboardDomainGuidanceRouteImport } from './routes/dashboard.$domain/guidance'
+import { Route as DashboardDomainCoursesRouteImport } from './routes/dashboard.$domain/courses'
+import { Route as DashboardDomainCertificatesRouteImport } from './routes/dashboard.$domain/certificates'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -28,35 +35,121 @@ const DashboardDomainRoute = DashboardDomainRouteImport.update({
   path: '/dashboard/$domain',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardDomainIndexRoute = DashboardDomainIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardDomainRoute,
+} as any)
+const DashboardDomainSettingsRoute = DashboardDomainSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardDomainRoute,
+} as any)
+const DashboardDomainPaymentsRoute = DashboardDomainPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => DashboardDomainRoute,
+} as any)
+const DashboardDomainMentorsRoute = DashboardDomainMentorsRouteImport.update({
+  id: '/mentors',
+  path: '/mentors',
+  getParentRoute: () => DashboardDomainRoute,
+} as any)
+const DashboardDomainGuidanceRoute = DashboardDomainGuidanceRouteImport.update({
+  id: '/guidance',
+  path: '/guidance',
+  getParentRoute: () => DashboardDomainRoute,
+} as any)
+const DashboardDomainCoursesRoute = DashboardDomainCoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => DashboardDomainRoute,
+} as any)
+const DashboardDomainCertificatesRoute =
+  DashboardDomainCertificatesRouteImport.update({
+    id: '/certificates',
+    path: '/certificates',
+    getParentRoute: () => DashboardDomainRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
-  '/dashboard/$domain': typeof DashboardDomainRoute
+  '/dashboard/$domain': typeof DashboardDomainRouteWithChildren
+  '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
+  '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
+  '/dashboard/$domain/guidance': typeof DashboardDomainGuidanceRoute
+  '/dashboard/$domain/mentors': typeof DashboardDomainMentorsRoute
+  '/dashboard/$domain/payments': typeof DashboardDomainPaymentsRoute
+  '/dashboard/$domain/settings': typeof DashboardDomainSettingsRoute
+  '/dashboard/$domain/': typeof DashboardDomainIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
-  '/dashboard/$domain': typeof DashboardDomainRoute
+  '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
+  '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
+  '/dashboard/$domain/guidance': typeof DashboardDomainGuidanceRoute
+  '/dashboard/$domain/mentors': typeof DashboardDomainMentorsRoute
+  '/dashboard/$domain/payments': typeof DashboardDomainPaymentsRoute
+  '/dashboard/$domain/settings': typeof DashboardDomainSettingsRoute
+  '/dashboard/$domain': typeof DashboardDomainIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/onboarding': typeof OnboardingRoute
-  '/dashboard/$domain': typeof DashboardDomainRoute
+  '/dashboard/$domain': typeof DashboardDomainRouteWithChildren
+  '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
+  '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
+  '/dashboard/$domain/guidance': typeof DashboardDomainGuidanceRoute
+  '/dashboard/$domain/mentors': typeof DashboardDomainMentorsRoute
+  '/dashboard/$domain/payments': typeof DashboardDomainPaymentsRoute
+  '/dashboard/$domain/settings': typeof DashboardDomainSettingsRoute
+  '/dashboard/$domain/': typeof DashboardDomainIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/onboarding' | '/dashboard/$domain'
+  fullPaths:
+    | '/'
+    | '/onboarding'
+    | '/dashboard/$domain'
+    | '/dashboard/$domain/certificates'
+    | '/dashboard/$domain/courses'
+    | '/dashboard/$domain/guidance'
+    | '/dashboard/$domain/mentors'
+    | '/dashboard/$domain/payments'
+    | '/dashboard/$domain/settings'
+    | '/dashboard/$domain/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/onboarding' | '/dashboard/$domain'
-  id: '__root__' | '/' | '/onboarding' | '/dashboard/$domain'
+  to:
+    | '/'
+    | '/onboarding'
+    | '/dashboard/$domain/certificates'
+    | '/dashboard/$domain/courses'
+    | '/dashboard/$domain/guidance'
+    | '/dashboard/$domain/mentors'
+    | '/dashboard/$domain/payments'
+    | '/dashboard/$domain/settings'
+    | '/dashboard/$domain'
+  id:
+    | '__root__'
+    | '/'
+    | '/onboarding'
+    | '/dashboard/$domain'
+    | '/dashboard/$domain/certificates'
+    | '/dashboard/$domain/courses'
+    | '/dashboard/$domain/guidance'
+    | '/dashboard/$domain/mentors'
+    | '/dashboard/$domain/payments'
+    | '/dashboard/$domain/settings'
+    | '/dashboard/$domain/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OnboardingRoute: typeof OnboardingRoute
-  DashboardDomainRoute: typeof DashboardDomainRoute
+  DashboardDomainRoute: typeof DashboardDomainRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +175,86 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDomainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/$domain/': {
+      id: '/dashboard/$domain/'
+      path: '/'
+      fullPath: '/dashboard/$domain/'
+      preLoaderRoute: typeof DashboardDomainIndexRouteImport
+      parentRoute: typeof DashboardDomainRoute
+    }
+    '/dashboard/$domain/settings': {
+      id: '/dashboard/$domain/settings'
+      path: '/settings'
+      fullPath: '/dashboard/$domain/settings'
+      preLoaderRoute: typeof DashboardDomainSettingsRouteImport
+      parentRoute: typeof DashboardDomainRoute
+    }
+    '/dashboard/$domain/payments': {
+      id: '/dashboard/$domain/payments'
+      path: '/payments'
+      fullPath: '/dashboard/$domain/payments'
+      preLoaderRoute: typeof DashboardDomainPaymentsRouteImport
+      parentRoute: typeof DashboardDomainRoute
+    }
+    '/dashboard/$domain/mentors': {
+      id: '/dashboard/$domain/mentors'
+      path: '/mentors'
+      fullPath: '/dashboard/$domain/mentors'
+      preLoaderRoute: typeof DashboardDomainMentorsRouteImport
+      parentRoute: typeof DashboardDomainRoute
+    }
+    '/dashboard/$domain/guidance': {
+      id: '/dashboard/$domain/guidance'
+      path: '/guidance'
+      fullPath: '/dashboard/$domain/guidance'
+      preLoaderRoute: typeof DashboardDomainGuidanceRouteImport
+      parentRoute: typeof DashboardDomainRoute
+    }
+    '/dashboard/$domain/courses': {
+      id: '/dashboard/$domain/courses'
+      path: '/courses'
+      fullPath: '/dashboard/$domain/courses'
+      preLoaderRoute: typeof DashboardDomainCoursesRouteImport
+      parentRoute: typeof DashboardDomainRoute
+    }
+    '/dashboard/$domain/certificates': {
+      id: '/dashboard/$domain/certificates'
+      path: '/certificates'
+      fullPath: '/dashboard/$domain/certificates'
+      preLoaderRoute: typeof DashboardDomainCertificatesRouteImport
+      parentRoute: typeof DashboardDomainRoute
+    }
   }
 }
+
+interface DashboardDomainRouteChildren {
+  DashboardDomainCertificatesRoute: typeof DashboardDomainCertificatesRoute
+  DashboardDomainCoursesRoute: typeof DashboardDomainCoursesRoute
+  DashboardDomainGuidanceRoute: typeof DashboardDomainGuidanceRoute
+  DashboardDomainMentorsRoute: typeof DashboardDomainMentorsRoute
+  DashboardDomainPaymentsRoute: typeof DashboardDomainPaymentsRoute
+  DashboardDomainSettingsRoute: typeof DashboardDomainSettingsRoute
+  DashboardDomainIndexRoute: typeof DashboardDomainIndexRoute
+}
+
+const DashboardDomainRouteChildren: DashboardDomainRouteChildren = {
+  DashboardDomainCertificatesRoute: DashboardDomainCertificatesRoute,
+  DashboardDomainCoursesRoute: DashboardDomainCoursesRoute,
+  DashboardDomainGuidanceRoute: DashboardDomainGuidanceRoute,
+  DashboardDomainMentorsRoute: DashboardDomainMentorsRoute,
+  DashboardDomainPaymentsRoute: DashboardDomainPaymentsRoute,
+  DashboardDomainSettingsRoute: DashboardDomainSettingsRoute,
+  DashboardDomainIndexRoute: DashboardDomainIndexRoute,
+}
+
+const DashboardDomainRouteWithChildren = DashboardDomainRoute._addFileChildren(
+  DashboardDomainRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OnboardingRoute: OnboardingRoute,
-  DashboardDomainRoute: DashboardDomainRoute,
+  DashboardDomainRoute: DashboardDomainRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
