@@ -9,7 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ReturnPolicyRouteImport } from './routes/return-policy'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as EmployeesRouteImport } from './routes/employees'
+import { Route as DisclaimerRouteImport } from './routes/disclaimer'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardDomainRouteImport } from './routes/dashboard.$domain'
 import { Route as DashboardDomainIndexRouteImport } from './routes/dashboard.$domain/index'
@@ -19,10 +27,51 @@ import { Route as DashboardDomainMentorsRouteImport } from './routes/dashboard.$
 import { Route as DashboardDomainGuidanceRouteImport } from './routes/dashboard.$domain/guidance'
 import { Route as DashboardDomainCoursesRouteImport } from './routes/dashboard.$domain/courses'
 import { Route as DashboardDomainCertificatesRouteImport } from './routes/dashboard.$domain/certificates'
+import { Route as DashboardDomainEnrollCourseIdRouteImport } from './routes/dashboard.$domain/enroll.$courseId'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReturnPolicyRoute = ReturnPolicyRouteImport.update({
+  id: '/return-policy',
+  path: '/return-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployeesRoute = EmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DisclaimerRoute = DisclaimerRouteImport.update({
+  id: '/disclaimer',
+  path: '/disclaimer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -71,10 +120,24 @@ const DashboardDomainCertificatesRoute =
     path: '/certificates',
     getParentRoute: () => DashboardDomainRoute,
   } as any)
+const DashboardDomainEnrollCourseIdRoute =
+  DashboardDomainEnrollCourseIdRouteImport.update({
+    id: '/enroll/$courseId',
+    path: '/enroll/$courseId',
+    getParentRoute: () => DashboardDomainRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/employees': typeof EmployeesRoute
+  '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
+  '/return-policy': typeof ReturnPolicyRoute
+  '/signup': typeof SignupRoute
   '/dashboard/$domain': typeof DashboardDomainRouteWithChildren
   '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
   '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
@@ -83,10 +146,19 @@ export interface FileRoutesByFullPath {
   '/dashboard/$domain/payments': typeof DashboardDomainPaymentsRoute
   '/dashboard/$domain/settings': typeof DashboardDomainSettingsRoute
   '/dashboard/$domain/': typeof DashboardDomainIndexRoute
+  '/dashboard/$domain/enroll/$courseId': typeof DashboardDomainEnrollCourseIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/employees': typeof EmployeesRoute
+  '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
+  '/return-policy': typeof ReturnPolicyRoute
+  '/signup': typeof SignupRoute
   '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
   '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
   '/dashboard/$domain/guidance': typeof DashboardDomainGuidanceRoute
@@ -94,11 +166,20 @@ export interface FileRoutesByTo {
   '/dashboard/$domain/payments': typeof DashboardDomainPaymentsRoute
   '/dashboard/$domain/settings': typeof DashboardDomainSettingsRoute
   '/dashboard/$domain': typeof DashboardDomainIndexRoute
+  '/dashboard/$domain/enroll/$courseId': typeof DashboardDomainEnrollCourseIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/employees': typeof EmployeesRoute
+  '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
+  '/return-policy': typeof ReturnPolicyRoute
+  '/signup': typeof SignupRoute
   '/dashboard/$domain': typeof DashboardDomainRouteWithChildren
   '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
   '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
@@ -107,12 +188,21 @@ export interface FileRoutesById {
   '/dashboard/$domain/payments': typeof DashboardDomainPaymentsRoute
   '/dashboard/$domain/settings': typeof DashboardDomainSettingsRoute
   '/dashboard/$domain/': typeof DashboardDomainIndexRoute
+  '/dashboard/$domain/enroll/$courseId': typeof DashboardDomainEnrollCourseIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
+    | '/disclaimer'
+    | '/employees'
+    | '/login'
     | '/onboarding'
+    | '/privacy-policy'
+    | '/refund-policy'
+    | '/return-policy'
+    | '/signup'
     | '/dashboard/$domain'
     | '/dashboard/$domain/certificates'
     | '/dashboard/$domain/courses'
@@ -121,10 +211,19 @@ export interface FileRouteTypes {
     | '/dashboard/$domain/payments'
     | '/dashboard/$domain/settings'
     | '/dashboard/$domain/'
+    | '/dashboard/$domain/enroll/$courseId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
+    | '/disclaimer'
+    | '/employees'
+    | '/login'
     | '/onboarding'
+    | '/privacy-policy'
+    | '/refund-policy'
+    | '/return-policy'
+    | '/signup'
     | '/dashboard/$domain/certificates'
     | '/dashboard/$domain/courses'
     | '/dashboard/$domain/guidance'
@@ -132,10 +231,19 @@ export interface FileRouteTypes {
     | '/dashboard/$domain/payments'
     | '/dashboard/$domain/settings'
     | '/dashboard/$domain'
+    | '/dashboard/$domain/enroll/$courseId'
   id:
     | '__root__'
     | '/'
+    | '/about'
+    | '/disclaimer'
+    | '/employees'
+    | '/login'
     | '/onboarding'
+    | '/privacy-policy'
+    | '/refund-policy'
+    | '/return-policy'
+    | '/signup'
     | '/dashboard/$domain'
     | '/dashboard/$domain/certificates'
     | '/dashboard/$domain/courses'
@@ -144,21 +252,86 @@ export interface FileRouteTypes {
     | '/dashboard/$domain/payments'
     | '/dashboard/$domain/settings'
     | '/dashboard/$domain/'
+    | '/dashboard/$domain/enroll/$courseId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  DisclaimerRoute: typeof DisclaimerRoute
+  EmployeesRoute: typeof EmployeesRoute
+  LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
+  ReturnPolicyRoute: typeof ReturnPolicyRoute
+  SignupRoute: typeof SignupRoute
   DashboardDomainRoute: typeof DashboardDomainRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/return-policy': {
+      id: '/return-policy'
+      path: '/return-policy'
+      fullPath: '/return-policy'
+      preLoaderRoute: typeof ReturnPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employees': {
+      id: '/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof EmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/disclaimer': {
+      id: '/disclaimer'
+      path: '/disclaimer'
+      fullPath: '/disclaimer'
+      preLoaderRoute: typeof DisclaimerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -224,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDomainCertificatesRouteImport
       parentRoute: typeof DashboardDomainRoute
     }
+    '/dashboard/$domain/enroll/$courseId': {
+      id: '/dashboard/$domain/enroll/$courseId'
+      path: '/enroll/$courseId'
+      fullPath: '/dashboard/$domain/enroll/$courseId'
+      preLoaderRoute: typeof DashboardDomainEnrollCourseIdRouteImport
+      parentRoute: typeof DashboardDomainRoute
+    }
   }
 }
 
@@ -235,6 +415,7 @@ interface DashboardDomainRouteChildren {
   DashboardDomainPaymentsRoute: typeof DashboardDomainPaymentsRoute
   DashboardDomainSettingsRoute: typeof DashboardDomainSettingsRoute
   DashboardDomainIndexRoute: typeof DashboardDomainIndexRoute
+  DashboardDomainEnrollCourseIdRoute: typeof DashboardDomainEnrollCourseIdRoute
 }
 
 const DashboardDomainRouteChildren: DashboardDomainRouteChildren = {
@@ -245,6 +426,7 @@ const DashboardDomainRouteChildren: DashboardDomainRouteChildren = {
   DashboardDomainPaymentsRoute: DashboardDomainPaymentsRoute,
   DashboardDomainSettingsRoute: DashboardDomainSettingsRoute,
   DashboardDomainIndexRoute: DashboardDomainIndexRoute,
+  DashboardDomainEnrollCourseIdRoute: DashboardDomainEnrollCourseIdRoute,
 }
 
 const DashboardDomainRouteWithChildren = DashboardDomainRoute._addFileChildren(
@@ -253,7 +435,15 @@ const DashboardDomainRouteWithChildren = DashboardDomainRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  DisclaimerRoute: DisclaimerRoute,
+  EmployeesRoute: EmployeesRoute,
+  LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
+  ReturnPolicyRoute: ReturnPolicyRoute,
+  SignupRoute: SignupRoute,
   DashboardDomainRoute: DashboardDomainRouteWithChildren,
 }
 export const routeTree = rootRouteImport

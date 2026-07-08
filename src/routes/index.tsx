@@ -4,6 +4,8 @@ import { Wordmark } from "@/components/brand";
 import { DOMAINS, type Domain } from "@/lib/domain";
 import { useEffect, useState, type ReactNode } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { supabase } from "@/utils/supabase";
+import type { Session } from "@supabase/supabase-js";
 
 function RevealWrapper({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -46,6 +48,21 @@ function Landing() {
 function SiteHeader() {
   const [activeSection, setActiveSection] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const links = [
     { name: "For you", href: "#lanes" },
@@ -117,20 +134,45 @@ function SiteHeader() {
           })}
         </nav>
         <div className="flex items-center gap-2">
-          <Link
-            to="/onboarding"
-            className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
-          >
-            Sign in
-          </Link>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Link
-              to="/onboarding"
-              className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-background transition hover:opacity-90 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-            >
-              Start the quiz <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </motion.div>
+          {session ? (
+            <div className="flex items-center gap-4">
+              <Link
+                to="/dashboard/$domain"
+                params={{ domain: "student" }}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link to="/dashboard/$domain" params={{ domain: "student" }}>
+                <div className="h-8 w-8 rounded-full bg-foreground/90 grid place-items-center font-display text-sm text-background overflow-hidden border border-border transition-transform hover:scale-105">
+                  {session.user?.user_metadata?.avatar_url ? (
+                    <img src={session.user.user_metadata.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+                  ) : session.user?.user_metadata?.full_name ? (
+                    session.user.user_metadata.full_name.charAt(0).toUpperCase()
+                  ) : (
+                    session.user?.email?.charAt(0).toUpperCase() || "U"
+                  )}
+                </div>
+              </Link>
+            </div>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
+              >
+                Sign in
+              </Link>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/signup"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-background transition hover:opacity-90 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                >
+                  Start the quiz <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </motion.div>
+            </>
+          )}
         </div>
       </div>
     </motion.header>
@@ -214,7 +256,7 @@ function Hero() {
           
           {/* CTA Buttons */}
           <motion.div variants={itemVariants} className="mt-10 flex flex-wrap items-center gap-3">
-            <Link to="/onboarding">
+            <Link to="/signup">
               {/* 4. Primary CTA Magnetic/Hover Interaction */}
               <motion.div
                 whileHover={{ backgroundColor: "hsl(var(--foreground) / 0.9)" }}
@@ -467,9 +509,16 @@ function Loops() {
 function Footer() {
   return (
     <footer className="mx-auto max-w-6xl px-6 py-12">
-      <div className="flex flex-wrap items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
         <Wordmark />
         <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} MentorForge — building growth paths.</div>
+      </div>
+      <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs text-muted-foreground border-t border-border/60 pt-6">
+        <Link to="/return-policy" className="hover:text-foreground transition-colors">Return Policy</Link>
+        <Link to="/refund-policy" className="hover:text-foreground transition-colors">Refund Policy</Link>
+        <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+        <Link to="/disclaimer" className="hover:text-foreground transition-colors">Disclaimer</Link>
+        <Link to="/about" className="hover:text-foreground transition-colors">About & Contact</Link>
       </div>
     </footer>
   );

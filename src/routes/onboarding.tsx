@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, GraduationCap, Rocket, Microscope, Sparkles } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { DOMAINS, type Domain } from "@/lib/domain";
+import { supabase } from "@/utils/supabase";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -103,87 +104,107 @@ const commonQ_9to15: Question[] = [
 ];
 
 const studentBranch: Question[] = [
-  { id: "edu_level", kind: "choice", prompt: "Where are you in your education?",
+  {
+    id: "edu_level", kind: "choice", prompt: "Where are you in your education?",
     choices: [
       { value: "hs", label: "High school" },
       { value: "undergrad", label: "Undergrad" },
       { value: "grad", label: "Grad school" },
       { value: "self", label: "Self-taught" },
-    ]},
+    ]
+  },
   { id: "field", kind: "text", prompt: "What field are you most drawn to?", placeholder: "e.g. Product design, ML, biology", helper: "One or two words." },
-  { id: "career_goal", kind: "choice", prompt: "What's the shape of the career you want?",
+  {
+    id: "career_goal", kind: "choice", prompt: "What's the shape of the career you want?",
     choices: [
       { value: "corp", label: "Big company, structured path" },
       { value: "startup", label: "Startups, move fast" },
       { value: "solo", label: "Solo / freelance" },
       { value: "academic", label: "Academic / research" },
-    ]},
-  { id: "time", kind: "choice", prompt: "How much time can you commit weekly?",
+    ]
+  },
+  {
+    id: "time", kind: "choice", prompt: "How much time can you commit weekly?",
     choices: [
       { value: "2", label: "About 2 hours" },
       { value: "5", label: "About 5 hours" },
       { value: "10", label: "10+ hours" },
       { value: "flex", label: "It varies week to week" },
-    ]},
-  { id: "budget", kind: "choice", prompt: "What's your mentorship budget per month?",
+    ]
+  },
+  {
+    id: "budget", kind: "choice", prompt: "What's your mentorship budget per month?",
     choices: [
       { value: "0", label: "$0 — free only" },
       { value: "50", label: "Up to $50" },
       { value: "150", label: "Up to $150" },
       { value: "300+", label: "$300+" },
-    ]},
+    ]
+  },
 ];
 
 const startupBranch: Question[] = [
-  { id: "stage", kind: "choice", prompt: "What stage are you at?",
+  {
+    id: "stage", kind: "choice", prompt: "What stage are you at?",
     choices: [
       { value: "idea", label: "Idea", hint: "Still validating" },
       { value: "mvp", label: "Building MVP" },
       { value: "pmf", label: "Finding PMF" },
       { value: "scale", label: "Scaling revenue" },
-    ]},
+    ]
+  },
   { id: "industry", kind: "text", prompt: "What industry are you building in?", placeholder: "e.g. Developer tools, climate, fintech" },
-  { id: "team_size", kind: "choice", prompt: "How big is the team today?",
+  {
+    id: "team_size", kind: "choice", prompt: "How big is the team today?",
     choices: [
       { value: "solo", label: "Just me" },
       { value: "2-4", label: "2 to 4" },
       { value: "5-15", label: "5 to 15" },
       { value: "15+", label: "15 or more" },
-    ]},
+    ]
+  },
   { id: "blocker", kind: "text", prompt: "What's your single biggest blocker right now?", helper: "Naming it is half the work.", placeholder: "e.g. Can't get to a repeatable sales motion" },
-  { id: "budget", kind: "choice", prompt: "What can you invest in advisors this month?",
+  {
+    id: "budget", kind: "choice", prompt: "What can you invest in advisors this month?",
     choices: [
       { value: "500", label: "Under $500" },
       { value: "2000", label: "$500 – $2,000" },
       { value: "5000", label: "$2,000 – $5,000" },
       { value: "5000+", label: "$5,000+" },
-    ]},
+    ]
+  },
 ];
 
 const researcherBranch: Question[] = [
   { id: "field", kind: "text", prompt: "What field do you research in?", placeholder: "e.g. Computational biology, HCI, sociology" },
-  { id: "stage", kind: "choice", prompt: "Where are you in your career?",
+  {
+    id: "stage", kind: "choice", prompt: "Where are you in your career?",
     choices: [
       { value: "grad", label: "Grad student" },
       { value: "postdoc", label: "Postdoc" },
       { value: "faculty", label: "Faculty" },
       { value: "indep", label: "Independent researcher" },
-    ]},
-  { id: "project", kind: "choice", prompt: "What kind of project are you on?",
+    ]
+  },
+  {
+    id: "project", kind: "choice", prompt: "What kind of project are you on?",
     choices: [
       { value: "thesis", label: "Thesis / dissertation" },
       { value: "paper", label: "Paper toward publication" },
       { value: "grant", label: "Grant proposal" },
       { value: "review", label: "Literature or method review" },
-    ]},
+    ]
+  },
   { id: "tools", kind: "text", prompt: "Which tools do you rely on most?", placeholder: "e.g. Python, R, LaTeX, Zotero" },
-  { id: "budget", kind: "choice", prompt: "What can you spend on expert review?",
+  {
+    id: "budget", kind: "choice", prompt: "What can you spend on expert review?",
     choices: [
       { value: "0", label: "$0 — free only" },
       { value: "100", label: "Up to $100/mo" },
       { value: "300", label: "Up to $300/mo" },
       { value: "500+", label: "$500+/mo" },
-    ]},
+    ]
+  },
 ];
 
 const domainQ: Question = {
@@ -225,8 +246,8 @@ const preDomain: Question[] = [
 function buildQuestions(domain: Domain | null): Question[] {
   const branch =
     domain === "student" ? studentBranch :
-    domain === "startup" ? startupBranch :
-    domain === "researcher" ? researcherBranch : [];
+      domain === "startup" ? startupBranch :
+        domain === "researcher" ? researcherBranch : [];
   return [...preDomain, domainQ, ...branch, ...commonQ_9to15].slice(0, 15);
 }
 
@@ -235,6 +256,13 @@ function Onboarding() {
   const [answers, setAnswers] = useState<Record<string, string | number>>({});
   const [step, setStep] = useState(0);
   const [building, setBuilding] = useState(false);
+  useEffect(() => {
+    if (window.location.hash && window.location.hash.includes("access_token")) {
+      supabase.auth.getSession().then(() => {
+        window.history.replaceState(null, "", window.location.pathname);
+      });
+    }
+  }, []);
 
   // resume
   useEffect(() => {
@@ -243,13 +271,13 @@ function Onboarding() {
       const s = localStorage.getItem("mf_step");
       if (raw) setAnswers(JSON.parse(raw));
       if (s) setStep(parseInt(s, 10) || 0);
-    } catch {}
+    } catch { }
   }, []);
   useEffect(() => {
     try {
       localStorage.setItem("mf_answers", JSON.stringify(answers));
       localStorage.setItem("mf_step", String(step));
-    } catch {}
+    } catch { }
   }, [answers, step]);
 
   const domain = (answers.domain as Domain) || null;
@@ -262,7 +290,7 @@ function Onboarding() {
 
   const canAdvance =
     q.kind === "text" ? typeof current === "string" && current.trim().length > 0
-    : current !== undefined && current !== "";
+      : current !== undefined && current !== "";
 
   function setAnswer(v: string | number) {
     setAnswers((a) => ({ ...a, [q.id]: v }));
@@ -281,7 +309,7 @@ function Onboarding() {
     setBuilding(true);
     try {
       localStorage.setItem("mf_profile", JSON.stringify({ ...answers, completed_at: Date.now() }));
-    } catch {}
+    } catch { }
     setTimeout(() => {
       const d = (answers.domain as Domain) || "student";
       navigate({ to: "/dashboard/$domain", params: { domain: d } });
@@ -325,11 +353,10 @@ function Onboarding() {
                     <button
                       key={c.value}
                       onClick={() => { setAnswer(c.value); setTimeout(next, 180); }}
-                      className={`group flex items-center justify-between rounded-xl border px-5 py-4 text-left transition ${
-                        active
+                      className={`group flex items-center justify-between rounded-xl border px-5 py-4 text-left transition ${active
                           ? "border-foreground bg-foreground text-background"
                           : "border-border bg-surface-elevated hover:border-border-strong"
-                      }`}
+                        }`}
                     >
                       <div>
                         <div className="font-medium">{c.label}</div>
@@ -339,9 +366,8 @@ function Onboarding() {
                           </div>
                         )}
                       </div>
-                      <div className={`grid h-6 w-6 place-items-center rounded-full border transition ${
-                        active ? "border-background bg-background text-foreground" : "border-border-strong text-transparent group-hover:text-muted-foreground"
-                      }`}>
+                      <div className={`grid h-6 w-6 place-items-center rounded-full border transition ${active ? "border-background bg-background text-foreground" : "border-border-strong text-transparent group-hover:text-muted-foreground"
+                        }`}>
                         <Check className="h-3.5 w-3.5" />
                       </div>
                     </button>
@@ -372,9 +398,8 @@ function Onboarding() {
                       <button
                         key={n}
                         onClick={() => { setAnswer(n); setTimeout(next, 180); }}
-                        className={`aspect-square rounded-xl border font-display text-2xl transition ${
-                          active ? "border-foreground bg-foreground text-background" : "border-border bg-surface-elevated hover:border-border-strong"
-                        }`}
+                        className={`aspect-square rounded-xl border font-display text-2xl transition ${active ? "border-foreground bg-foreground text-background" : "border-border bg-surface-elevated hover:border-border-strong"
+                          }`}
                       >
                         {n}
                       </button>
