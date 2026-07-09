@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { User, Bell, Shield, LogOut } from "lucide-react";
 import { mockUser } from "@/lib/mockUser";
+import type { Domain } from "@/lib/domain";
+import { supabase } from "@/utils/supabase";
 
 export const Route = createFileRoute("/dashboard/$domain/settings")({
   component: SettingsPage,
@@ -9,6 +11,18 @@ export const Route = createFileRoute("/dashboard/$domain/settings")({
 function SettingsPage() {
   const { domain } = Route.useParams();
   const user = { ...mockUser, lane: domain as Domain };
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error('Error logging out:', error.message);
+    } else {
+      console.log('Successfully logged out');
+      navigate({ to: '/' });
+    }
+  }
 
   return (
     <div className="space-y-12 max-w-3xl">
@@ -33,7 +47,7 @@ function SettingsPage() {
                 </button>
               </div>
             </div>
-            
+
             <div className="grid gap-6 pt-6 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Full Name</label>
@@ -93,7 +107,10 @@ function SettingsPage() {
         </section>
 
         <div className="flex justify-between border-t border-border pt-8">
-          <button className="inline-flex items-center gap-2 text-sm text-red-500 hover:text-red-600 transition">
+          <button 
+            className="inline-flex items-center gap-2 text-sm text-red-500 hover:text-red-600 transition cursor-pointer"
+            onClick={handleLogout}
+          >
             <LogOut className="h-4 w-4" /> Sign out
           </button>
         </div>

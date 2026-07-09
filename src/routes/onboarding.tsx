@@ -262,6 +262,15 @@ function Onboarding() {
         window.history.replaceState(null, "", window.location.pathname);
       });
     }
+
+    // Redirect to dashboard if onboarding is already completed
+    try {
+      const profile = localStorage.getItem("mf_profile");
+      if (profile) {
+        const { domain } = JSON.parse(profile);
+        navigate({ to: "/dashboard/$domain", params: { domain: domain || "student" } });
+      }
+    } catch { }
   }, []);
 
   // resume

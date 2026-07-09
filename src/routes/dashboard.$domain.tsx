@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, redirect } from "@tanstack/react-router";
 import {
   Bell, Search, LayoutDashboard, BookOpen, Users, GraduationCap as GradIcon,
   Award, Wallet, Settings, ArrowRight
@@ -12,6 +12,14 @@ import type { Session } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/dashboard/$domain")({
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw redirect({
+        to: '/login',
+      });
+    }
+  },
   component: DashboardLayout,
 });
 
@@ -20,13 +28,17 @@ function DashboardLayout() {
   const user = { ...mockUser, lane: domain as Domain };
   return (
     <div className="min-h-screen bg-surface text-foreground">
-      <div className="mx-auto grid max-w-[1400px] grid-cols-[240px_1fr]">
-        <Sidebar domain={user.lane} />
-        <div className="min-h-screen border-l border-border bg-background">
+      <div className="mx-auto flex flex-col lg:grid lg:max-w-[1400px] lg:grid-cols-[240px_1fr]">
+        <div className="hidden lg:block">
+          <Sidebar domain={user.lane} />
+        </div>
+        
+        <div className="flex min-h-screen flex-col border-l border-border bg-background">
           <TopBar user={user} currentDomain={user.lane} />
-          <main className="mx-auto max-w-6xl px-8 py-10">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-8 md:py-10 pb-24 lg:pb-10">
             <Outlet />
           </main>
+          <MobileNav domain={user.lane} />
         </div>
       </div>
     </div>
@@ -89,6 +101,39 @@ function Sidebar({ domain }: { domain: Domain }) {
   );
 }
 
+function MobileNav({ domain }: { domain: Domain }) {
+  const location = useLocation();
+  const path = location.pathname;
+
+  const nav = [
+    { icon: LayoutDashboard, label: "Home", to: "/dashboard/$domain" },
+    { icon: BookOpen, label: "Guidance", to: "/dashboard/$domain/guidance" },
+    { icon: Users, label: "Mentors", to: "/dashboard/$domain/mentors" },
+    { icon: GradIcon, label: "Courses", to: "/dashboard/$domain/courses" },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background px-2 py-3 lg:hidden pb-safe">
+      {nav.map((n) => {
+        const active = path.includes(n.to.replace('/$domain', `/${domain}`)) || (n.to === "/dashboard/$domain" && path === `/dashboard/${domain}`);
+        return (
+          <Link
+            key={n.label}
+            to={n.to}
+            params={{ domain }}
+            className={`flex flex-col items-center gap-1.5 text-[10px] font-medium transition ${
+              active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <n.icon className={`h-5 w-5 ${active ? "text-foreground" : "opacity-80"}`} />
+            {n.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 function TopBar({ user, currentDomain }: { user: any; currentDomain: Domain }) {
   const d = DOMAINS[currentDomain];
   const icons = { student: GradIcon2, startup: Rocket, researcher: Microscope };
@@ -110,11 +155,12 @@ function TopBar({ user, currentDomain }: { user: any; currentDomain: Domain }) {
   }, []);
 
   return (
-    <header className="flex items-center justify-between border-b border-border px-8 py-4">
+    <header className="flex items-center justify-between border-b border-border px-4 py-4 md:px-8 bg-background sticky top-0 z-40">
       <div className="flex items-center gap-3">
         <div className={`inline-flex items-center gap-2 rounded-full ${d.softBgClass} px-3 py-1 text-xs ${d.accentClass}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${d.dotClass}`} />
-          {d.label} · {currentDomain === "startup" ? "Seed stage" : currentDomain === "researcher" ? "Postdoc" : "Undergrad"}
+          <span className="hidden sm:inline">{d.label} · {currentDomain === "startup" ? "Seed stage" : currentDomain === "researcher" ? "Postdoc" : "Undergrad"}</span>
+          <span className="sm:hidden">{d.label}</span>
         </div>
         
         <div className="hidden text-xs text-muted-foreground md:block ml-4">Switch lane (preview):</div>

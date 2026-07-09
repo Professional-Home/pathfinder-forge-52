@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, GraduationCap, Rocket, Microscope, Check } from "lucide-react";
+import { ArrowRight, Sparkles, GraduationCap, Rocket, Microscope, Check, Users, Map, Target, Trophy, Milestone, LayoutDashboard, BrainCircuit, Network } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { DOMAINS, type Domain } from "@/lib/domain";
 import { useEffect, useState, type ReactNode } from "react";
@@ -366,32 +366,226 @@ function DomainLanes() {
 }
 
 function HowItWorks() {
-  const steps = [
-    { n: "01", t: "Take the quiz", d: "15 questions, one screen at a time. Autosaves as you go." },
-    { n: "02", t: "Meet your path", d: "A personalized roadmap with courses, guidance, and mentor picks." },
-    { n: "03", t: "Book an expert", d: "On-demand sessions with vetted operators, researchers, and educators." },
-    { n: "04", t: "Get certified", d: "Complete assessments and earn verifiable certificates you can share." },
-  ];
   return (
-    <section id="how" className="border-b border-border/60 bg-surface">
-      <div className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-14">
-          <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">02 — How it works</div>
-          <h2 className="max-w-2xl font-display text-4xl md:text-5xl">Four steps. About five minutes.</h2>
+    <section id="how" className="border-b border-border/60 bg-surface/30">
+      <div className="mx-auto max-w-6xl px-6 py-24 md:py-32">
+        <div className="mb-20 text-center">
+          <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">02 — Platform Features</div>
+          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl tracking-tight">Your journey to mastery.</h2>
         </div>
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((s) => (
-            <div key={s.n} className="bg-surface-elevated p-6">
-              <div className="font-mono text-xs text-muted-foreground">{s.n}</div>
-              <div className="mt-8 font-display text-2xl">{s.t}</div>
-              <p className="mt-2 text-sm text-muted-foreground">{s.d}</p>
-            </div>
-          ))}
+        
+        <div className="space-y-32">
+          {/* Section 1: AI Assessment */}
+          <FeatureCard 
+            imagePosition="left"
+            title="AI Assessment"
+            description="Our AI evaluates your current skills, experience, interests, and career goals to identify strengths, weaknesses, and opportunities. It builds a personalized understanding before recommending your next steps."
+            icon={Sparkles}
+            chipTitle="AI Assessment"
+            chipSubtitle="Deep multi-domain analysis of skills, goals, gaps, and timing."
+            bullets={["Personalized analysis", "Multi-domain support"]}
+            backgroundVisual={<AIVisual />}
+          />
+
+          {/* Section 2: Expert Matching */}
+          <FeatureCard 
+            imagePosition="right"
+            title="Expert Matching"
+            description="Get matched with verified mentors, researchers, startup founders, and industry professionals based on your interests, goals, and learning stage."
+            icon={Users}
+            chipTitle="Expert Matching"
+            chipSubtitle="Matched to vetted mentors, advisors, and collaborators."
+            link={{ text: "Explore mentors", href: "#loops" }}
+            backgroundVisual={<ExpertVisual />}
+          />
+
+          {/* Section 3: Roadmap Creation */}
+          <FeatureCard 
+            imagePosition="left"
+            title="Roadmap Creation"
+            description="Receive an AI-generated roadmap tailored to your career or startup journey. Every milestone is actionable, measurable, and continuously updated."
+            icon={Milestone}
+            chipTitle="Roadmap Creation"
+            chipSubtitle="A measurable roadmap with milestones, dependencies, and risk tracking."
+            bullets={["AI generated roadmap", "Milestone tracking"]}
+            backgroundVisual={<RoadmapVisual />}
+          />
+
+          {/* Section 4: Execution Tracking */}
+          <FeatureCard 
+            imagePosition="right"
+            title="Execution Tracking"
+            description="Stay accountable with Kanban boards, AI reminders, progress tracking, calendars, and smart nudges that keep you moving forward."
+            icon={LayoutDashboard}
+            chipTitle="Execution Tracking"
+            chipSubtitle="Kanban, calendar, and AI-powered progress monitoring."
+            button={{ text: "View Progress", href: "/signup" }}
+            backgroundVisual={<ExecutionVisual />}
+          />
+
+          {/* Section 5: Outcome Achievement */}
+          <FeatureCard 
+            imagePosition="left"
+            title="Outcome Achievement"
+            description="Transform your roadmap into measurable outcomes including internships, startup funding, research publications, certifications, and career success."
+            icon={Trophy}
+            chipTitle="Outcome Achievement"
+            chipSubtitle="Internships, jobs, research papers, patents, funding and verified achievements."
+            bullets={["Verified achievements", "Career success tracking"]}
+            backgroundVisual={<OutcomeVisual />}
+          />
         </div>
       </div>
     </section>
   );
 }
+
+interface FeatureCardProps {
+  imagePosition: "left" | "right";
+  title: string;
+  description: string;
+  icon: any;
+  chipTitle: string;
+  chipSubtitle: string;
+  bullets?: string[];
+  link?: { text: string; href: string };
+  button?: { text: string; href: string };
+  backgroundVisual: ReactNode;
+}
+
+function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle, chipSubtitle, bullets, link, button, backgroundVisual }: FeatureCardProps) {
+  const isRight = imagePosition === "right";
+  return (
+    <div className={`flex flex-col gap-12 md:gap-24 md:flex-row ${isRight ? 'md:flex-row-reverse' : ''} items-center`}>
+      <motion.div 
+        className="w-full md:w-1/2"
+        initial={{ opacity: 0, x: isRight ? 40 : -40 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <motion.div 
+          whileHover={{ y: -8, scale: 1.01 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="relative aspect-[4/3] rounded-[28px] overflow-hidden shadow-sm hover:shadow-xl transition-shadow bg-surface-elevated border border-border"
+        >
+          {backgroundVisual}
+          
+          <div className="absolute inset-0 flex items-center justify-center p-6">
+            <motion.div 
+              whileHover={{ scale: 1.04 }}
+              className="bg-background/90 backdrop-blur-md rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-border/60 flex items-center gap-4 max-w-[320px] w-full"
+            >
+              <motion.div 
+                whileHover={{ rotate: 5 }}
+                className="h-14 w-14 rounded-xl flex items-center justify-center bg-surface border border-border text-foreground shrink-0 shadow-sm"
+              >
+                <Icon className="w-6 h-6" />
+              </motion.div>
+              <div>
+                <div className="text-sm font-semibold text-foreground leading-tight">{chipTitle}</div>
+                <div className="text-xs text-muted-foreground mt-1.5 leading-snug">{chipSubtitle}</div>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      <motion.div 
+        className="w-full md:w-1/2"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className={`max-w-[460px] ${isRight ? 'md:mr-auto' : 'md:ml-auto'}`}>
+          <h3 className="font-display text-3xl md:text-4xl lg:text-5xl mb-6 text-foreground tracking-tight">{title}</h3>
+          <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+            {description}
+          </p>
+          
+          {bullets && bullets.length > 0 && (
+            <ul className="space-y-4 mb-8">
+              {bullets.map((b, i) => (
+                <li key={i} className="flex items-center gap-3 text-foreground font-medium">
+                  <div className="h-5 w-5 rounded-full bg-student/20 text-student flex items-center justify-center shrink-0">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {b}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {link && (
+            <a href={link.href} onClick={(e) => {
+              if (link.href.startsWith('#')) {
+                e.preventDefault();
+                document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }} className="inline-flex items-center gap-2 text-foreground font-medium hover:text-startup transition-colors group">
+              {link.text} 
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </a>
+          )}
+
+          {button && (
+            <Link to={button.href} className="inline-flex items-center gap-2 bg-foreground text-background px-6 py-3 rounded-full font-medium hover:opacity-90 transition-opacity group">
+              {button.text} 
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+const AIVisual = () => (
+  <div className="absolute inset-0 bg-student/5">
+    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+    <div className="absolute top-1/4 left-1/4 w-48 h-48 bg-student/20 rounded-full blur-3xl mix-blend-multiply"></div>
+    <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-startup/10 rounded-full blur-3xl mix-blend-multiply"></div>
+  </div>
+);
+
+const ExpertVisual = () => (
+  <div className="absolute inset-0 bg-startup/5">
+    <div className="absolute top-1/4 left-1/3 w-3 h-3 rounded-full bg-startup/40" />
+    <div className="absolute top-1/2 right-1/4 w-4 h-4 rounded-full bg-startup/60" />
+    <div className="absolute bottom-1/3 left-1/4 w-2 h-2 rounded-full bg-startup/40" />
+    <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <path d="M 33 25 L 75 50 L 25 66 Z" fill="none" stroke="currentColor" strokeWidth="0.5" />
+    </svg>
+    <div className="absolute inset-0 bg-gradient-to-tr from-startup/10 to-transparent"></div>
+  </div>
+);
+
+const RoadmapVisual = () => (
+  <div className="absolute inset-0 bg-researcher/5 flex flex-col items-center justify-center opacity-30">
+    <div className="w-1/2 h-3 bg-researcher/20 rounded-full mb-6"></div>
+    <div className="w-2/3 h-3 bg-researcher/20 rounded-full mb-6 ml-8"></div>
+    <div className="w-1/3 h-3 bg-researcher/20 rounded-full mr-12"></div>
+    <div className="absolute -left-1/4 top-1/2 w-64 h-64 bg-researcher/10 rounded-full blur-3xl"></div>
+  </div>
+);
+
+const ExecutionVisual = () => (
+  <div className="absolute inset-0 bg-student/5 flex items-end justify-center gap-6 p-8 opacity-20">
+    <div className="w-16 bg-student/40 rounded-t-xl h-1/3"></div>
+    <div className="w-16 bg-student/40 rounded-t-xl h-2/3"></div>
+    <div className="w-16 bg-student/60 rounded-t-xl h-1/2"></div>
+    <div className="w-16 bg-student/30 rounded-t-xl h-4/5"></div>
+  </div>
+);
+
+const OutcomeVisual = () => (
+  <div className="absolute inset-0 bg-startup/5 flex items-center justify-center">
+    <div className="absolute top-0 w-full h-full bg-gradient-to-b from-transparent to-startup/10"></div>
+    <div className="w-64 h-64 rounded-full border-[24px] border-startup/10 opacity-50 absolute right-[-10%] top-[-10%]"></div>
+    <div className="w-40 h-40 rounded-full border-[12px] border-startup/20 opacity-40 absolute left-[5%] bottom-[10%]"></div>
+  </div>
+);
 
 function ProductPreview() {
   return (
@@ -410,16 +604,16 @@ function ProductPreview() {
             <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
             <div className="ml-4 font-mono text-[11px] text-muted-foreground">mentorforge.app/dashboard/startup</div>
           </div>
-          <div className="grid grid-cols-12 gap-4 p-4 md:p-6">
-            <div className="col-span-3 space-y-1 rounded-lg bg-surface p-3 text-xs text-muted-foreground">
+          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 p-4 md:p-6">
+            <div className="lg:col-span-3 flex overflow-x-auto space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 rounded-lg bg-surface p-3 text-xs text-muted-foreground no-scrollbar">
               {["Dashboard", "Guidance", "Mentors", "Courses", "Certificates", "Payments"].map((i, idx) => (
-                <div key={i} className={`rounded px-2 py-1.5 ${idx === 0 ? "bg-background text-foreground" : ""}`}>
+                <div key={i} className={`whitespace-nowrap rounded px-3 py-1.5 lg:px-2 ${idx === 0 ? "bg-background text-foreground" : ""}`}>
                   {i}
                 </div>
               ))}
             </div>
-            <div className="col-span-9 grid grid-cols-6 gap-4">
-              <div className="col-span-4 rounded-lg border border-border bg-background p-5">
+            <div className="lg:col-span-9 grid grid-cols-1 sm:grid-cols-6 gap-4">
+              <div className="sm:col-span-4 rounded-lg border border-border bg-background p-5">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="h-1.5 w-1.5 rounded-full bg-startup" />
                   <span className="font-mono uppercase tracking-widest">Startup · Seed</span>
@@ -429,18 +623,18 @@ function ProductPreview() {
                   {["Idea", "MVP", "PMF", "Scale"].map((s, i) => (
                     <div key={s} className="space-y-1">
                       <div className={`h-1 rounded-full ${i <= 1 ? "bg-startup" : "bg-border"}`} />
-                      <div className={`text-[11px] ${i <= 1 ? "text-foreground" : "text-muted-foreground"}`}>{s}</div>
+                      <div className={`text-[9px] sm:text-[11px] ${i <= 1 ? "text-foreground" : "text-muted-foreground"}`}>{s}</div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="col-span-2 rounded-lg border border-border bg-background p-5">
+              <div className="sm:col-span-2 rounded-lg border border-border bg-background p-5">
                 <div className="text-xs text-muted-foreground">Suggested mentor</div>
                 <div className="mt-3 font-display text-lg">Priya N.</div>
                 <div className="mt-0.5 text-xs text-muted-foreground">Ex-Stripe · Fundraising</div>
                 <div className="mt-4 inline-flex rounded bg-foreground px-2 py-1 text-[11px] text-background">Book · $120</div>
               </div>
-              <div className="col-span-3 rounded-lg border border-border bg-background p-5">
+              <div className="sm:col-span-3 rounded-lg border border-border bg-background p-5">
                 <div className="text-xs text-muted-foreground">Guidance for you</div>
                 <ul className="mt-3 space-y-2 text-sm">
                   <li>Writing a seed memo that actually gets read</li>
@@ -448,7 +642,7 @@ function ProductPreview() {
                   <li>Hiring #1: signals and traps</li>
                 </ul>
               </div>
-              <div className="col-span-3 rounded-lg border border-border bg-background p-5">
+              <div className="sm:col-span-3 rounded-lg border border-border bg-background p-5">
                 <div className="text-xs text-muted-foreground">Skill radar</div>
                 <div className="mt-3 grid grid-cols-4 items-end gap-2 h-16">
                   {[40, 70, 55, 85].map((v, i) => (
