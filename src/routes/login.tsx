@@ -8,8 +8,8 @@ import { supabase } from "@/utils/supabase";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — MentorForge" },
-      { name: "description", content: "Sign in to your MentorForge account and continue your growth journey." },
+      { title: "Sign in — Micrylis" },
+      { name: "description", content: "Sign in to your Micrylis account and continue your growth journey." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -404,7 +404,7 @@ function LoginPage() {
 
               {/* Sign up link */}
               <p className="text-center text-sm text-muted-foreground">
-                New to MentorForge?{" "}
+                New to Micrylis?{" "}
                 <Link
                   to="/signup"
                   className="font-medium text-foreground underline-offset-4 hover:underline"

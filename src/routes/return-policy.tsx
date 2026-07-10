@@ -9,7 +9,7 @@ function ReturnPolicy() {
   return (
     <LegalLayout title="Return Policy" lastUpdated="July 8, 2026">
       <p>
-        Thank you for choosing MentorForge. We strive to provide the best possible experience and high-quality digital services. Please read our Return Policy carefully before making any purchases or bookings.
+        Thank you for choosing Micrylis. We strive to provide the best possible experience and high-quality digital services. Please read our Return Policy carefully before making any purchases or bookings.
       </p>
 
       <LegalSection title="1. Digital Products and Services">
@@ -35,7 +35,7 @@ function ReturnPolicy() {
 
       <LegalSection title="4. Contact Us">
         <p>
-          If you have any questions about this Return Policy or need assistance with a specific transaction, please contact us at support@mentorforge.app.
+          If you have any questions about this Return Policy or need assistance with a specific transaction, please contact us at support@micrylis.com.
         </p>
       </LegalSection>
     </LegalLayout>

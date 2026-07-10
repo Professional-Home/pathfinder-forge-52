@@ -20,8 +20,8 @@ function GoogleIcon() {
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Create account — MentorForge" },
-      { name: "description", content: "Create your free MentorForge account and start building your personalized growth path." },
+      { title: "Create account — Micrylis" },
+      { name: "description", content: "Create your free Micrylis account and start building your personalized growth path." },
       { name: "robots", content: "noindex" },
     ],
   }),

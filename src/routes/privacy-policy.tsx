@@ -9,7 +9,7 @@ function PrivacyPolicy() {
   return (
     <LegalLayout title="Privacy Policy" lastUpdated="July 8, 2026">
       <p>
-        MentorForge ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our application.
+        Micrylis ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our application.
       </p>
 
       <LegalSection title="1. Information We Collect">
@@ -49,7 +49,7 @@ function PrivacyPolicy() {
 
       <LegalSection title="5. Contact Us">
         <p>
-          If you have questions or comments about this Privacy Policy, please contact us at privacy@mentorforge.app.
+          If you have questions or comments about this Privacy Policy, please contact us at privacy@micrylis.com.
         </p>
       </LegalSection>
     </LegalLayout>

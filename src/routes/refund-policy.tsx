@@ -9,7 +9,7 @@ function RefundPolicy() {
   return (
     <LegalLayout title="Refund Policy" lastUpdated="July 8, 2026">
       <p>
-        At MentorForge, we want you to be completely satisfied with your learning and mentorship experience. Our refund policy outlines the conditions under which you may be eligible for a refund.
+        At Micrylis, we want you to be completely satisfied with your learning and mentorship experience. Our refund policy outlines the conditions under which you may be eligible for a refund.
       </p>
 
       <LegalSection title="1. Mentorship Sessions">
@@ -35,13 +35,13 @@ function RefundPolicy() {
 
       <LegalSection title="4. Exceptions">
         <p>
-          MentorForge reserves the right to deny refund requests if we detect abuse of our policy, such as repeatedly purchasing and requesting refunds for courses or sessions.
+          Micrylis reserves the right to deny refund requests if we detect abuse of our policy, such as repeatedly purchasing and requesting refunds for courses or sessions.
         </p>
       </LegalSection>
       
       <LegalSection title="Contact Information">
         <p>
-          To request a refund or if you have any questions, please reach out to our billing team at billing@mentorforge.app.
+          To request a refund or if you have any questions, please reach out to our billing team at billing@micrylis.com.
         </p>
       </LegalSection>
     </LegalLayout>

@@ -78,14 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "MentorForge — Personalized mentorship, in 5 minutes" },
+      { title: "Micrylis — Personalized mentorship, in 5 minutes" },
       {
         name: "description",
         content:
           "Tell us who you are in 5 minutes. We'll build your growth path, connect you to the right expert, and certify your progress.",
       },
-      { name: "author", content: "MentorForge" },
-      { property: "og:title", content: "MentorForge — Personalized mentorship, in 5 minutes" },
+      { name: "author", content: "Micrylis" },
+      { property: "og:title", content: "Micrylis — Personalized mentorship, in 5 minutes" },
       {
         property: "og:description",
         content:
@@ -112,7 +112,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/logo.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,

@@ -8,8 +8,8 @@ import { supabase } from "@/utils/supabase";
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
-      { title: "Onboarding — MentorForge" },
-      { name: "description", content: "Answer 15 questions to build your personalized MentorForge dashboard." },
+      { title: "Onboarding — Micrylis" },
+      { name: "description", content: "Answer 15 questions to build your personalized Micrylis dashboard." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -232,7 +232,7 @@ const preDomain: Question[] = [
   {
     id: "context",
     kind: "choice",
-    prompt: "What brought you to MentorForge today?",
+    prompt: "What brought you to Micrylis today?",
     choices: [
       { value: "recommend", label: "A friend recommended it" },
       { value: "search", label: "I searched for a mentor" },

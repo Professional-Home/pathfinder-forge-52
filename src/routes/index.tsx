@@ -673,7 +673,7 @@ function ProductPreview() {
             <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
             <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
             <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
-            <div className="ml-4 font-mono text-[11px] text-muted-foreground">mentorforge.app/dashboard/startup</div>
+            <div className="ml-4 font-mono text-[11px] text-muted-foreground">micrylis.com/dashboard/startup</div>
           </div>
           <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 p-4 md:p-6">
             <div className="lg:col-span-3 flex overflow-x-auto space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 rounded-lg bg-surface p-3 text-xs text-muted-foreground no-scrollbar">
@@ -869,7 +869,7 @@ function Footer() {
     <footer className="mx-auto max-w-6xl px-6 py-12">
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
         <Wordmark />
-        <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} MentorForge — building growth paths.</div>
+        <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} Micrylis — building growth paths.</div>
       </div>
       <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs text-muted-foreground border-t border-border/60 pt-6">
         <Link to="/return-policy" className="hover:text-foreground transition-colors">Return Policy</Link>

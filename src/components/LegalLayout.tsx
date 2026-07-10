@@ -32,7 +32,7 @@ export function LegalLayout({ children, title, lastUpdated }: { children: ReactN
       </main>
       <footer className="border-t border-border/60 mt-auto">
         <div className="mx-auto max-w-4xl px-6 py-8 flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-muted-foreground w-full">
-           <div>© {new Date().getFullYear()} MentorForge. All rights reserved.</div>
+           <div>© {new Date().getFullYear()} Micrylis. All rights reserved.</div>
            <div className="flex flex-wrap justify-center gap-4">
              <Link to="/return-policy" className="hover:text-foreground transition-colors">Return Policy</Link>
              <Link to="/refund-policy" className="hover:text-foreground transition-colors">Refund Policy</Link>
