@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, GraduationCap, Rocket, Microscope, Check, Users, Map, Target, Trophy, Milestone, LayoutDashboard, BrainCircuit, Network } from "lucide-react";
+import { ArrowRight, Sparkles, GraduationCap, Rocket, Microscope, Check, Users, Map, Target, Trophy, Milestone, LayoutDashboard, BrainCircuit, Network, Plus, Minus } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { DOMAINS, type Domain } from "@/lib/domain";
-import { useEffect, useState, type ReactNode } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { useEffect, useState, type ReactNode, useRef } from "react";
+import { motion, useScroll, useTransform, type Variants, useInView, animate, useMotionValue, AnimatePresence } from "framer-motion";
 import { supabase } from "@/utils/supabase";
 import type { Session } from "@supabase/supabase-js";
 
@@ -18,6 +18,38 @@ function RevealWrapper({ children, className = "" }: { children: ReactNode; clas
     >
       {children}
     </motion.div>
+  );
+}
+
+function AnimatedStat({ value }: { value: string }) {
+  const match = value.match(/^([^0-9]*)([0-9.]+)(.*)$/);
+
+  if (!match) return <span>{value}</span>;
+
+  const [, prefix, numStr, suffix] = match;
+  const num = parseFloat(numStr);
+  const isFloat = numStr.includes('.');
+
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) =>
+    isFloat ? latest.toFixed(1) : Math.round(latest).toString()
+  );
+
+  useEffect(() => {
+    if (isInView) {
+      const controls = animate(count, num, { duration: 2.5, ease: [0.16, 1, 0.3, 1] });
+      return controls.stop;
+    }
+  }, [isInView, num, count]);
+
+  return (
+    <span ref={ref} className="inline-flex items-center justify-center">
+      {prefix}
+      <motion.span>{rounded}</motion.span>
+      {suffix}
+    </span>
   );
 }
 
@@ -36,10 +68,11 @@ function Landing() {
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
       <Hero />
-      <RevealWrapper><DomainLanes /></RevealWrapper>
+      <RevealWrapper><GrowthPath /></RevealWrapper>
       <RevealWrapper><HowItWorks /></RevealWrapper>
       <RevealWrapper><ProductPreview /></RevealWrapper>
       <RevealWrapper><Loops /></RevealWrapper>
+      <RevealWrapper><WhyMicrylis /></RevealWrapper>
       <Footer />
     </div>
   );
@@ -101,11 +134,10 @@ function SiteHeader() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className={`fixed top-0 z-40 w-full transition-all duration-300 ${
-        isScrolled
-          ? "border-b border-border/60 bg-background/80 backdrop-blur"
-          : "border-b border-transparent bg-transparent"
-      }`}
+      className={`fixed top-0 z-40 w-full transition-all duration-300 ${isScrolled
+        ? "border-b border-border/60 bg-background/80 backdrop-blur"
+        : "border-b border-transparent bg-transparent"
+        }`}
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Wordmark />
@@ -117,9 +149,8 @@ function SiteHeader() {
                 key={link.name}
                 href={link.href}
                 onClick={(e) => scrollTo(e, link.href)}
-                className={`relative px-3 py-1.5 transition-colors ${
-                  isActive ? "text-foreground" : "hover:text-foreground"
-                }`}
+                className={`relative px-3 py-1.5 transition-colors ${isActive ? "text-foreground" : "hover:text-foreground"
+                  }`}
               >
                 <span className="relative z-10">{link.name}</span>
                 {isActive && (
@@ -180,7 +211,7 @@ function SiteHeader() {
 }
 
 function Hero() {
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -191,7 +222,7 @@ function Hero() {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -211,13 +242,13 @@ function Hero() {
           className="absolute top-32 left-1/2 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-tr from-student/10 via-startup/10 to-transparent blur-[100px]"
         />
       </div>
-      <div className="mx-auto grid max-w-6xl gap-16 px-6 py-24 md:py-32">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-3xl"
-        >
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="mx-auto grid max-w-6xl gap-16 px-6 py-24 md:py-32"
+      >
+        <div className="max-w-3xl">
           {/* 2. Badge Pill Micro-Interaction */}
           <motion.div
             variants={itemVariants}
@@ -232,28 +263,27 @@ function Hero() {
             </motion.div>
             15 questions. Then a path built around you.
           </motion.div>
-          
+
           {/* 3. Headline Text Reveal */}
           <h1 className="font-display text-6xl leading-[1.02] md:text-7xl lg:text-8xl">
             <div className="overflow-hidden pb-1">
               <motion.div variants={itemVariants}>
-                Tell us who you are<br />
+                Don't Just Learn Biology<br />
               </motion.div>
             </div>
             <div className="overflow-hidden pb-2">
               {/* Delayed for the two-beat reveal */}
               <motion.div variants={itemVariants}>
-                <span className="italic text-muted-foreground">in five minutes.</span>
+                <span className="italic text-muted-foreground">Build the Future of It.</span>
               </motion.div>
             </div>
           </h1>
-          
+
           {/* 1.5 Description */}
           <motion.p variants={itemVariants} className="mt-8 max-w-xl text-lg text-muted-foreground">
-            MentorForge builds your growth path, matches you to an expert mentor,
-            and certifies your progress — whether you're a student, a founder, or a researcher.
+            Learn by solving real industry challenges, publishing research, building AI-powered biotechnology projects, and working alongside mentors from academia and industry.From your first project to your first publication, Micrylis Biotech is where future scientists, bioinformaticians, and biotech founders are built.
           </motion.p>
-          
+
           {/* CTA Buttons */}
           <motion.div variants={itemVariants} className="mt-10 flex flex-wrap items-center gap-3">
             <Link to="/signup">
@@ -276,9 +306,9 @@ function Hero() {
             <Link to="/dashboard/$domain" params={{ domain: "student" }}>
               {/* 5. Secondary CTA Interaction */}
               <motion.div
-                whileHover={{ 
-                  borderColor: "hsl(var(--foreground))", 
-                  backgroundColor: "hsl(var(--accent))" 
+                whileHover={{
+                  borderColor: "hsl(var(--foreground))",
+                  backgroundColor: "hsl(var(--accent))"
                 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className="inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface-elevated px-5 py-3 text-sm font-medium text-foreground cursor-pointer"
@@ -287,78 +317,101 @@ function Hero() {
               </motion.div>
             </Link>
           </motion.div>
-          
-          {/* 6. Trust Checkmarks Row */}
-          <motion.div variants={itemVariants} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+        </div>
+
+        {/* 6. Trust Bar (Stat Bar Style) */}
+        <motion.div variants={itemVariants} className="mt-12 w-full col-span-full overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_20px_60px_-30px_rgba(0,0,0,0.15)]">
+          <div className="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-border">
             {[
-              "No credit card",
-              "Resume anytime",
-              "Free forever tier"
-            ].map((text, i) => (
-              <motion.span 
-                key={text}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: [0, 1.2, 1] }}
-                transition={{ delay: 0.8 + (i * 0.1), duration: 0.4 }}
-                className="inline-flex items-center gap-1.5"
-              >
-                <Check className="h-3.5 w-3.5" /> {text}
-              </motion.span>
+              { top: "30+", bottom: "Students Learning" },
+              { top: "Online", bottom: "Industry Projects" },
+              { top: "AI", bottom: "Integrated Learning" },
+              { top: "Research", bottom: "First Approach" },
+              { top: "Career", bottom: "Mentorship" }
+            ].map((item, i) => (
+              <div key={item.top} className="flex flex-col items-center justify-center py-6 px-4 md:px-2 lg:px-4 text-center bg-surface-elevated hover:bg-surface/80 transition-colors">
+                <div className="text-2xl lg:text-3xl font-display font-bold tracking-tight text-foreground">
+                  <AnimatedStat value={item.top} />
+                </div>
+                <div className="text-xs text-muted-foreground mt-1.5 font-medium">
+                  {item.bottom}
+                </div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 }
 
-function DomainLanes() {
+function GrowthPath() {
   return (
-    <section id="lanes" className="border-b border-border/60">
+    <section className="border-b border-border/60 bg-background">
       <div className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-14 flex items-end justify-between gap-8">
           <div>
-            <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">01 — Three lanes</div>
+            <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">01 — The Process</div>
             <h2 className="max-w-2xl font-display text-4xl md:text-5xl">
-              One platform, tuned to how you actually work.
+              Your Growth Path
             </h2>
           </div>
-          <p className="hidden max-w-sm text-sm text-muted-foreground md:block">
-            Your answers set the lane. The lane sets the mentors, the reading,
-            the courses — everything.
-          </p>
         </div>
         <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">
-          {(Object.keys(DOMAINS) as Domain[]).map((id) => {
-            const d = DOMAINS[id];
-            const Icon = domainIcons[id];
-            return (
-              <Link
-                key={id}
-                to="/dashboard/$domain"
-                params={{ domain: id }}
-                className="group flex flex-col justify-between gap-10 bg-surface-elevated p-8 transition hover:bg-background"
-              >
-                <div>
-                  <div className={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${d.softBgClass}`}>
-                    <Icon className={`h-5 w-5 ${d.accentClass}`} />
-                  </div>
-                  <div className="mt-6 flex items-center gap-2">
-                    <span className={`h-1.5 w-1.5 rounded-full ${d.dotClass}`} />
-                    <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                      {d.label}
-                    </span>
-                  </div>
-                  <h3 className="mt-2 font-display text-3xl">{d.tagline}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{d.subtitle}</p>
-                </div>
-                <div className="inline-flex items-center gap-1.5 text-sm text-foreground">
-                  See the {d.label.toLowerCase()} dashboard
-                  <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-                </div>
-              </Link>
-            );
-          })}
+          {/* Card 1 */}
+          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-8 transition hover:bg-background">
+            <div>
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-student-soft">
+                <Map className="h-5 w-5 text-student" />
+              </div>
+              <div className="mt-6 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-student" />
+                <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Step 1
+                </span>
+              </div>
+              <h3 className="mt-2 font-display text-3xl">Discover</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Assess your current skills and choose a personalized learning path.
+              </p>
+            </div>
+          </div>
+          {/* Card 2 */}
+          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-8 transition hover:bg-background">
+            <div>
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-startup-soft">
+                <Rocket className="h-5 w-5 text-startup" />
+              </div>
+              <div className="mt-6 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-startup" />
+                <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Step 2
+                </span>
+              </div>
+              <h3 className="mt-2 font-display text-3xl">Build</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Work on real biotechnology and AI projects with structured guidance.
+              </p>
+            </div>
+          </div>
+          {/* Card 3 */}
+          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-8 transition hover:bg-background">
+            <div>
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-researcher-soft">
+                <Trophy className="h-5 w-5 text-researcher" />
+              </div>
+              <div className="mt-6 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-researcher" />
+                <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Step 3
+                </span>
+              </div>
+              <h3 className="mt-2 font-display text-3xl">Showcase</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Publish your work, strengthen your portfolio, and become ready for internships, research labs, higher studies, or startups.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -373,10 +426,10 @@ function HowItWorks() {
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">02 — Platform Features</div>
           <h2 className="font-display text-4xl md:text-5xl lg:text-6xl tracking-tight">Your journey to mastery.</h2>
         </div>
-        
+
         <div className="space-y-32">
           {/* Section 1: AI Assessment */}
-          <FeatureCard 
+          <FeatureCard
             imagePosition="left"
             title="AI Assessment"
             description="Our AI evaluates your current skills, experience, interests, and career goals to identify strengths, weaknesses, and opportunities. It builds a personalized understanding before recommending your next steps."
@@ -385,10 +438,11 @@ function HowItWorks() {
             chipSubtitle="Deep multi-domain analysis of skills, goals, gaps, and timing."
             bullets={["Personalized analysis", "Multi-domain support"]}
             backgroundVisual={<AIVisual />}
+            imageSrc="/AI Assessment.jpeg"
           />
 
           {/* Section 2: Expert Matching */}
-          <FeatureCard 
+          <FeatureCard
             imagePosition="right"
             title="Expert Matching"
             description="Get matched with verified mentors, researchers, startup founders, and industry professionals based on your interests, goals, and learning stage."
@@ -397,10 +451,11 @@ function HowItWorks() {
             chipSubtitle="Matched to vetted mentors, advisors, and collaborators."
             link={{ text: "Explore mentors", href: "#loops" }}
             backgroundVisual={<ExpertVisual />}
+            imageSrc="/Expert Matching.jpeg"
           />
 
           {/* Section 3: Roadmap Creation */}
-          <FeatureCard 
+          <FeatureCard
             imagePosition="left"
             title="Roadmap Creation"
             description="Receive an AI-generated roadmap tailored to your career or startup journey. Every milestone is actionable, measurable, and continuously updated."
@@ -409,10 +464,11 @@ function HowItWorks() {
             chipSubtitle="A measurable roadmap with milestones, dependencies, and risk tracking."
             bullets={["AI generated roadmap", "Milestone tracking"]}
             backgroundVisual={<RoadmapVisual />}
+            imageSrc="/Roadmap Creation.jpeg"
           />
 
           {/* Section 4: Execution Tracking */}
-          <FeatureCard 
+          <FeatureCard
             imagePosition="right"
             title="Execution Tracking"
             description="Stay accountable with Kanban boards, AI reminders, progress tracking, calendars, and smart nudges that keep you moving forward."
@@ -421,18 +477,19 @@ function HowItWorks() {
             chipSubtitle="Kanban, calendar, and AI-powered progress monitoring."
             button={{ text: "View Progress", href: "/signup" }}
             backgroundVisual={<ExecutionVisual />}
+            imageSrc="/Execution Tracking.jpeg"
           />
 
           {/* Section 5: Outcome Achievement */}
-          <FeatureCard 
+          <FeatureCard
             imagePosition="left"
             title="Outcome Achievement"
             description="Transform your roadmap into measurable outcomes including internships, startup funding, research publications, certifications, and career success."
             icon={Trophy}
             chipTitle="Outcome Achievement"
             chipSubtitle="Internships, jobs, research papers, patents, funding and verified achievements."
-            bullets={["Verified achievements", "Career success tracking"]}
             backgroundVisual={<OutcomeVisual />}
+            imageSrc="/Outcome Achievement.jpeg"
           />
         </div>
       </div>
@@ -450,48 +507,62 @@ interface FeatureCardProps {
   bullets?: string[];
   link?: { text: string; href: string };
   button?: { text: string; href: string };
-  backgroundVisual: ReactNode;
+  backgroundVisual?: ReactNode;
+  imageSrc?: string;
 }
 
-function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle, chipSubtitle, bullets, link, button, backgroundVisual }: FeatureCardProps) {
+function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle, chipSubtitle, bullets, link, button, backgroundVisual, imageSrc }: FeatureCardProps) {
   const isRight = imagePosition === "right";
+  const [imageError, setImageError] = useState(false);
+
   return (
     <div className={`flex flex-col gap-12 md:gap-24 md:flex-row ${isRight ? 'md:flex-row-reverse' : ''} items-center`}>
-      <motion.div 
+      <motion.div
         className="w-full md:w-1/2"
         initial={{ opacity: 0, x: isRight ? 40 : -40 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       >
-        <motion.div 
+        <motion.div
           whileHover={{ y: -8, scale: 1.01 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative aspect-[4/3] rounded-[28px] overflow-hidden shadow-sm hover:shadow-xl transition-shadow bg-surface-elevated border border-border"
+          className="relative aspect-[4/3] rounded-[28px] overflow-hidden shadow-sm hover:shadow-xl transition-shadow bg-surface-elevated border border-border flex items-center justify-center bg-muted/10"
         >
-          {backgroundVisual}
-          
-          <div className="absolute inset-0 flex items-center justify-center p-6">
-            <motion.div 
-              whileHover={{ scale: 1.04 }}
-              className="bg-background/90 backdrop-blur-md rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-border/60 flex items-center gap-4 max-w-[320px] w-full"
-            >
-              <motion.div 
-                whileHover={{ rotate: 5 }}
-                className="h-14 w-14 rounded-xl flex items-center justify-center bg-surface border border-border text-foreground shrink-0 shadow-sm"
-              >
-                <Icon className="w-6 h-6" />
-              </motion.div>
-              <div>
-                <div className="text-sm font-semibold text-foreground leading-tight">{chipTitle}</div>
-                <div className="text-xs text-muted-foreground mt-1.5 leading-snug">{chipSubtitle}</div>
+          {imageSrc && !imageError ? (
+            <img
+              src={imageSrc}
+              alt={title}
+              className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <>
+              {backgroundVisual}
+
+              <div className="absolute inset-0 flex items-center justify-center p-6">
+                <motion.div
+                  whileHover={{ scale: 1.04 }}
+                  className="bg-background/90 backdrop-blur-md rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-border/60 flex items-center gap-4 max-w-[320px] w-full"
+                >
+                  <motion.div
+                    whileHover={{ rotate: 5 }}
+                    className="h-14 w-14 rounded-xl flex items-center justify-center bg-surface border border-border text-foreground shrink-0 shadow-sm"
+                  >
+                    <Icon className="w-6 h-6" />
+                  </motion.div>
+                  <div>
+                    <div className="text-sm font-semibold text-foreground leading-tight">{chipTitle}</div>
+                    <div className="text-xs text-muted-foreground mt-1.5 leading-snug">{chipSubtitle}</div>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
+            </>
+          )}
         </motion.div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="w-full md:w-1/2"
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -503,7 +574,7 @@ function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle,
           <p className="text-lg text-muted-foreground leading-relaxed mb-8">
             {description}
           </p>
-          
+
           {bullets && bullets.length > 0 && (
             <ul className="space-y-4 mb-8">
               {bullets.map((b, i) => (
@@ -524,14 +595,14 @@ function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle,
                 document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
               }
             }} className="inline-flex items-center gap-2 text-foreground font-medium hover:text-startup transition-colors group">
-              {link.text} 
+              {link.text}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </a>
           )}
 
           {button && (
             <Link to={button.href} className="inline-flex items-center gap-2 bg-foreground text-background px-6 py-3 rounded-full font-medium hover:opacity-90 transition-opacity group">
-              {button.text} 
+              {button.text}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           )}
@@ -692,6 +763,99 @@ function Loops() {
                 </div>
               </div>
               <div className="text-sm font-mono">{m.p}<span className="text-muted-foreground">/session</span></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WhyMicrylis() {
+  const [open, setOpen] = useState<number | null>(0);
+
+  const statements = [
+    {
+      q: "Why Micrylis?",
+      a: (
+        <div className="flex flex-col gap-4">
+          <p className="font-medium text-foreground text-xl">The Problem Isn't Learning. It's Never Building.</p>
+          <p>
+            Most students graduate with certificates. Very few graduate with research papers, real-world projects, industry experience, and a portfolio that gets them noticed.
+          </p>
+          <p>
+            At Micrylis Biotech, we believe biotechnology should be learned by doing—not by memorizing. Every student works on real problems, collaborates with peers, and builds a portfolio that speaks louder than grades.
+          </p>
+        </div>
+      )
+    },
+    {
+      q: "Why Students Choose Us",
+      a: (
+        <div className="flex flex-col gap-4">
+          <p className="font-medium text-foreground text-xl">Learning That Creates Outcomes</p>
+          <ul className="grid gap-3 sm:grid-cols-2 mt-2">
+            {[
+              "Real Industry Projects",
+              "Weekly Mentor Sessions",
+              "Research-Oriented Curriculum",
+              "Portfolio Development",
+              "Publication Guidance",
+              "AI-Integrated Biotechnology",
+              "Community of Driven Students",
+              "Career Roadmap"
+            ].map((item, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <div className="mt-1 flex shrink-0 items-center justify-center rounded-full bg-student/10 p-1 text-student">
+                  <Check className="h-3 w-3" />
+                </div>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <section className="border-b border-border/60 bg-background py-24 md:py-32">
+      <div className="mx-auto max-w-3xl px-6">
+        <div className="text-center mb-16 flex flex-col items-center">
+          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight text-foreground mb-6">
+            Frequently asked questions
+          </h2>
+        </div>
+
+        <div className="border-t border-border/60">
+          {statements.map((item, i) => (
+            <div key={i} className="border-b border-border/60">
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                className="flex w-full items-center justify-between py-6 text-left focus:outline-none group cursor-pointer"
+              >
+                <span className="font-display text-xl md:text-2xl font-medium text-foreground/90 group-hover:text-foreground transition-colors pr-8">
+                  {item.q}
+                </span>
+                <div className="flex shrink-0 items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors">
+                  {open === i ? <Minus strokeWidth={1.5} className="h-6 w-6" /> : <Plus strokeWidth={1.5} className="h-6 w-6" />}
+                </div>
+              </button>
+              <AnimatePresence>
+                {open === i && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pb-8 text-lg text-muted-foreground leading-relaxed">
+                      {item.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
