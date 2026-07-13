@@ -8,6 +8,7 @@ import { AdminPagination, usePagination } from "@/components/admin/AdminPaginati
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ConfirmationDialog } from "@/components/admin/ConfirmationDialog";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { AdminDataTable, AdminToolbar } from "@/components/admin/admin-shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -173,12 +174,11 @@ function AdminCoursesPage() {
         }
       />
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <AdminToolbar>
         <SearchBar
           value={search}
           onChange={(v) => { setSearch(v); setCurrentPage(1); }}
           placeholder="Search courses..."
-          className="flex-1"
         />
         <FilterDropdown
           value={statusFilter}
@@ -197,7 +197,7 @@ function AdminCoursesPage() {
             ...categories.map((c) => ({ label: c, value: c })),
           ]}
         />
-      </div>
+      </AdminToolbar>
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -209,7 +209,7 @@ function AdminCoursesPage() {
         />
       ) : (
         <>
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface-elevated">
+          <AdminDataTable>
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -280,7 +280,7 @@ function AdminCoursesPage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </AdminDataTable>
           <div className="mt-4">
             <AdminPagination
               currentPage={currentPage}

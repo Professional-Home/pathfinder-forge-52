@@ -22,10 +22,15 @@ export function FilterDropdown({
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className={cn("w-[160px] border-border bg-surface", className)}>
+      <SelectTrigger
+        className={cn(
+          "h-[46px] w-full rounded-xl border-border bg-background sm:w-[180px]",
+          className,
+        )}
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="border-border">
         {options.map((opt) => (
           <SelectItem key={opt.value} value={opt.value}>
             {opt.label}

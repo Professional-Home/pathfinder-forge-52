@@ -6,14 +6,11 @@ import {
   Calendar,
   FileText,
   Plus,
-  ArrowRight,
   TrendingUp,
 } from "lucide-react";
-import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminGreeting, AdminCard, AdminListRow, AdminLinkRow } from "@/components/admin/admin-shared";
 import { DashboardCard } from "@/components/admin/DashboardCard";
-import { AdminCard } from "@/components/admin/admin-shared";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { Button } from "@/components/ui/button";
 import {
   ChartContainer,
   ChartTooltip,
@@ -27,6 +24,7 @@ import {
   INITIAL_ENROLLMENTS,
   INITIAL_SESSIONS,
 } from "@/lib/adminMockData";
+import { getAdminUser } from "@/lib/adminAuth";
 
 export const Route = createFileRoute("/admin/dashboard")({
   component: AdminDashboardPage,
@@ -36,106 +34,83 @@ const chartConfig = {
   enrollments: { label: "Enrollments", color: "var(--student)" },
 };
 
+const quickActions = [
+  { icon: Plus, label: "Add Course", desc: "Create new course", to: "/admin/courses", accent: "text-student bg-student/10" },
+  { icon: Users, label: "Add Mentor", desc: "Onboard mentor", to: "/admin/mentors", accent: "text-startup bg-startup/10" },
+  { icon: Calendar, label: "Schedule Session", desc: "Book guidance", to: "/admin/guidance", accent: "text-researcher bg-researcher/10" },
+  { icon: TrendingUp, label: "View Enrollments", desc: "Track progress", to: "/admin/enrollments", accent: "text-student bg-student/10" },
+];
+
 function AdminDashboardPage() {
+  const user = getAdminUser();
   const recentEnrollments = INITIAL_ENROLLMENTS.slice(0, 4);
   const latestCourses = INITIAL_COURSES.slice(0, 3);
   const upcomingSessions = INITIAL_SESSIONS.filter((s) => s.status === "upcoming").slice(0, 3);
 
   return (
     <>
-      <AdminPageHeader
-        title="Dashboard"
-        description="Overview of courses, students, mentors, and guidance sessions."
-        breadcrumbs={[
-          { label: "Admin", to: "/admin/dashboard" },
-          { label: "Dashboard" },
-        ]}
+      <AdminGreeting
+        title={`Welcome back, ${user.name}.`}
+        sub="Here's what's happening across courses, students, mentors, and guidance."
       />
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
         <DashboardCard title="Total Courses" value={DASHBOARD_STATS.totalCourses} icon={BookOpen} trend="+2 this month" />
-        <DashboardCard title="Published" value={DASHBOARD_STATS.publishedCourses} icon={FileText} />
-        <DashboardCard title="Draft Courses" value={DASHBOARD_STATS.draftCourses} icon={FileText} />
+        <DashboardCard title="Published" value={DASHBOARD_STATS.publishedCourses} icon={FileText} accent="researcher" />
+        <DashboardCard title="Draft Courses" value={DASHBOARD_STATS.draftCourses} icon={FileText} accent="startup" />
         <DashboardCard title="Total Students" value={DASHBOARD_STATS.totalStudents.toLocaleString()} icon={GraduationCap} trend="+12% vs last month" />
-        <DashboardCard title="Total Mentors" value={DASHBOARD_STATS.totalMentors} icon={Users} />
-        <DashboardCard title="Upcoming Sessions" value={DASHBOARD_STATS.upcomingSessions} icon={Calendar} />
+        <DashboardCard title="Total Mentors" value={DASHBOARD_STATS.totalMentors} icon={Users} accent="startup" />
+        <DashboardCard title="Upcoming Sessions" value={DASHBOARD_STATS.upcomingSessions} icon={Calendar} accent="researcher" />
       </div>
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2">
         <AdminCard title="Enrollment trends" hint="Last 6 months">
-          <ChartContainer config={chartConfig} className="h-[240px] w-full">
+          <ChartContainer config={chartConfig} className="h-[220px] w-full sm:h-[260px]">
             <BarChart data={ENROLLMENT_CHART_DATA}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis dataKey="month" tickLine={false} axisLine={false} className="text-xs" />
               <YAxis tickLine={false} axisLine={false} className="text-xs" />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="enrollments" fill="var(--student)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="enrollments" fill="var(--student)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ChartContainer>
         </AdminCard>
 
-        <AdminCard
-          title="Quick actions"
-          hint="Common admin tasks"
-        >
+        <AdminCard title="Quick actions" hint="Common admin tasks">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Link to="/admin/courses">
-              <Button variant="outline" className="h-auto w-full justify-start gap-3 border-border py-3">
-                <Plus className="h-4 w-4" />
-                <div className="text-left">
-                  <div className="text-sm font-medium">Add Course</div>
-                  <div className="text-xs text-muted-foreground">Create new course</div>
+            {quickActions.map((action) => (
+              <Link
+                key={action.to}
+                to={action.to}
+                className="flex items-start gap-3 rounded-xl border border-border bg-background p-4 transition hover:border-border-strong hover:shadow-sm"
+              >
+                <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${action.accent}`}>
+                  <action.icon className="h-4 w-4" />
                 </div>
-              </Button>
-            </Link>
-            <Link to="/admin/mentors">
-              <Button variant="outline" className="h-auto w-full justify-start gap-3 border-border py-3">
-                <Users className="h-4 w-4" />
-                <div className="text-left">
-                  <div className="text-sm font-medium">Add Mentor</div>
-                  <div className="text-xs text-muted-foreground">Onboard mentor</div>
+                <div>
+                  <div className="text-sm font-medium">{action.label}</div>
+                  <div className="text-xs text-muted-foreground">{action.desc}</div>
                 </div>
-              </Button>
-            </Link>
-            <Link to="/admin/guidance">
-              <Button variant="outline" className="h-auto w-full justify-start gap-3 border-border py-3">
-                <Calendar className="h-4 w-4" />
-                <div className="text-left">
-                  <div className="text-sm font-medium">Schedule Session</div>
-                  <div className="text-xs text-muted-foreground">Book guidance</div>
-                </div>
-              </Button>
-            </Link>
-            <Link to="/admin/enrollments">
-              <Button variant="outline" className="h-auto w-full justify-start gap-3 border-border py-3">
-                <TrendingUp className="h-4 w-4" />
-                <div className="text-left">
-                  <div className="text-sm font-medium">View Enrollments</div>
-                  <div className="text-xs text-muted-foreground">Track progress</div>
-                </div>
-              </Button>
-            </Link>
+              </Link>
+            ))}
           </div>
         </AdminCard>
       </div>
 
       <div className="mt-8 grid gap-5 lg:grid-cols-3">
-        <AdminCard title="Recent enrollments" className="lg:col-span-1">
+        <AdminCard title="Recent enrollments">
           {recentEnrollments.map((e) => (
-            <div key={e.id} className="flex items-center justify-between border-b border-border/60 py-3 last:border-0">
-              <div>
-                <div className="text-sm font-medium">{e.studentName}</div>
-                <div className="text-xs text-muted-foreground">{e.courseName}</div>
-              </div>
-              <StatusBadge status={e.status} />
-            </div>
+            <AdminListRow
+              key={e.id}
+              primary={e.studentName}
+              secondary={e.courseName}
+              trailing={<StatusBadge status={e.status} />}
+            />
           ))}
-          <Link to="/admin/enrollments" className="mt-4 inline-flex items-center gap-1 text-xs text-foreground">
-            View all <ArrowRight className="h-3 w-3" />
-          </Link>
+          <AdminLinkRow label="View all enrollments" to="/admin/enrollments" />
         </AdminCard>
 
-        <AdminCard title="Latest courses" className="lg:col-span-1">
+        <AdminCard title="Latest courses">
           {latestCourses.map((c) => (
             <div key={c.id} className="flex items-center gap-3 border-b border-border/60 py-3 last:border-0">
               <img src={c.thumbnail} alt={c.title} className="h-10 w-14 rounded-md object-cover" />
@@ -146,12 +121,10 @@ function AdminDashboardPage() {
               <StatusBadge status={c.status} />
             </div>
           ))}
-          <Link to="/admin/courses" className="mt-4 inline-flex items-center gap-1 text-xs text-foreground">
-            Manage courses <ArrowRight className="h-3 w-3" />
-          </Link>
+          <AdminLinkRow label="Manage courses" to="/admin/courses" />
         </AdminCard>
 
-        <AdminCard title="Upcoming sessions" className="lg:col-span-1">
+        <AdminCard title="Upcoming sessions">
           {upcomingSessions.map((s) => (
             <div key={s.id} className="border-b border-border/60 py-3 last:border-0">
               <div className="text-sm font-medium">{s.studentName}</div>
@@ -163,9 +136,7 @@ function AdminDashboardPage() {
               </div>
             </div>
           ))}
-          <Link to="/admin/guidance" className="mt-4 inline-flex items-center gap-1 text-xs text-foreground">
-            Manage sessions <ArrowRight className="h-3 w-3" />
-          </Link>
+          <AdminLinkRow label="Manage sessions" to="/admin/guidance" />
         </AdminCard>
       </div>
     </>

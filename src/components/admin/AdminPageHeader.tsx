@@ -51,12 +51,16 @@ export function AdminPageHeader({
             <span className="h-1.5 w-1.5 rounded-full bg-student" />
             <span className="font-mono uppercase tracking-widest">Admin Panel</span>
           </div>
-          <h1 className="mt-3 font-display text-3xl md:text-4xl">{title}</h1>
+          <h1 className="mt-3 font-display text-3xl sm:text-4xl md:text-5xl">{title}</h1>
           {description && (
-            <p className="mt-2 text-muted-foreground">{description}</p>
+            <p className="mt-2 text-sm text-muted-foreground sm:text-base">{description}</p>
           )}
         </div>
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center [&_button]:w-full sm:[&_button]:w-auto">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );

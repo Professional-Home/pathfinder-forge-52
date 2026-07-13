@@ -35,7 +35,7 @@ function DashboardLayout() {
         
         <div className="flex min-h-screen flex-col border-l border-border bg-background">
           <TopBar user={user} currentDomain={user.lane} />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-8 md:py-10 pb-24 lg:pb-10">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:py-6 md:px-8 md:py-10 lg:pb-10">
             <Outlet />
           </main>
           <MobileNav domain={user.lane} />
@@ -113,7 +113,7 @@ function MobileNav({ domain }: { domain: Domain }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background px-2 py-3 lg:hidden pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
       {nav.map((n) => {
         const active = path.includes(n.to.replace('/$domain', `/${domain}`)) || (n.to === "/dashboard/$domain" && path === `/dashboard/${domain}`);
         return (

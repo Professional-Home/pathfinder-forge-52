@@ -7,6 +7,7 @@ import { FilterDropdown } from "@/components/admin/FilterDropdown";
 import { AdminPagination, usePagination } from "@/components/admin/AdminPagination";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { EmptyState } from "@/components/admin/EmptyState";
+import { AdminDataTable, AdminToolbar } from "@/components/admin/admin-shared";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -68,12 +69,11 @@ function AdminEnrollmentsPage() {
         ]}
       />
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <AdminToolbar>
         <SearchBar
           value={search}
           onChange={(v) => { setSearch(v); setCurrentPage(1); }}
           placeholder="Search by student or course..."
-          className="flex-1"
         />
         <FilterDropdown
           value={statusFilter}
@@ -86,7 +86,7 @@ function AdminEnrollmentsPage() {
             { label: "Cancelled", value: "cancelled" },
           ]}
         />
-      </div>
+      </AdminToolbar>
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -96,7 +96,7 @@ function AdminEnrollmentsPage() {
         />
       ) : (
         <>
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface-elevated">
+          <AdminDataTable>
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -147,7 +147,7 @@ function AdminEnrollmentsPage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </AdminDataTable>
           <div className="mt-4">
             <AdminPagination
               currentPage={currentPage}

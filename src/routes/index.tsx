@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, GraduationCap, Rocket, Microscope, Check, Users, Map, Target, Trophy, Milestone, LayoutDashboard, BrainCircuit, Network, Plus, Minus } from "lucide-react";
+import { ArrowRight, Sparkles, GraduationCap, Rocket, Microscope, Check, Users, Map, Target, Trophy, Milestone, LayoutDashboard, BrainCircuit, Network, Plus, Minus, Menu, X } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { DOMAINS, type Domain } from "@/lib/domain";
 import { useEffect, useState, type ReactNode, useRef } from "react";
 import { motion, useScroll, useTransform, type Variants, useInView, animate, useMotionValue, AnimatePresence } from "framer-motion";
 import { supabase } from "@/utils/supabase";
 import type { Session } from "@supabase/supabase-js";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 function RevealWrapper({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -81,6 +83,7 @@ function Landing() {
 function SiteHeader() {
   const [activeSection, setActiveSection] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
@@ -126,6 +129,7 @@ function SiteHeader() {
 
   const scrollTo = (e: React.MouseEvent<HTMLAnchorElement>, target: string) => {
     e.preventDefault();
+    setMobileOpen(false);
     document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -139,7 +143,7 @@ function SiteHeader() {
         : "border-b border-transparent bg-transparent"
         }`}
     >
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Wordmark />
         <nav className="hidden items-center gap-2 text-sm text-muted-foreground md:flex">
           {links.map((link) => {
@@ -165,12 +169,58 @@ function SiteHeader() {
           })}
         </nav>
         <div className="flex items-center gap-2">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="border-border md:hidden" aria-label="Open menu">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[280px] border-border bg-background p-0">
+              <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                <Wordmark />
+                <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <nav className="flex flex-col gap-1 p-4">
+                {links.map((link) => (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    onClick={(e) => scrollTo(e, link.href)}
+                    className="rounded-lg px-4 py-3 text-sm font-medium text-foreground transition hover:bg-surface"
+                  >
+                    {link.name}
+                  </a>
+                ))}
+                {!session && (
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-sm text-muted-foreground transition hover:bg-surface hover:text-foreground"
+                  >
+                    Sign in
+                  </Link>
+                )}
+                {session && (
+                  <Link
+                    to="/dashboard/$domain"
+                    params={{ domain: "student" }}
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-4 py-3 text-sm font-medium text-foreground transition hover:bg-surface"
+                  >
+                    Dashboard
+                  </Link>
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
           {session ? (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Link
                 to="/dashboard/$domain"
                 params={{ domain: "student" }}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="hidden text-sm font-medium text-muted-foreground hover:text-foreground transition-colors sm:inline"
               >
                 Dashboard
               </Link>
@@ -195,12 +245,14 @@ function SiteHeader() {
                 Sign in
               </Link>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  to="/signup"
-                  className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-1.5 text-sm font-medium text-background transition hover:opacity-90 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-                >
-                  Start the quiz <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2.5 py-1.5 text-xs font-medium text-background transition hover:opacity-90 sm:px-3 sm:py-1.5 sm:text-sm shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+              >
+                <span className="hidden sm:inline">Start the quiz</span>
+                <span className="sm:hidden">Start</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
               </motion.div>
             </>
           )}
@@ -246,7 +298,7 @@ function Hero() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="mx-auto grid max-w-6xl gap-16 px-6 py-24 md:py-32"
+        className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:gap-16 sm:px-6 sm:py-24 md:py-32"
       >
         <div className="max-w-3xl">
           {/* 2. Badge Pill Micro-Interaction */}
@@ -265,7 +317,7 @@ function Hero() {
           </motion.div>
 
           {/* 3. Headline Text Reveal */}
-          <h1 className="font-display text-6xl leading-[1.02] md:text-7xl lg:text-8xl">
+          <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl md:text-7xl lg:text-8xl">
             <div className="overflow-hidden pb-1">
               <motion.div variants={itemVariants}>
                 Don't Just Learn Biology<br />
@@ -280,18 +332,17 @@ function Hero() {
           </h1>
 
           {/* 1.5 Description */}
-          <motion.p variants={itemVariants} className="mt-8 max-w-xl text-lg text-muted-foreground">
-            Learn by solving real industry challenges, publishing research, building AI-powered biotechnology projects, and working alongside mentors from academia and industry.From your first project to your first publication, Micrylis Biotech is where future scientists, bioinformaticians, and biotech founders are built.
+          <motion.p variants={itemVariants} className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:mt-8 sm:text-lg">
+            Learn by solving real industry challenges, publishing research, building AI-powered biotechnology projects, and working alongside mentors from academia and industry. From your first project to your first publication, Micrylis Biotech is where future scientists, bioinformaticians, and biotech founders are built.
           </motion.p>
 
-          {/* CTA Buttons */}
-          <motion.div variants={itemVariants} className="mt-10 flex flex-wrap items-center gap-3">
+          <motion.div variants={itemVariants} className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
             <Link to="/signup">
               {/* 4. Primary CTA Magnetic/Hover Interaction */}
               <motion.div
                 whileHover={{ backgroundColor: "hsl(var(--foreground) / 0.9)" }}
                 whileTap={{ scale: 0.97 }}
-                className="group inline-flex items-center gap-2 rounded-md bg-foreground px-5 py-3 text-sm font-medium text-background cursor-pointer"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-md bg-foreground px-5 py-3 text-sm font-medium text-background cursor-pointer sm:w-auto"
               >
                 Start the 5-minute quiz
                 <motion.div
@@ -311,7 +362,7 @@ function Hero() {
                   backgroundColor: "hsl(var(--accent))"
                 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface-elevated px-5 py-3 text-sm font-medium text-foreground cursor-pointer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-elevated px-5 py-3 text-sm font-medium text-foreground cursor-pointer sm:w-auto"
               >
                 Preview a dashboard
               </motion.div>
@@ -348,7 +399,7 @@ function Hero() {
 function GrowthPath() {
   return (
     <section className="border-b border-border/60 bg-background">
-      <div className="mx-auto max-w-6xl px-6 py-24">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <div className="mb-14 flex items-end justify-between gap-8">
           <div>
             <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">01 — The Process</div>
@@ -421,7 +472,7 @@ function GrowthPath() {
 function HowItWorks() {
   return (
     <section id="how" className="border-b border-border/60 bg-surface/30">
-      <div className="mx-auto max-w-6xl px-6 py-24 md:py-32">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 md:py-32">
         <div className="mb-20 text-center">
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">02 — Platform Features</div>
           <h2 className="font-display text-4xl md:text-5xl lg:text-6xl tracking-tight">Your journey to mastery.</h2>
@@ -661,7 +712,7 @@ const OutcomeVisual = () => (
 function ProductPreview() {
   return (
     <section id="preview" className="border-b border-border/60">
-      <div className="mx-auto max-w-6xl px-6 py-24">
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <div className="mb-14 max-w-2xl">
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">03 — Product</div>
           <h2 className="font-display text-4xl md:text-5xl">
@@ -735,7 +786,7 @@ function ProductPreview() {
 function Loops() {
   return (
     <section id="loops" className="border-b border-border/60 bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-16 px-6 py-24 md:grid-cols-2">
+      <div className="mx-auto grid max-w-6xl gap-16 px-4 py-16 sm:px-6 sm:py-24 md:grid-cols-2">
         <div>
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">04 — Mentors</div>
           <h2 className="font-display text-4xl md:text-5xl">
@@ -819,10 +870,10 @@ function WhyMicrylis() {
   ];
 
   return (
-    <section className="border-b border-border/60 bg-background py-24 md:py-32">
-      <div className="mx-auto max-w-3xl px-6">
-        <div className="text-center mb-16 flex flex-col items-center">
-          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight text-foreground mb-6">
+    <section className="border-b border-border/60 bg-background py-16 sm:py-24 md:py-32">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <div className="mb-12 flex flex-col items-center text-center sm:mb-16">
+          <h2 className="mb-4 font-display text-3xl font-medium tracking-tight text-foreground sm:mb-6 sm:text-4xl md:text-5xl lg:text-6xl">
             Frequently asked questions
           </h2>
         </div>
@@ -866,7 +917,7 @@ function WhyMicrylis() {
 
 function Footer() {
   return (
-    <footer className="mx-auto max-w-6xl px-6 py-12">
+    <footer className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
         <Wordmark />
         <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} Micrylis — building growth paths.</div>

@@ -3,16 +3,15 @@ import { useMemo, useState } from "react";
 import { Plus, Calendar, Eye } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
-import { FilterDropdown } from "@/components/admin/FilterDropdown";
 import { AdminPagination, usePagination } from "@/components/admin/AdminPagination";
 import { StatusBadge } from "@/components/admin/StatusBadge";
-import { AdminCard } from "@/components/admin/admin-shared";
+import { AdminCard, AdminDataTable, AdminToolbar } from "@/components/admin/admin-shared";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -62,7 +61,6 @@ const emptyForm = {
 function AdminGuidancePage() {
   const [sessions, setSessions] = useState<AdminGuidanceSession[]>(INITIAL_SESSIONS);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -76,11 +74,10 @@ function AdminGuidancePage() {
         s.studentName.toLowerCase().includes(search.toLowerCase()) ||
         s.courseName.toLowerCase().includes(search.toLowerCase()) ||
         s.mentorName.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === "all" || s.status === statusFilter;
       const matchesTab = activeTab === "all" || s.status === activeTab;
-      return matchesSearch && matchesStatus && matchesTab;
+      return matchesSearch && matchesTab;
     });
-  }, [sessions, search, statusFilter, activeTab]);
+  }, [sessions, search, activeTab]);
 
   const { paginatedItems, totalPages } = usePagination(filtered, PAGE_SIZE, currentPage);
 
@@ -159,32 +156,26 @@ function AdminGuidancePage() {
         onValueChange={(v) => { setActiveTab(v); setCurrentPage(1); }}
         className="mb-6"
       >
-        <TabsList className="border border-border bg-surface">
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+        <TabsList className="h-auto w-full justify-start gap-1 rounded-2xl border border-border bg-surface-elevated p-1 sm:w-auto">
+          <TabsTrigger value="upcoming" className="rounded-xl px-4 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            Upcoming
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="rounded-xl px-4 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            Completed
+          </TabsTrigger>
+          <TabsTrigger value="all" className="rounded-xl px-4 py-2 text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            All
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value={activeTab} className="mt-0" />
       </Tabs>
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <AdminToolbar>
         <SearchBar
           value={search}
           onChange={(v) => { setSearch(v); setCurrentPage(1); }}
           placeholder="Search sessions..."
-          className="flex-1"
         />
-        <FilterDropdown
-          value={statusFilter}
-          onChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}
-          options={[
-            { label: "All Status", value: "all" },
-            { label: "Upcoming", value: "upcoming" },
-            { label: "Completed", value: "completed" },
-            { label: "Cancelled", value: "cancelled" },
-          ]}
-        />
-      </div>
+      </AdminToolbar>
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -196,7 +187,7 @@ function AdminGuidancePage() {
         />
       ) : (
         <>
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface-elevated">
+          <AdminDataTable>
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -244,7 +235,7 @@ function AdminGuidancePage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </AdminDataTable>
           <div className="mt-4">
             <AdminPagination
               currentPage={currentPage}

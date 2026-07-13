@@ -1,21 +1,21 @@
 import { Link, useLocation } from "@tanstack/react-router";
+import { ArrowRight, Shield } from "lucide-react";
+import { Wordmark } from "@/components/brand";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   BookOpen,
   Users,
   GraduationCap,
   Calendar,
-  Shield,
 } from "lucide-react";
-import { Wordmark } from "@/components/brand";
-import { cn } from "@/lib/utils";
 
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", to: "/admin/dashboard" },
-  { icon: BookOpen, label: "Course Management", to: "/admin/courses" },
-  { icon: GraduationCap, label: "Course Enrollments", to: "/admin/enrollments" },
-  { icon: Users, label: "Mentor Management", to: "/admin/mentors" },
-  { icon: Calendar, label: "Guidance Management", to: "/admin/guidance" },
+export const adminNavItems = [
+  { icon: LayoutDashboard, label: "Dashboard", shortLabel: "Home", to: "/admin/dashboard" },
+  { icon: BookOpen, label: "Course Management", shortLabel: "Courses", to: "/admin/courses" },
+  { icon: GraduationCap, label: "Course Enrollments", shortLabel: "Students", to: "/admin/enrollments" },
+  { icon: Users, label: "Mentor Management", shortLabel: "Mentors", to: "/admin/mentors" },
+  { icon: Calendar, label: "Guidance Management", shortLabel: "Guidance", to: "/admin/guidance" },
 ];
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -23,7 +23,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const path = location.pathname;
 
   return (
-    <aside className="flex h-full flex-col gap-8 bg-surface p-6">
+    <aside className="sticky top-0 flex h-screen flex-col gap-8 bg-surface p-6">
       <Wordmark />
       <div className="rounded-xl border border-border bg-surface-elevated p-3">
         <div className="flex items-center gap-2">
@@ -35,9 +35,10 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         <div className="mt-1 font-display text-lg">Control Center</div>
       </div>
       <nav className="flex flex-col gap-0.5 text-sm">
-        {navItems.map((item) => {
+        {adminNavItems.map((item) => {
           const active =
-            path === item.to || (item.to !== "/admin/dashboard" && path.startsWith(item.to));
+            path === item.to ||
+            (item.to !== "/admin/dashboard" && path.startsWith(item.to));
           return (
             <Link
               key={item.label}
@@ -46,7 +47,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-left transition",
                 active
-                  ? "bg-background text-foreground"
+                  ? "bg-background text-foreground shadow-sm ring-1 ring-border/60"
                   : "text-muted-foreground hover:bg-background hover:text-foreground",
               )}
             >
@@ -56,12 +57,19 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </nav>
-      <div className="mt-auto rounded-lg border border-border bg-surface-elevated p-3 text-xs text-muted-foreground">
-        <div className="font-medium text-foreground">Frontend preview</div>
-        <div className="mt-1">Mock data only — backend integration pending.</div>
+      <div className="mt-auto space-y-3 text-xs text-muted-foreground">
+        <div className="rounded-lg border border-border bg-surface-elevated p-3">
+          <div className="font-medium text-foreground">Back to website</div>
+          <div className="mt-1">Return to the public Micrylis site.</div>
+          <Link
+            to="/"
+            onClick={onNavigate}
+            className="mt-3 inline-flex items-center gap-1 text-foreground"
+          >
+            Go home <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
       </div>
     </aside>
   );
 }
-
-export { navItems as adminNavItems };
