@@ -17,9 +17,16 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EmployeesRouteImport } from './routes/employees'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardDomainRouteImport } from './routes/dashboard.$domain'
+import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminGuidanceRouteImport } from './routes/admin/guidance'
+import { Route as AdminEnrollmentsRouteImport } from './routes/admin/enrollments'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
 import { Route as DashboardDomainIndexRouteImport } from './routes/dashboard.$domain/index'
 import { Route as DashboardDomainSettingsRouteImport } from './routes/dashboard.$domain/settings'
 import { Route as DashboardDomainPaymentsRouteImport } from './routes/dashboard.$domain/payments'
@@ -69,6 +76,11 @@ const DisclaimerRoute = DisclaimerRouteImport.update({
   path: '/disclaimer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -83,6 +95,36 @@ const DashboardDomainRoute = DashboardDomainRouteImport.update({
   id: '/dashboard/$domain',
   path: '/dashboard/$domain',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMentorsRoute = AdminMentorsRouteImport.update({
+  id: '/mentors',
+  path: '/mentors',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGuidanceRoute = AdminGuidanceRouteImport.update({
+  id: '/guidance',
+  path: '/guidance',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEnrollmentsRoute = AdminEnrollmentsRouteImport.update({
+  id: '/enrollments',
+  path: '/enrollments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCoursesRoute = AdminCoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => AdminRoute,
 } as any)
 const DashboardDomainIndexRoute = DashboardDomainIndexRouteImport.update({
   id: '/',
@@ -130,6 +172,7 @@ const DashboardDomainEnrollCourseIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
   '/login': typeof LoginRoute
@@ -138,6 +181,12 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/guidance': typeof AdminGuidanceRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/mentors': typeof AdminMentorsRoute
   '/dashboard/$domain': typeof DashboardDomainRouteWithChildren
   '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
   '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
@@ -151,6 +200,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
   '/login': typeof LoginRoute
@@ -159,6 +209,12 @@ export interface FileRoutesByTo {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/guidance': typeof AdminGuidanceRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/mentors': typeof AdminMentorsRoute
   '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
   '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
   '/dashboard/$domain/guidance': typeof DashboardDomainGuidanceRoute
@@ -172,6 +228,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
   '/login': typeof LoginRoute
@@ -180,6 +237,12 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
+  '/admin/guidance': typeof AdminGuidanceRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/mentors': typeof AdminMentorsRoute
   '/dashboard/$domain': typeof DashboardDomainRouteWithChildren
   '/dashboard/$domain/certificates': typeof DashboardDomainCertificatesRoute
   '/dashboard/$domain/courses': typeof DashboardDomainCoursesRoute
@@ -195,6 +258,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
     | '/disclaimer'
     | '/employees'
     | '/login'
@@ -203,6 +267,12 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/admin/courses'
+    | '/admin/dashboard'
+    | '/admin/enrollments'
+    | '/admin/guidance'
+    | '/admin/login'
+    | '/admin/mentors'
     | '/dashboard/$domain'
     | '/dashboard/$domain/certificates'
     | '/dashboard/$domain/courses'
@@ -216,6 +286,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/admin'
     | '/disclaimer'
     | '/employees'
     | '/login'
@@ -224,6 +295,12 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/admin/courses'
+    | '/admin/dashboard'
+    | '/admin/enrollments'
+    | '/admin/guidance'
+    | '/admin/login'
+    | '/admin/mentors'
     | '/dashboard/$domain/certificates'
     | '/dashboard/$domain/courses'
     | '/dashboard/$domain/guidance'
@@ -236,6 +313,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/disclaimer'
     | '/employees'
     | '/login'
@@ -244,6 +322,12 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/admin/courses'
+    | '/admin/dashboard'
+    | '/admin/enrollments'
+    | '/admin/guidance'
+    | '/admin/login'
+    | '/admin/mentors'
     | '/dashboard/$domain'
     | '/dashboard/$domain/certificates'
     | '/dashboard/$domain/courses'
@@ -258,6 +342,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
   DisclaimerRoute: typeof DisclaimerRoute
   EmployeesRoute: typeof EmployeesRoute
   LoginRoute: typeof LoginRoute
@@ -327,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DisclaimerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -347,6 +439,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/$domain'
       preLoaderRoute: typeof DashboardDomainRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/mentors': {
+      id: '/admin/mentors'
+      path: '/mentors'
+      fullPath: '/admin/mentors'
+      preLoaderRoute: typeof AdminMentorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/guidance': {
+      id: '/admin/guidance'
+      path: '/guidance'
+      fullPath: '/admin/guidance'
+      preLoaderRoute: typeof AdminGuidanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/enrollments': {
+      id: '/admin/enrollments'
+      path: '/enrollments'
+      fullPath: '/admin/enrollments'
+      preLoaderRoute: typeof AdminEnrollmentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/courses': {
+      id: '/admin/courses'
+      path: '/courses'
+      fullPath: '/admin/courses'
+      preLoaderRoute: typeof AdminCoursesRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/dashboard/$domain/': {
       id: '/dashboard/$domain/'
@@ -407,6 +541,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminCoursesRoute: typeof AdminCoursesRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminEnrollmentsRoute: typeof AdminEnrollmentsRoute
+  AdminGuidanceRoute: typeof AdminGuidanceRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminMentorsRoute: typeof AdminMentorsRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminCoursesRoute: AdminCoursesRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminEnrollmentsRoute: AdminEnrollmentsRoute,
+  AdminGuidanceRoute: AdminGuidanceRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminMentorsRoute: AdminMentorsRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface DashboardDomainRouteChildren {
   DashboardDomainCertificatesRoute: typeof DashboardDomainCertificatesRoute
   DashboardDomainCoursesRoute: typeof DashboardDomainCoursesRoute
@@ -436,6 +590,7 @@ const DashboardDomainRouteWithChildren = DashboardDomainRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
   DisclaimerRoute: DisclaimerRoute,
   EmployeesRoute: EmployeesRoute,
   LoginRoute: LoginRoute,
