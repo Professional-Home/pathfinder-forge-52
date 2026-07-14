@@ -112,7 +112,7 @@ export function SiteHeader() {
           animate={{
             opacity: 1,
             y: 0,
-            width: pill ? "min(100%, 880px)" : "min(100%, 1120px)",
+            width: pill ? "min(100%, 720px)" : "min(100%, 1120px)",
           }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           className="pointer-events-auto relative"
@@ -122,8 +122,8 @@ export function SiteHeader() {
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             className={`relative flex items-center justify-between gap-2 transition-[background-color,box-shadow,backdrop-filter,border-radius,border-color,min-height,padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               pill
-                ? "min-h-[42px] rounded-full border border-border/50 bg-transparent px-3 py-1 shadow-[0_6px_24px_-16px_rgba(0,0,0,0.2)] backdrop-blur-md sm:min-h-[44px] sm:px-4 md:px-5"
-                : "min-h-[48px] rounded-none border border-transparent bg-transparent px-3 py-1.5 shadow-none backdrop-blur-none sm:min-h-[52px] sm:px-5 md:px-6"
+                ? "min-h-[44px] rounded-full border border-border/50 bg-transparent px-3.5 py-1.5 shadow-[0_6px_24px_-16px_rgba(0,0,0,0.2)] backdrop-blur-md sm:min-h-[46px] sm:px-5"
+                : "min-h-[50px] rounded-none border border-transparent bg-transparent px-3 py-1.5 shadow-none backdrop-blur-none sm:min-h-[54px] sm:px-5 md:px-6"
             }`}
           >
             <Wordmark compact={pill} />
