@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 
 const PLATFORM_LINKS = [
@@ -18,17 +17,25 @@ const COMPANY_LINKS = [
   { name: "Disclaimer", to: "/disclaimer" as const },
 ] as const;
 
+const SOCIAL_LINKS = [
+  {
+    name: "Instagram",
+    href: "https://instagram.com/micrylis",
+    icon: Instagram,
+  },
+  {
+    name: "LinkedIn",
+    href: "https://linkedin.com/company/micrylis",
+    icon: Linkedin,
+  },
+  {
+    name: "Email",
+    href: "mailto:hello@micrylis.com",
+    icon: Mail,
+  },
+] as const;
+
 export function SiteFooter() {
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-
-  const onSubscribe = (e: FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setSubscribed(true);
-    setEmail("");
-  };
-
   return (
     <footer className="border-t border-border/70 bg-surface/40">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16 md:py-20">
@@ -42,11 +49,26 @@ export function SiteFooter() {
             <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               Designed for proactive careers.
             </p>
+
+            <div className="mt-8 flex items-center gap-3">
+              {SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
+                <a
+                  key={name}
+                  href={href}
+                  target={href.startsWith("mailto:") ? undefined : "_blank"}
+                  rel={href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
+                  aria-label={name}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface-elevated text-foreground transition hover:bg-foreground hover:text-background"
+                >
+                  <Icon className="h-4 w-4" strokeWidth={1.75} />
+                </a>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-8 md:gap-6">
             <div>
-              <h3 className="mb-4 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              <h3 className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 Platform
               </h3>
               <ul className="space-y-3">
@@ -64,7 +86,7 @@ export function SiteFooter() {
             </div>
 
             <div>
-              <h3 className="mb-4 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              <h3 className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 Company
               </h3>
               <ul className="space-y-3">
@@ -82,37 +104,54 @@ export function SiteFooter() {
             </div>
 
             <div className="col-span-2 sm:col-span-1">
-              <h3 className="mb-4 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                Stay Updated
+              <h3 className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                Contact
               </h3>
-              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                Join our newsletter for the latest mentorship paths and growth playbooks.
-              </p>
-              {subscribed ? (
-                <p className="text-sm font-medium text-foreground">You&apos;re on the list. Welcome.</p>
-              ) : (
-                <form onSubmit={onSubscribe} className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-                  <label htmlFor="footer-email" className="sr-only">
-                    Email address
-                  </label>
-                  <input
-                    id="footer-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@email.com"
-                    className="h-11 min-w-0 flex-1 rounded-full border border-border bg-surface-elevated px-4 text-sm text-foreground outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                  <button
-                    type="submit"
-                    className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full bg-foreground px-4 text-sm font-semibold text-background transition hover:opacity-90"
+              <ul className="space-y-4 text-sm text-muted-foreground">
+                <li>
+                  <a
+                    href="mailto:hello@micrylis.com"
+                    className="inline-flex items-start gap-2.5 transition-colors hover:text-foreground"
                   >
-                    Subscribe
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </button>
-                </form>
-              )}
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
+                    <span>
+                      <span className="block font-medium text-foreground">hello@micrylis.com</span>
+                      <span className="text-xs">General inquiries</span>
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:support@micrylis.com"
+                    className="inline-flex items-start gap-2.5 transition-colors hover:text-foreground"
+                  >
+                    <Mail className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
+                    <span>
+                      <span className="block font-medium text-foreground">support@micrylis.com</span>
+                      <span className="text-xs">Support & billing</span>
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="tel:+15551234567"
+                    className="inline-flex items-start gap-2.5 transition-colors hover:text-foreground"
+                  >
+                    <Phone className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
+                    <span className="font-medium text-foreground">+1 (555) 123-4567</span>
+                  </a>
+                </li>
+                <li className="inline-flex items-start gap-2.5">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
+                  <span>
+                    Micrylis Inc.
+                    <br />
+                    123 Innovation Drive, Suite 400
+                    <br />
+                    San Francisco, CA 94105
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -121,15 +160,31 @@ export function SiteFooter() {
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Micrylis. All rights reserved.
           </p>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+            <a
+              href="https://instagram.com/micrylis"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              Instagram
+            </a>
+            <a
+              href="https://linkedin.com/company/micrylis"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-foreground"
+            >
+              LinkedIn
+            </a>
+            <a href="mailto:hello@micrylis.com" className="transition-colors hover:text-foreground">
+              Email
+            </a>
             <Link to="/privacy-policy" className="transition-colors hover:text-foreground">
               Privacy
             </Link>
             <Link to="/disclaimer" className="transition-colors hover:text-foreground">
               Terms
-            </Link>
-            <Link to="/about" className="transition-colors hover:text-foreground">
-              Contact
             </Link>
           </div>
         </div>
