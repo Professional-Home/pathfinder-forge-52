@@ -5,9 +5,11 @@ import type { Session } from "@supabase/supabase-js";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
 
-const PRIMARY_LINKS = [
+const NAV_LINKS = [
   { name: "For you", href: "#lanes" },
   { name: "How it works", href: "#how" },
+  { name: "Product", href: "#preview" },
+  { name: "Mentors", href: "#loops" },
 ] as const;
 
 const EXPLORE_LINKS = [
@@ -45,6 +47,7 @@ function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
 
 export function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
 
@@ -65,6 +68,17 @@ export function SiteHeader() {
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 28);
+      const scrollPos = window.scrollY + 120;
+      for (const link of NAV_LINKS) {
+        const section = document.querySelector(link.href);
+        if (!(section instanceof HTMLElement)) continue;
+        if (
+          section.offsetTop <= scrollPos &&
+          section.offsetTop + section.offsetHeight > scrollPos
+        ) {
+          setActiveSection(link.href.slice(1));
+        }
+      }
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -84,11 +98,7 @@ export function SiteHeader() {
     scrollToHash(href);
   };
 
-  const pill = isScrolled || menuOpen;
-  const linkTone = pill
-    ? "text-white/85 hover:text-white"
-    : "text-foreground/75 hover:text-foreground";
-  const menuDotTone = pill ? "bg-white" : "bg-foreground";
+  const pill = isScrolled;
 
   return (
     <>
@@ -98,7 +108,7 @@ export function SiteHeader() {
           animate={{
             opacity: 1,
             y: 0,
-            width: pill ? "min(100%, 920px)" : "min(100%, 1120px)",
+            width: pill ? "min(100%, 1040px)" : "min(100%, 1120px)",
           }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           className="pointer-events-auto relative"
@@ -106,56 +116,51 @@ export function SiteHeader() {
           <motion.div
             layout
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative flex min-h-[52px] items-center justify-between px-4 py-2 transition-[background-color,box-shadow,backdrop-filter,border-radius] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:min-h-[56px] sm:px-6 md:px-8 ${
+            className={`relative flex min-h-[52px] items-center justify-between gap-3 px-3 py-2 transition-[background-color,box-shadow,backdrop-filter,border-radius,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:min-h-[56px] sm:px-5 md:px-6 ${
               pill
-                ? "rounded-full border border-white/10 bg-[#1a1a1a]/72 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+                ? "rounded-full border border-border/50 bg-transparent shadow-[0_8px_30px_-18px_rgba(0,0,0,0.25)] backdrop-blur-md"
                 : "rounded-none border border-transparent bg-transparent shadow-none backdrop-blur-none"
             }`}
           >
-            {/* Left links */}
-            <div className="z-10 flex flex-1 items-center justify-start gap-5 md:gap-6">
-              <nav className="hidden items-center gap-5 text-sm font-medium md:flex lg:gap-6">
-                {PRIMARY_LINKS.map((link) => (
+            <Wordmark compact={pill} />
+
+            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 text-[13px] font-medium text-muted-foreground lg:flex">
+              {NAV_LINKS.map((link) => {
+                const isActive = activeSection === link.href.slice(1);
+                return (
                   <a
                     key={link.name}
                     href={link.href}
                     onClick={(e) => onNavClick(e, link.href)}
-                    className={`transition-colors duration-300 ${linkTone}`}
+                    className={`relative rounded-full px-3.5 py-2 transition-colors ${
+                      isActive ? "text-foreground" : "hover:text-foreground"
+                    }`}
                   >
-                    {link.name}
+                    <span className="relative z-10">{link.name}</span>
+                    {isActive && (
+                      <motion.span
+                        layoutId="site-nav-pill"
+                        className="absolute inset-0 rounded-full border border-border bg-surface-elevated/80"
+                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                      />
+                    )}
                   </a>
-                ))}
-              </nav>
-            </div>
+                );
+              })}
+            </nav>
 
-            {/* Center logo */}
-            <div className="pointer-events-auto absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
-              <Wordmark
-                compact
-                inverted={pill}
-                className="scale-[0.92] sm:scale-100"
-              />
-            </div>
-
-            {/* Right actions */}
-            <div className="z-10 flex flex-1 items-center justify-end gap-2 sm:gap-3 md:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               {session ? (
                 <>
                   <Link
                     to="/dashboard/$domain"
                     params={{ domain: "student" }}
-                    className={`hidden text-sm font-medium transition-colors duration-300 sm:inline ${linkTone}`}
+                    className="hidden text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
                   >
                     Dashboard
                   </Link>
                   <Link to="/dashboard/$domain" params={{ domain: "student" }}>
-                    <div
-                      className={`grid h-8 w-8 place-items-center overflow-hidden rounded-full border text-sm font-medium transition-transform hover:scale-105 ${
-                        pill
-                          ? "border-white/20 bg-white text-black"
-                          : "border-border bg-foreground text-background"
-                      }`}
-                    >
+                    <div className="grid h-8 w-8 place-items-center overflow-hidden rounded-full border border-border bg-foreground/90 text-sm font-medium text-background transition-transform hover:scale-105">
                       {session.user?.user_metadata?.avatar_url ? (
                         <img
                           src={session.user.user_metadata.avatar_url}
@@ -174,17 +179,13 @@ export function SiteHeader() {
                 <>
                   <Link
                     to="/login"
-                    className={`hidden text-sm font-medium transition-colors duration-300 md:inline ${linkTone}`}
+                    className="hidden text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground md:inline"
                   >
                     Log in
                   </Link>
                   <Link
                     to="/signup"
-                    className={`hidden items-center rounded-full px-4 py-2 text-xs font-medium transition-colors md:inline-flex md:text-sm ${
-                      pill
-                        ? "bg-white text-black hover:bg-white/90"
-                        : "bg-foreground text-background hover:opacity-90"
-                    }`}
+                    className="hidden items-center rounded-full bg-foreground px-3.5 py-2 text-[13px] font-semibold text-background transition hover:opacity-90 md:inline-flex"
                   >
                     Become a member
                   </Link>
@@ -196,11 +197,9 @@ export function SiteHeader() {
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((open) => !open)}
-                className={`rounded-full p-2.5 transition-opacity hover:opacity-75 ${
-                  pill ? "text-white" : "text-foreground"
-                }`}
+                className="rounded-full p-2.5 text-foreground transition-opacity hover:opacity-70 lg:hidden"
               >
-                <GridMenuIcon className={menuDotTone} />
+                <GridMenuIcon className="bg-foreground" />
               </button>
             </div>
           </motion.div>
@@ -214,7 +213,7 @@ export function SiteHeader() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28 }}
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-40 lg:hidden"
           >
             <button
               type="button"
