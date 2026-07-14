@@ -112,7 +112,7 @@ export function SiteHeader() {
           animate={{
             opacity: 1,
             y: 0,
-            width: pill ? "min(100%, 720px)" : "min(100%, 1120px)",
+            width: pill ? "min(100%, 880px)" : "min(100%, 1040px)",
           }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           className="pointer-events-auto relative"
@@ -120,15 +120,15 @@ export function SiteHeader() {
           <motion.div
             layout
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative flex items-center justify-between gap-2 transition-[background-color,box-shadow,backdrop-filter,border-radius,border-color,min-height,padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            className={`grid items-center gap-3 transition-[background-color,box-shadow,backdrop-filter,border-radius,border-color,min-height,padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               pill
-                ? "min-h-[44px] rounded-full border border-border/50 bg-transparent px-3.5 py-1.5 shadow-[0_6px_24px_-16px_rgba(0,0,0,0.2)] backdrop-blur-md sm:min-h-[46px] sm:px-5"
-                : "min-h-[50px] rounded-none border border-transparent bg-transparent px-3 py-1.5 shadow-none backdrop-blur-none sm:min-h-[54px] sm:px-5 md:px-6"
+                ? "min-h-[48px] grid-cols-[auto_minmax(0,1fr)_auto] rounded-full border border-border/50 bg-background/85 px-4 py-1.5 shadow-[0_8px_28px_-14px_rgba(0,0,0,0.28)] backdrop-blur-md sm:min-h-[50px] sm:px-5"
+                : "min-h-[52px] grid-cols-[auto_1fr_auto] rounded-none border border-transparent bg-transparent px-3 py-1.5 shadow-none backdrop-blur-none sm:min-h-[56px] sm:px-5 md:px-6"
             }`}
           >
-            <Wordmark compact={pill} />
+            <Wordmark compact={pill} className="justify-self-start" />
 
-            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 text-[12px] font-medium text-muted-foreground lg:flex">
+            <nav className="hidden min-w-0 items-center justify-center gap-0.5 justify-self-center text-[12px] font-medium text-muted-foreground lg:flex">
               {NAV_LINKS.map((link) => {
                 const isActive = activeSection === link.href.slice(1);
                 return (
@@ -136,7 +136,7 @@ export function SiteHeader() {
                     key={link.name}
                     href={link.href}
                     onClick={(e) => onNavClick(e, link.href)}
-                    className={`relative rounded-full px-2.5 py-1.5 transition-colors ${
+                    className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${
                       isActive ? "text-foreground" : "hover:text-foreground"
                     }`}
                   >
@@ -153,7 +153,7 @@ export function SiteHeader() {
               })}
             </nav>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center justify-self-end gap-2 sm:gap-2.5">
               {session ? (
                 <>
                   <Link
@@ -183,13 +183,13 @@ export function SiteHeader() {
                 <>
                   <Link
                     to="/login"
-                    className="hidden text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground md:inline"
+                    className="hidden shrink-0 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground md:inline"
                   >
                     Log in
                   </Link>
                   <Link
                     to="/signup"
-                    className="hidden items-center rounded-full bg-foreground px-3 py-1.5 text-[12px] font-semibold text-background transition hover:opacity-90 md:inline-flex"
+                    className="hidden shrink-0 items-center rounded-full bg-foreground px-3 py-1.5 text-[12px] font-semibold text-background transition hover:opacity-90 md:inline-flex"
                   >
                     Become a member
                   </Link>

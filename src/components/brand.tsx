@@ -18,17 +18,18 @@ export function Wordmark({
   return (
     <Link
       to="/"
-      className={`inline-flex items-center gap-2.5 transition-opacity hover:opacity-80 ${className}`}
+      className={`inline-flex items-center gap-2 transition-opacity hover:opacity-80 ${className}`}
     >
       <img
-        src="/logo.png"
-        alt="Micrylis"
+        src="/logo-mark.png"
+        alt=""
+        aria-hidden
         className={`w-auto object-contain transition-[height] duration-300 ${
           compact ? "h-8 sm:h-9" : "h-9 sm:h-10"
-        } ${inverted && !theme ? "brightness-0 invert" : ""}`}
+        }`}
       />
       <span
-        className={`font-semibold leading-none tracking-tight transition-colors duration-300 ${
+        className={`font-semibold leading-none tracking-tight transition-[font-size,color] duration-300 ${
           compact ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
         } ${isDark ? "text-white" : "text-foreground"}`}
       >
