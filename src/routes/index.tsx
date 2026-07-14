@@ -143,9 +143,8 @@ function Hero() {
           <motion.div variants={itemVariants} className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
             <Link to="/signup" className="w-full sm:w-auto">
               <motion.div
-                whileHover={{ backgroundColor: "hsl(var(--foreground) / 0.9)" }}
                 whileTap={{ scale: 0.97 }}
-                className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3.5 text-sm font-semibold text-background sm:w-auto sm:py-3"
+                className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-transparent bg-black px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:border-black hover:bg-white hover:text-black focus-visible:border-black focus-visible:bg-white focus-visible:text-black active:border-black active:bg-white active:text-black sm:w-auto sm:py-3"
               >
                 Start the 5-minute quiz
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
