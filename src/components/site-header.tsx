@@ -1,16 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import type { Session } from "@supabase/supabase-js";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
 
-const NAV_LINKS = [
+const PRIMARY_LINKS = [
   { name: "For you", href: "#lanes" },
   { name: "How it works", href: "#how" },
-  { name: "Product", href: "#preview" },
-  { name: "Mentors", href: "#loops" },
 ] as const;
 
 const EXPLORE_LINKS = [
@@ -36,8 +33,17 @@ function scrollToHash(hash: string) {
   window.location.href = `/${hash}`;
 }
 
+function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
+  return (
+    <span className="grid grid-cols-3 gap-[2.5px]" aria-hidden>
+      {Array.from({ length: 9 }).map((_, i) => (
+        <span key={i} className={`h-1 w-1 rounded-full ${className}`} />
+      ))}
+    </span>
+  );
+}
+
 export function SiteHeader() {
-  const [activeSection, setActiveSection] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -58,20 +64,8 @@ export function SiteHeader() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 24);
-      const scrollPos = window.scrollY + 120;
-      for (const link of NAV_LINKS) {
-        const section = document.querySelector(link.href);
-        if (!(section instanceof HTMLElement)) continue;
-        if (
-          section.offsetTop <= scrollPos &&
-          section.offsetTop + section.offsetHeight > scrollPos
-        ) {
-          setActiveSection(link.href.slice(1));
-        }
-      }
+      setIsScrolled(window.scrollY > 28);
     };
-
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -90,112 +84,128 @@ export function SiteHeader() {
     scrollToHash(href);
   };
 
+  const pill = isScrolled || menuOpen;
+  const linkTone = pill
+    ? "text-white/85 hover:text-white"
+    : "text-foreground/75 hover:text-foreground";
+  const menuDotTone = pill ? "bg-white" : "bg-foreground";
+
   return (
     <>
-      <motion.header
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-          isScrolled || menuOpen
-            ? "border-b border-border/70 bg-background/85 backdrop-blur-xl"
-            : "border-b border-transparent bg-transparent"
-        }`}
-      >
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:h-[4.25rem] sm:px-6">
-          <Wordmark />
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-3 pt-3 sm:px-4 sm:pt-4 md:pt-5">
+        <motion.header
+          initial={{ opacity: 0, y: -10 }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            width: pill ? "min(100%, 920px)" : "min(100%, 1120px)",
+          }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="pointer-events-auto relative"
+        >
+          <motion.div
+            layout
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className={`relative flex min-h-[52px] items-center justify-between px-4 py-2 transition-[background-color,box-shadow,backdrop-filter,border-radius] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:min-h-[56px] sm:px-6 md:px-8 ${
+              pill
+                ? "rounded-full border border-white/10 bg-[#1a1a1a]/72 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+                : "rounded-none border border-transparent bg-transparent shadow-none backdrop-blur-none"
+            }`}
+          >
+            {/* Left links */}
+            <div className="z-10 flex flex-1 items-center justify-start gap-5 md:gap-6">
+              <nav className="hidden items-center gap-5 text-sm font-medium md:flex lg:gap-6">
+                {PRIMARY_LINKS.map((link) => (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    onClick={(e) => onNavClick(e, link.href)}
+                    className={`transition-colors duration-300 ${linkTone}`}
+                  >
+                    {link.name}
+                  </a>
+                ))}
+              </nav>
+            </div>
 
-          <nav className="hidden items-center gap-1 text-[13px] font-medium text-muted-foreground lg:flex">
-            {NAV_LINKS.map((link) => {
-              const isActive = activeSection === link.href.slice(1);
-              return (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={(e) => onNavClick(e, link.href)}
-                  className={`relative rounded-full px-3.5 py-2 transition-colors ${
-                    isActive ? "text-foreground" : "hover:text-foreground"
-                  }`}
-                >
-                  <span className="relative z-10">{link.name}</span>
-                  {isActive && (
-                    <motion.span
-                      layoutId="site-nav-pill"
-                      className="absolute inset-0 rounded-full border border-border bg-surface-elevated"
-                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                    />
-                  )}
-                </a>
-              );
-            })}
-          </nav>
+            {/* Center logo */}
+            <div className="pointer-events-auto absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
+              <Wordmark
+                compact
+                inverted={pill}
+                className="scale-[0.92] sm:scale-100"
+              />
+            </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {session ? (
-              <>
-                <Link
-                  to="/dashboard/$domain"
-                  params={{ domain: "student" }}
-                  className="hidden text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
-                >
-                  Dashboard
-                </Link>
-                <Link to="/dashboard/$domain" params={{ domain: "student" }}>
-                  <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full border border-border bg-foreground/90 font-display text-sm text-background transition-transform hover:scale-105">
-                    {session.user?.user_metadata?.avatar_url ? (
-                      <img
-                        src={session.user.user_metadata.avatar_url}
-                        alt="Profile"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : session.user?.user_metadata?.full_name ? (
-                      session.user.user_metadata.full_name.charAt(0).toUpperCase()
-                    ) : (
-                      session.user?.email?.charAt(0).toUpperCase() || "U"
-                    )}
-                  </div>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="hidden text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
-                >
-                  Log in
-                </Link>
-                <Link
-                  to="/signup"
-                  className="hidden items-center gap-1.5 rounded-full bg-foreground px-3.5 py-2 text-[13px] font-semibold text-background shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.35)] transition hover:opacity-90 sm:inline-flex"
-                >
-                  Become a member
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </>
-            )}
-
-            <button
-              type="button"
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-surface-elevated px-3.5 text-[13px] font-semibold text-foreground transition hover:bg-surface lg:hidden"
-            >
-              {menuOpen ? (
+            {/* Right actions */}
+            <div className="z-10 flex flex-1 items-center justify-end gap-2 sm:gap-3 md:gap-4">
+              {session ? (
                 <>
-                  <X className="h-4 w-4" />
-                  Close
+                  <Link
+                    to="/dashboard/$domain"
+                    params={{ domain: "student" }}
+                    className={`hidden text-sm font-medium transition-colors duration-300 sm:inline ${linkTone}`}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link to="/dashboard/$domain" params={{ domain: "student" }}>
+                    <div
+                      className={`grid h-8 w-8 place-items-center overflow-hidden rounded-full border text-sm font-medium transition-transform hover:scale-105 ${
+                        pill
+                          ? "border-white/20 bg-white text-black"
+                          : "border-border bg-foreground text-background"
+                      }`}
+                    >
+                      {session.user?.user_metadata?.avatar_url ? (
+                        <img
+                          src={session.user.user_metadata.avatar_url}
+                          alt="Profile"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : session.user?.user_metadata?.full_name ? (
+                        session.user.user_metadata.full_name.charAt(0).toUpperCase()
+                      ) : (
+                        session.user?.email?.charAt(0).toUpperCase() || "U"
+                      )}
+                    </div>
+                  </Link>
                 </>
               ) : (
                 <>
-                  <Menu className="h-4 w-4" />
-                  Menu
+                  <Link
+                    to="/login"
+                    className={`hidden text-sm font-medium transition-colors duration-300 md:inline ${linkTone}`}
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className={`hidden items-center rounded-full px-4 py-2 text-xs font-medium transition-colors md:inline-flex md:text-sm ${
+                      pill
+                        ? "bg-white text-black hover:bg-white/90"
+                        : "bg-foreground text-background hover:opacity-90"
+                    }`}
+                  >
+                    Become a member
+                  </Link>
                 </>
               )}
-            </button>
-          </div>
-        </div>
-      </motion.header>
+
+              <button
+                type="button"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((open) => !open)}
+                className={`rounded-full p-2.5 transition-opacity hover:opacity-75 ${
+                  pill ? "text-white" : "text-foreground"
+                }`}
+              >
+                <GridMenuIcon className={menuDotTone} />
+              </button>
+            </div>
+          </motion.div>
+        </motion.header>
+      </div>
 
       <AnimatePresence>
         {menuOpen && (
@@ -203,100 +213,95 @@ export function SiteHeader() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-background lg:hidden"
+            transition={{ duration: 0.28 }}
+            className="fixed inset-0 z-40"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
+            <button
+              type="button"
+              aria-label="Close menu overlay"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setMenuOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="flex h-full flex-col px-5 pb-8 pt-24"
+              className="absolute right-0 top-0 flex h-full w-[85%] max-w-sm flex-col rounded-l-3xl bg-background shadow-2xl"
             >
-              <div className="mb-8 flex gap-3 sm:hidden">
-                {session ? (
+              <div className="flex items-center justify-between border-b border-border px-6 py-6">
+                <span className="text-2xl font-medium tracking-tight text-foreground">Menu</span>
+                <div className="flex items-center gap-3">
+                  {!session && (
+                    <>
+                      <Link
+                        to="/login"
+                        onClick={() => setMenuOpen(false)}
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        Log in
+                      </Link>
+                      <Link
+                        to="/signup"
+                        onClick={() => setMenuOpen(false)}
+                        className="rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background"
+                      >
+                        Be a member
+                      </Link>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="Close menu"
+                    onClick={() => setMenuOpen(false)}
+                    className="rounded-full p-1"
+                  >
+                    <GridMenuIcon className="bg-foreground" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-1 flex-col overflow-y-auto px-6 py-8">
+                <span className="mb-4 text-xs tracking-wide text-muted-foreground">Explore</span>
+                <div className="mb-8 flex flex-col gap-4 text-[17px] font-medium text-foreground">
+                  {EXPLORE_LINKS.map((link) => (
+                    <a
+                      key={link.name}
+                      href={link.href}
+                      onClick={(e) => onNavClick(e, link.href.replace("/", ""))}
+                      className="transition-colors hover:text-muted-foreground"
+                    >
+                      {link.name}
+                    </a>
+                  ))}
+                </div>
+
+                <span className="mb-4 text-xs tracking-wide text-muted-foreground">Company</span>
+                <div className="flex flex-col gap-3 text-sm font-medium text-muted-foreground">
+                  {COMPANY_LINKS.map((link) => (
+                    <Link
+                      key={link.name}
+                      to={link.to}
+                      onClick={() => setMenuOpen(false)}
+                      className="transition-colors hover:text-foreground"
+                    >
+                      {link.name}
+                    </Link>
+                  ))}
+                </div>
+
+                {session && (
                   <Link
                     to="/dashboard/$domain"
                     params={{ domain: "student" }}
                     onClick={() => setMenuOpen(false)}
-                    className="inline-flex flex-1 items-center justify-center rounded-full bg-foreground px-4 py-3 text-sm font-semibold text-background"
+                    className="mt-10 inline-flex items-center justify-center rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background"
                   >
                     Open dashboard
                   </Link>
-                ) : (
-                  <>
-                    <Link
-                      to="/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="inline-flex flex-1 items-center justify-center rounded-full border border-border bg-surface-elevated px-4 py-3 text-sm font-semibold text-foreground"
-                    >
-                      Log in
-                    </Link>
-                    <Link
-                      to="/signup"
-                      onClick={() => setMenuOpen(false)}
-                      className="inline-flex flex-1 items-center justify-center rounded-full bg-foreground px-4 py-3 text-sm font-semibold text-background"
-                    >
-                      Be a member
-                    </Link>
-                  </>
                 )}
               </div>
-
-              <div className="grid flex-1 gap-10 overflow-y-auto pb-6">
-                <div>
-                  <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-                    Explore
-                  </p>
-                  <ul className="space-y-1">
-                    {EXPLORE_LINKS.map((link, index) => (
-                      <motion.li
-                        key={link.name}
-                        initial={{ opacity: 0, x: -12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.05 * index, duration: 0.35 }}
-                      >
-                        <a
-                          href={link.href}
-                          onClick={(e) => onNavClick(e, link.href.replace("/", ""))}
-                          className="block py-2.5 font-display text-3xl tracking-tight text-foreground transition hover:text-muted-foreground sm:text-4xl"
-                        >
-                          {link.name}
-                        </a>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-                    Company
-                  </p>
-                  <ul className="space-y-1">
-                    {COMPANY_LINKS.map((link, index) => (
-                      <motion.li
-                        key={link.name}
-                        initial={{ opacity: 0, x: -12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.08 + 0.05 * index, duration: 0.35 }}
-                      >
-                        <Link
-                          to={link.to}
-                          onClick={() => setMenuOpen(false)}
-                          className="block py-2 text-lg font-medium text-muted-foreground transition hover:text-foreground"
-                        >
-                          {link.name}
-                        </Link>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <p className="mt-auto pt-4 text-xs text-muted-foreground">
-                Personalized mentorship paths for students, startups, and researchers.
-              </p>
-            </motion.div>
+            </motion.aside>
           </motion.div>
         )}
       </AnimatePresence>
