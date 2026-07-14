@@ -1,6 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react";
-import { Wordmark } from "@/components/brand";
 
 const PLATFORM_LINKS = [
   { name: "How it works", href: "/#how" },
@@ -17,66 +15,30 @@ const COMPANY_LINKS = [
   { name: "Disclaimer", to: "/disclaimer" as const },
 ] as const;
 
-const SOCIAL_LINKS = [
-  {
-    name: "Instagram",
-    href: "https://instagram.com/micrylis",
-    icon: Instagram,
-  },
-  {
-    name: "LinkedIn",
-    href: "https://linkedin.com/company/micrylis",
-    icon: Linkedin,
-  },
-  {
-    name: "Email",
-    href: "mailto:hello@micrylis.com",
-    icon: Mail,
-  },
-] as const;
-
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border/70 bg-surface/40">
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16 md:py-20">
-        <div className="grid gap-12 md:grid-cols-12 md:gap-10">
+    <footer className="bg-[#0b0b0c] text-white">
+      <div className="mx-auto max-w-6xl px-4 pt-12 pb-6 sm:px-6 sm:pt-14 sm:pb-7 md:pt-16 md:pb-8">
+        <div className="grid gap-10 md:grid-cols-12 md:gap-8">
           <div className="md:col-span-4">
-            <Wordmark />
-            <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+            <Link to="/" className="inline-block text-xl font-semibold tracking-tight text-white">
+              micrylis
+            </Link>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/55">
               The premium operating system for personalized growth. Quantify your path,
               learn with mentors, and unlock peak outcomes.
             </p>
-            <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              Designed for proactive careers.
-            </p>
-
-            <div className="mt-8 flex items-center gap-3">
-              {SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
-                <a
-                  key={name}
-                  href={href}
-                  target={href.startsWith("mailto:") ? undefined : "_blank"}
-                  rel={href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
-                  aria-label={name}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface-elevated text-foreground transition hover:bg-foreground hover:text-background"
-                >
-                  <Icon className="h-4 w-4" strokeWidth={1.75} />
-                </a>
-              ))}
-            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-8 md:gap-6">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-8">
             <div>
-              <h3 className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                Platform
-              </h3>
+              <h3 className="mb-4 text-sm font-semibold text-white">Platform</h3>
               <ul className="space-y-3">
                 {PLATFORM_LINKS.map((link) => (
                   <li key={link.name}>
                     <a
                       href={link.href}
-                      className="text-sm text-foreground/85 transition-colors hover:text-foreground"
+                      className="text-sm text-white/55 transition-colors hover:text-white"
                     >
                       {link.name}
                     </a>
@@ -86,15 +48,13 @@ export function SiteFooter() {
             </div>
 
             <div>
-              <h3 className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                Company
-              </h3>
+              <h3 className="mb-4 text-sm font-semibold text-white">Company</h3>
               <ul className="space-y-3">
                 {COMPANY_LINKS.map((link) => (
                   <li key={link.name}>
                     <Link
                       to={link.to}
-                      className="text-sm text-foreground/85 transition-colors hover:text-foreground"
+                      className="text-sm text-white/55 transition-colors hover:text-white"
                     >
                       {link.name}
                     </Link>
@@ -104,89 +64,67 @@ export function SiteFooter() {
             </div>
 
             <div className="col-span-2 sm:col-span-1">
-              <h3 className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                Contact
-              </h3>
-              <ul className="space-y-4 text-sm text-muted-foreground">
+              <h3 className="mb-4 text-sm font-semibold text-white">Contact</h3>
+              <ul className="space-y-3 text-sm text-white/55">
                 <li>
-                  <a
-                    href="mailto:hello@micrylis.com"
-                    className="inline-flex items-start gap-2.5 transition-colors hover:text-foreground"
-                  >
-                    <Mail className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
-                    <span>
-                      <span className="block font-medium text-foreground">hello@micrylis.com</span>
-                      <span className="text-xs">General inquiries</span>
-                    </span>
+                  <a href="mailto:hello@micrylis.com" className="transition-colors hover:text-white">
+                    hello@micrylis.com
                   </a>
+                  <span className="mt-0.5 block text-xs text-white/35">General inquiries</span>
                 </li>
                 <li>
-                  <a
-                    href="mailto:support@micrylis.com"
-                    className="inline-flex items-start gap-2.5 transition-colors hover:text-foreground"
-                  >
-                    <Mail className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
-                    <span>
-                      <span className="block font-medium text-foreground">support@micrylis.com</span>
-                      <span className="text-xs">Support & billing</span>
-                    </span>
+                  <a href="mailto:support@micrylis.com" className="transition-colors hover:text-white">
+                    support@micrylis.com
                   </a>
+                  <span className="mt-0.5 block text-xs text-white/35">Support & billing</span>
                 </li>
                 <li>
-                  <a
-                    href="tel:+15551234567"
-                    className="inline-flex items-start gap-2.5 transition-colors hover:text-foreground"
-                  >
-                    <Phone className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
-                    <span className="font-medium text-foreground">+1 (555) 123-4567</span>
+                  <a href="tel:+15551234567" className="transition-colors hover:text-white">
+                    +1 (555) 123-4567
                   </a>
                 </li>
-                <li className="inline-flex items-start gap-2.5">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
-                  <span>
-                    Micrylis Inc.
-                    <br />
-                    123 Innovation Drive, Suite 400
-                    <br />
-                    San Francisco, CA 94105
-                  </span>
+                <li className="leading-relaxed">
+                  Micrylis Inc.
+                  <br />
+                  123 Innovation Drive, Suite 400
+                  <br />
+                  San Francisco, CA 94105
                 </li>
               </ul>
+
+              <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/55">
+                <a
+                  href="https://instagram.com/micrylis"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-white"
+                >
+                  Instagram
+                </a>
+                <a
+                  href="https://linkedin.com/company/micrylis"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-white"
+                >
+                  LinkedIn
+                </a>
+                <a
+                  href="mailto:hello@micrylis.com"
+                  className="transition-colors hover:text-white"
+                >
+                  Email
+                </a>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-4 border-t border-border/70 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-5 sm:mt-12 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-white/40">
             © {new Date().getFullYear()} Micrylis. All rights reserved.
           </p>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-            <a
-              href="https://instagram.com/micrylis"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-foreground"
-            >
-              Instagram
-            </a>
-            <a
-              href="https://linkedin.com/company/micrylis"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-foreground"
-            >
-              LinkedIn
-            </a>
-            <a href="mailto:hello@micrylis.com" className="transition-colors hover:text-foreground">
-              Email
-            </a>
-            <Link to="/privacy-policy" className="transition-colors hover:text-foreground">
-              Privacy
-            </Link>
-            <Link to="/disclaimer" className="transition-colors hover:text-foreground">
-              Terms
-            </Link>
-          </div>
+          <p className="text-xs text-white/40">Designed for proactive careers.</p>
         </div>
       </div>
     </footer>
