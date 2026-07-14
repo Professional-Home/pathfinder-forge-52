@@ -665,9 +665,9 @@ function WhyMicrylis() {
   ];
 
   return (
-    <section className="border-b border-border/60 bg-background py-16 sm:py-24 md:py-32">
+    <section className="border-b border-border/60 bg-background py-12 sm:py-16 md:py-20">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
-        <div className="mb-12 flex flex-col items-center text-center sm:mb-16">
+        <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
           <h2 className="mb-4 font-display text-3xl font-medium tracking-tight text-foreground sm:mb-6 sm:text-4xl md:text-5xl lg:text-6xl">
             Frequently asked questions
           </h2>

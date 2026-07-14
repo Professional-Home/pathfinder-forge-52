@@ -102,13 +102,17 @@ export function SiteHeader() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-3 pt-3 sm:px-4 sm:pt-4 md:pt-5">
+      <div
+        className={`pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-3 sm:px-4 ${
+          pill ? "pt-2 sm:pt-2.5" : "pt-3 sm:pt-4 md:pt-5"
+        }`}
+      >
         <motion.header
           initial={{ opacity: 0, y: -10 }}
           animate={{
             opacity: 1,
             y: 0,
-            width: pill ? "min(100%, 1040px)" : "min(100%, 1120px)",
+            width: pill ? "min(100%, 880px)" : "min(100%, 1120px)",
           }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
           className="pointer-events-auto relative"
@@ -116,15 +120,15 @@ export function SiteHeader() {
           <motion.div
             layout
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative flex min-h-[52px] items-center justify-between gap-3 px-3 py-2 transition-[background-color,box-shadow,backdrop-filter,border-radius,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:min-h-[56px] sm:px-5 md:px-6 ${
+            className={`relative flex items-center justify-between gap-2 transition-[background-color,box-shadow,backdrop-filter,border-radius,border-color,min-height,padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               pill
-                ? "rounded-full border border-border/50 bg-transparent shadow-[0_8px_30px_-18px_rgba(0,0,0,0.25)] backdrop-blur-md"
-                : "rounded-none border border-transparent bg-transparent shadow-none backdrop-blur-none"
+                ? "min-h-[42px] rounded-full border border-border/50 bg-transparent px-3 py-1 shadow-[0_6px_24px_-16px_rgba(0,0,0,0.2)] backdrop-blur-md sm:min-h-[44px] sm:px-4 md:px-5"
+                : "min-h-[48px] rounded-none border border-transparent bg-transparent px-3 py-1.5 shadow-none backdrop-blur-none sm:min-h-[52px] sm:px-5 md:px-6"
             }`}
           >
             <Wordmark compact={pill} />
 
-            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 text-[13px] font-medium text-muted-foreground lg:flex">
+            <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-0.5 text-[12px] font-medium text-muted-foreground lg:flex">
               {NAV_LINKS.map((link) => {
                 const isActive = activeSection === link.href.slice(1);
                 return (
@@ -132,7 +136,7 @@ export function SiteHeader() {
                     key={link.name}
                     href={link.href}
                     onClick={(e) => onNavClick(e, link.href)}
-                    className={`relative rounded-full px-3.5 py-2 transition-colors ${
+                    className={`relative rounded-full px-2.5 py-1.5 transition-colors ${
                       isActive ? "text-foreground" : "hover:text-foreground"
                     }`}
                   >
@@ -149,18 +153,18 @@ export function SiteHeader() {
               })}
             </nav>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {session ? (
                 <>
                   <Link
                     to="/dashboard/$domain"
                     params={{ domain: "student" }}
-                    className="hidden text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
+                    className="hidden text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
                   >
                     Dashboard
                   </Link>
                   <Link to="/dashboard/$domain" params={{ domain: "student" }}>
-                    <div className="grid h-8 w-8 place-items-center overflow-hidden rounded-full border border-border bg-foreground/90 text-sm font-medium text-background transition-transform hover:scale-105">
+                    <div className="grid h-7 w-7 place-items-center overflow-hidden rounded-full border border-border bg-foreground/90 text-xs font-medium text-background transition-transform hover:scale-105 sm:h-8 sm:w-8 sm:text-sm">
                       {session.user?.user_metadata?.avatar_url ? (
                         <img
                           src={session.user.user_metadata.avatar_url}
@@ -179,13 +183,13 @@ export function SiteHeader() {
                 <>
                   <Link
                     to="/login"
-                    className="hidden text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground md:inline"
+                    className="hidden text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground md:inline"
                   >
                     Log in
                   </Link>
                   <Link
                     to="/signup"
-                    className="hidden items-center rounded-full bg-foreground px-3.5 py-2 text-[13px] font-semibold text-background transition hover:opacity-90 md:inline-flex"
+                    className="hidden items-center rounded-full bg-foreground px-3 py-1.5 text-[12px] font-semibold text-background transition hover:opacity-90 md:inline-flex"
                   >
                     Become a member
                   </Link>
@@ -197,7 +201,7 @@ export function SiteHeader() {
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((open) => !open)}
-                className="rounded-full p-2.5 text-foreground transition-opacity hover:opacity-70 lg:hidden"
+                className="rounded-full p-2 text-foreground transition-opacity hover:opacity-70 lg:hidden"
               >
                 <GridMenuIcon className="bg-foreground" />
               </button>
