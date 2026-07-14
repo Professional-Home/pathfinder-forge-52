@@ -1,13 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, GraduationCap, Rocket, Microscope, Check, Users, Map, Target, Trophy, Milestone, LayoutDashboard, BrainCircuit, Network, Plus, Minus, Menu, X } from "lucide-react";
-import { Wordmark } from "@/components/brand";
-import { DOMAINS, type Domain } from "@/lib/domain";
+import { ArrowRight, Sparkles, Rocket, Check, Users, Map, Trophy, Milestone, LayoutDashboard, Plus, Minus } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { DOMAINS } from "@/lib/domain";
 import { useEffect, useState, type ReactNode, useRef } from "react";
-import { motion, useScroll, useTransform, type Variants, useInView, animate, useMotionValue, AnimatePresence } from "framer-motion";
-import { supabase } from "@/utils/supabase";
-import type { Session } from "@supabase/supabase-js";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { motion, useTransform, type Variants, useInView, animate, useMotionValue, AnimatePresence } from "framer-motion";
 
 function RevealWrapper({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -59,12 +56,6 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-const domainIcons: Record<Domain, typeof GraduationCap> = {
-  student: GraduationCap,
-  startup: Rocket,
-  researcher: Microscope,
-};
-
 function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -75,190 +66,8 @@ function Landing() {
       <RevealWrapper><ProductPreview /></RevealWrapper>
       <RevealWrapper><Loops /></RevealWrapper>
       <RevealWrapper><WhyMicrylis /></RevealWrapper>
-      <Footer />
+      <SiteFooter />
     </div>
-  );
-}
-
-function SiteHeader() {
-  const [activeSection, setActiveSection] = useState("");
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const links = [
-    { name: "For you", href: "#lanes" },
-    { name: "How it works", href: "#how" },
-    { name: "Product", href: "#preview" },
-    { name: "Mentors", href: "#loops" },
-  ];
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-      const scrollPos = window.scrollY + 100;
-      links.forEach((link) => {
-        const section = document.querySelector(link.href);
-        if (section instanceof HTMLElement) {
-          if (
-            section.offsetTop <= scrollPos &&
-            section.offsetTop + section.offsetHeight > scrollPos
-          ) {
-            setActiveSection(link.href.substring(1));
-          }
-        }
-      });
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollTo = (e: React.MouseEvent<HTMLAnchorElement>, target: string) => {
-    e.preventDefault();
-    setMobileOpen(false);
-    document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  return (
-    <motion.header
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className={`fixed top-0 z-40 w-full transition-all duration-300 ${isScrolled
-        ? "border-b border-border/60 bg-background/80 backdrop-blur"
-        : "border-b border-transparent bg-transparent"
-        }`}
-    >
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Wordmark />
-        <nav className="hidden items-center gap-2 text-sm text-muted-foreground md:flex">
-          {links.map((link) => {
-            const isActive = activeSection === link.href.substring(1);
-            return (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={(e) => scrollTo(e, link.href)}
-                className={`relative px-3 py-1.5 transition-colors ${isActive ? "text-foreground" : "hover:text-foreground"
-                  }`}
-              >
-                <span className="relative z-10">{link.name}</span>
-                {isActive && (
-                  <motion.div
-                    layoutId="active-nav"
-                    className="absolute inset-0 rounded-md bg-surface-elevated border border-border"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-              </a>
-            );
-          })}
-        </nav>
-        <div className="flex items-center gap-2">
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="border-border md:hidden" aria-label="Open menu">
-                <Menu className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[280px] border-border bg-background p-0">
-              <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                <Wordmark />
-                <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} aria-label="Close menu">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <nav className="flex flex-col gap-1 p-4">
-                {links.map((link) => (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    onClick={(e) => scrollTo(e, link.href)}
-                    className="rounded-lg px-4 py-3 text-sm font-medium text-foreground transition hover:bg-surface"
-                  >
-                    {link.name}
-                  </a>
-                ))}
-                {!session && (
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-4 py-3 text-sm text-muted-foreground transition hover:bg-surface hover:text-foreground"
-                  >
-                    Sign in
-                  </Link>
-                )}
-                {session && (
-                  <Link
-                    to="/dashboard/$domain"
-                    params={{ domain: "student" }}
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-4 py-3 text-sm font-medium text-foreground transition hover:bg-surface"
-                  >
-                    Dashboard
-                  </Link>
-                )}
-              </nav>
-            </SheetContent>
-          </Sheet>
-          {session ? (
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Link
-                to="/dashboard/$domain"
-                params={{ domain: "student" }}
-                className="hidden text-sm font-medium text-muted-foreground hover:text-foreground transition-colors sm:inline"
-              >
-                Dashboard
-              </Link>
-              <Link to="/dashboard/$domain" params={{ domain: "student" }}>
-                <div className="h-8 w-8 rounded-full bg-foreground/90 grid place-items-center font-display text-sm text-background overflow-hidden border border-border transition-transform hover:scale-105">
-                  {session.user?.user_metadata?.avatar_url ? (
-                    <img src={session.user.user_metadata.avatar_url} alt="Profile" className="h-full w-full object-cover" />
-                  ) : session.user?.user_metadata?.full_name ? (
-                    session.user.user_metadata.full_name.charAt(0).toUpperCase()
-                  ) : (
-                    session.user?.email?.charAt(0).toUpperCase() || "U"
-                  )}
-                </div>
-              </Link>
-            </div>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
-              >
-                Sign in
-              </Link>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                to="/signup"
-                className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-2.5 py-1.5 text-xs font-medium text-background transition hover:opacity-90 sm:px-3 sm:py-1.5 sm:text-sm shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
-              >
-                <span className="hidden sm:inline">Start the quiz</span>
-                <span className="sm:hidden">Start</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-              </motion.div>
-            </>
-          )}
-        </div>
-      </div>
-    </motion.header>
   );
 }
 
@@ -286,83 +95,70 @@ function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-border/60">
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.35]">
-        <div className="absolute -top-40 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-gradient-to-br from-student/25 via-startup/15 to-researcher/25 blur-3xl" />
-        {/* 8. Background Ambience Glow */}
+        <div className="absolute -top-40 left-1/2 h-[420px] w-[min(900px,140vw)] -translate-x-1/2 rounded-full bg-gradient-to-br from-student/25 via-startup/15 to-researcher/25 blur-3xl" />
         <motion.div
           animate={{ x: [-15, 15, -15], y: [-10, 10, -10] }}
           transition={{ duration: 15, ease: "easeInOut", repeat: Infinity }}
-          className="absolute top-32 left-1/2 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-tr from-student/10 via-startup/10 to-transparent blur-[100px]"
+          className="absolute top-32 left-1/2 h-[320px] w-[min(700px,120vw)] -translate-x-1/2 rounded-full bg-gradient-to-tr from-student/10 via-startup/10 to-transparent blur-[100px]"
         />
       </div>
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:gap-16 sm:px-6 sm:py-24 md:py-32"
+        className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-28 sm:gap-14 sm:px-6 sm:pb-24 sm:pt-32 md:gap-16 md:pb-32 md:pt-36"
       >
         <div className="max-w-3xl">
-          {/* 2. Badge Pill Micro-Interaction */}
           <motion.div
             variants={itemVariants}
             whileHover={{ scale: 1.03, y: -2 }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface-elevated px-3 py-1 text-xs text-muted-foreground cursor-pointer transition-shadow hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.15)]"
+            className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-surface-elevated px-3 py-1.5 text-[11px] text-muted-foreground transition-shadow hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.15)] sm:mb-6 sm:text-xs"
           >
             <motion.div
               animate={{ scale: [1, 1.15, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             >
-              <Sparkles className="h-3 w-3" />
+              <Sparkles className="h-3 w-3 shrink-0" />
             </motion.div>
-            15 questions. Then a path built around you.
+            <span className="truncate">15 questions. Then a path built around you.</span>
           </motion.div>
 
-          {/* 3. Headline Text Reveal */}
-          <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl md:text-7xl lg:text-8xl">
+          <h1 className="font-display text-[2.35rem] leading-[1.05] sm:text-5xl md:text-7xl lg:text-8xl">
             <div className="overflow-hidden pb-1">
               <motion.div variants={itemVariants}>
-                Don't Just Learn Biology<br />
+                Don&apos;t Just Learn Biology<br />
               </motion.div>
             </div>
             <div className="overflow-hidden pb-2">
-              {/* Delayed for the two-beat reveal */}
               <motion.div variants={itemVariants}>
                 <span className="italic text-muted-foreground">Build the Future of It.</span>
               </motion.div>
             </div>
           </h1>
 
-          {/* 1.5 Description */}
-          <motion.p variants={itemVariants} className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:mt-8 sm:text-lg">
+          <motion.p variants={itemVariants} className="mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground sm:mt-8 sm:text-lg">
             Learn by solving real industry challenges, publishing research, building AI-powered biotechnology projects, and working alongside mentors from academia and industry. From your first project to your first publication, Micrylis Biotech is where future scientists, bioinformaticians, and biotech founders are built.
           </motion.p>
 
           <motion.div variants={itemVariants} className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link to="/signup">
-              {/* 4. Primary CTA Magnetic/Hover Interaction */}
+            <Link to="/signup" className="w-full sm:w-auto">
               <motion.div
                 whileHover={{ backgroundColor: "hsl(var(--foreground) / 0.9)" }}
                 whileTap={{ scale: 0.97 }}
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-md bg-foreground px-5 py-3 text-sm font-medium text-background cursor-pointer sm:w-auto"
+                className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3.5 text-sm font-semibold text-background sm:w-auto sm:py-3"
               >
                 Start the 5-minute quiz
-                <motion.div
-                  className="inline-block"
-                  whileHover={{ x: [0, 4, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </motion.div>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </motion.div>
             </Link>
-            <Link to="/dashboard/$domain" params={{ domain: "student" }}>
-              {/* 5. Secondary CTA Interaction */}
+            <Link to="/dashboard/$domain" params={{ domain: "student" }} className="w-full sm:w-auto">
               <motion.div
                 whileHover={{
                   borderColor: "hsl(var(--foreground))",
-                  backgroundColor: "hsl(var(--accent))"
+                  backgroundColor: "hsl(var(--accent))",
                 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border-strong bg-surface-elevated px-5 py-3 text-sm font-medium text-foreground cursor-pointer sm:w-auto"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated px-5 py-3.5 text-sm font-semibold text-foreground sm:w-auto sm:py-3"
               >
                 Preview a dashboard
               </motion.div>
@@ -370,21 +166,23 @@ function Hero() {
           </motion.div>
         </div>
 
-        {/* 6. Trust Bar (Stat Bar Style) */}
-        <motion.div variants={itemVariants} className="mt-12 w-full col-span-full overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_20px_60px_-30px_rgba(0,0,0,0.15)]">
-          <div className="grid grid-cols-2 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-border">
+        <motion.div variants={itemVariants} className="col-span-full mt-4 w-full overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_20px_60px_-30px_rgba(0,0,0,0.15)] sm:mt-8">
+          <div className="grid grid-cols-2 divide-y divide-border md:grid-cols-5 md:divide-x md:divide-y-0">
             {[
               { top: "30+", bottom: "Students Learning" },
               { top: "Online", bottom: "Industry Projects" },
               { top: "AI", bottom: "Integrated Learning" },
               { top: "Research", bottom: "First Approach" },
-              { top: "Career", bottom: "Mentorship" }
-            ].map((item, i) => (
-              <div key={item.top} className="flex flex-col items-center justify-center py-6 px-4 md:px-2 lg:px-4 text-center bg-surface-elevated hover:bg-surface/80 transition-colors">
-                <div className="text-2xl lg:text-3xl font-display font-bold tracking-tight text-foreground">
+              { top: "Career", bottom: "Mentorship" },
+            ].map((item) => (
+              <div
+                key={item.top}
+                className="flex flex-col items-center justify-center bg-surface-elevated px-3 py-5 text-center transition-colors hover:bg-surface/80 sm:px-4 sm:py-6 md:px-2 lg:px-4 last:col-span-2 md:last:col-span-1"
+              >
+                <div className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
                   <AnimatedStat value={item.top} />
                 </div>
-                <div className="text-xs text-muted-foreground mt-1.5 font-medium">
+                <div className="mt-1.5 text-[11px] font-medium text-muted-foreground sm:text-xs">
                   {item.bottom}
                 </div>
               </div>
@@ -398,19 +196,18 @@ function Hero() {
 
 function GrowthPath() {
   return (
-    <section className="border-b border-border/60 bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-        <div className="mb-14 flex items-end justify-between gap-8">
+    <section id="lanes" className="scroll-mt-24 border-b border-border/60 bg-background">
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20 md:py-24">
+        <div className="mb-10 flex items-end justify-between gap-8 sm:mb-14">
           <div>
             <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">01 — The Process</div>
-            <h2 className="max-w-2xl font-display text-4xl md:text-5xl">
+            <h2 className="max-w-2xl font-display text-3xl sm:text-4xl md:text-5xl">
               Your Growth Path
             </h2>
           </div>
         </div>
         <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">
-          {/* Card 1 */}
-          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-8 transition hover:bg-background">
+          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-6 transition hover:bg-background sm:p-8">
             <div>
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-student-soft">
                 <Map className="h-5 w-5 text-student" />
@@ -421,14 +218,13 @@ function GrowthPath() {
                   Step 1
                 </span>
               </div>
-              <h3 className="mt-2 font-display text-3xl">Discover</h3>
+              <h3 className="mt-2 font-display text-2xl sm:text-3xl">Discover</h3>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 Assess your current skills and choose a personalized learning path.
               </p>
             </div>
           </div>
-          {/* Card 2 */}
-          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-8 transition hover:bg-background">
+          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-6 transition hover:bg-background sm:p-8">
             <div>
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-startup-soft">
                 <Rocket className="h-5 w-5 text-startup" />
@@ -439,14 +235,13 @@ function GrowthPath() {
                   Step 2
                 </span>
               </div>
-              <h3 className="mt-2 font-display text-3xl">Build</h3>
+              <h3 className="mt-2 font-display text-2xl sm:text-3xl">Build</h3>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 Work on real biotechnology and AI projects with structured guidance.
               </p>
             </div>
           </div>
-          {/* Card 3 */}
-          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-8 transition hover:bg-background">
+          <div className="group flex flex-col justify-between gap-10 bg-surface-elevated p-6 transition hover:bg-background sm:p-8">
             <div>
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-researcher-soft">
                 <Trophy className="h-5 w-5 text-researcher" />
@@ -457,7 +252,7 @@ function GrowthPath() {
                   Step 3
                 </span>
               </div>
-              <h3 className="mt-2 font-display text-3xl">Showcase</h3>
+              <h3 className="mt-2 font-display text-2xl sm:text-3xl">Showcase</h3>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 Publish your work, strengthen your portfolio, and become ready for internships, research labs, higher studies, or startups.
               </p>
@@ -471,14 +266,14 @@ function GrowthPath() {
 
 function HowItWorks() {
   return (
-    <section id="how" className="border-b border-border/60 bg-surface/30">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 md:py-32">
-        <div className="mb-20 text-center">
+    <section id="how" className="scroll-mt-24 border-b border-border/60 bg-surface/30">
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-24 md:py-32">
+        <div className="mb-12 text-center sm:mb-16 md:mb-20">
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">02 — Platform Features</div>
-          <h2 className="font-display text-4xl md:text-5xl lg:text-6xl tracking-tight">Your journey to mastery.</h2>
+          <h2 className="font-display text-3xl tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">Your journey to mastery.</h2>
         </div>
 
-        <div className="space-y-32">
+        <div className="space-y-16 sm:space-y-24 md:space-y-32">
           {/* Section 1: AI Assessment */}
           <FeatureCard
             imagePosition="left"
@@ -567,18 +362,18 @@ function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle,
   const [imageError, setImageError] = useState(false);
 
   return (
-    <div className={`flex flex-col gap-12 md:gap-24 md:flex-row ${isRight ? 'md:flex-row-reverse' : ''} items-center`}>
+    <div className={`flex flex-col items-center gap-8 md:flex-row md:gap-16 lg:gap-24 ${isRight ? "md:flex-row-reverse" : ""}`}>
       <motion.div
         className="w-full md:w-1/2"
         initial={{ opacity: 0, x: isRight ? 40 : -40 }}
         whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
+        viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
       >
         <motion.div
           whileHover={{ y: -8, scale: 1.01 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative aspect-[4/3] rounded-[28px] overflow-hidden shadow-sm hover:shadow-xl transition-shadow bg-surface-elevated border border-border flex items-center justify-center bg-muted/10"
+          className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-elevated bg-muted/10 shadow-sm transition-shadow hover:shadow-xl sm:rounded-[28px]"
         >
           {imageSrc && !imageError ? (
             <img
@@ -620,9 +415,9 @@ function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle,
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
       >
-        <div className={`max-w-[460px] ${isRight ? 'md:mr-auto' : 'md:ml-auto'}`}>
-          <h3 className="font-display text-3xl md:text-4xl lg:text-5xl mb-6 text-foreground tracking-tight">{title}</h3>
-          <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+        <div className={`max-w-[460px] ${isRight ? "md:mr-auto" : "md:ml-auto"}`}>
+          <h3 className="mb-4 font-display text-2xl tracking-tight text-foreground sm:mb-6 sm:text-3xl md:text-4xl lg:text-5xl">{title}</h3>
+          <p className="mb-6 text-base leading-relaxed text-muted-foreground sm:mb-8 sm:text-lg">
             {description}
           </p>
 
@@ -711,11 +506,11 @@ const OutcomeVisual = () => (
 
 function ProductPreview() {
   return (
-    <section id="preview" className="border-b border-border/60">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-        <div className="mb-14 max-w-2xl">
+    <section id="preview" className="scroll-mt-24 border-b border-border/60">
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-24">
+        <div className="mb-10 max-w-2xl sm:mb-14">
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">03 — Product</div>
-          <h2 className="font-display text-4xl md:text-5xl">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl">
             A dashboard that changes shape for who you are.
           </h2>
         </div>
@@ -785,11 +580,11 @@ function ProductPreview() {
 
 function Loops() {
   return (
-    <section id="loops" className="border-b border-border/60 bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-16 px-4 py-16 sm:px-6 sm:py-24 md:grid-cols-2">
+    <section id="loops" className="scroll-mt-24 border-b border-border/60 bg-surface">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:gap-16 sm:px-6 sm:py-24 md:grid-cols-2">
         <div>
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">04 — Mentors</div>
-          <h2 className="font-display text-4xl md:text-5xl">
+          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl">
             Experts you can actually reach.
           </h2>
           <p className="mt-6 max-w-md text-muted-foreground">
@@ -803,17 +598,17 @@ function Loops() {
             { n: "Aditi R.", r: "Head of Product, Notion · 0→1", p: "$180", tag: "startup" as const },
             { n: "Jonas W.", r: "Sr. Engineer, Vercel · Career coaching", p: "$60", tag: "student" as const },
           ].map((m) => (
-            <div key={m.n} className="flex items-center justify-between rounded-xl border border-border bg-surface-elevated p-4">
-              <div className="flex items-center gap-4">
-                <div className={`h-10 w-10 rounded-full ${DOMAINS[m.tag].softBgClass} grid place-items-center font-display ${DOMAINS[m.tag].accentClass}`}>
+            <div key={m.n} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-elevated p-3.5 sm:p-4">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-display ${DOMAINS[m.tag].softBgClass} ${DOMAINS[m.tag].accentClass}`}>
                   {m.n[0]}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="text-sm font-medium">{m.n}</div>
-                  <div className="text-xs text-muted-foreground">{m.r}</div>
+                  <div className="truncate text-xs text-muted-foreground">{m.r}</div>
                 </div>
               </div>
-              <div className="text-sm font-mono">{m.p}<span className="text-muted-foreground">/session</span></div>
+              <div className="shrink-0 text-xs font-mono sm:text-sm">{m.p}<span className="text-muted-foreground">/session</span></div>
             </div>
           ))}
         </div>
@@ -915,20 +710,3 @@ function WhyMicrylis() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-        <Wordmark />
-        <div className="text-xs text-muted-foreground">© {new Date().getFullYear()} Micrylis — building growth paths.</div>
-      </div>
-      <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs text-muted-foreground border-t border-border/60 pt-6">
-        <Link to="/return-policy" className="hover:text-foreground transition-colors">Return Policy</Link>
-        <Link to="/refund-policy" className="hover:text-foreground transition-colors">Refund Policy</Link>
-        <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-        <Link to="/disclaimer" className="hover:text-foreground transition-colors">Disclaimer</Link>
-        <Link to="/about" className="hover:text-foreground transition-colors">About & Contact</Link>
-      </div>
-    </footer>
-  );
-}
