@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, GraduationCap, Rocket, Microscope, Sparkles, Check } from "lucide-react";
 import { Wordmark } from "@/components/brand";
-import { supabase } from "@/utils/supabase"
+import { supabase } from "@/utils/supabase";
+import { setCookie } from "@/lib/cookies";
 
 /** Official Google "G" logo in SVG */
 function GoogleIcon() {
@@ -43,22 +44,35 @@ function SignupPage() {
   const [error, setError] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hashError = hashParams.get("error");
+      const errorDescription = hashParams.get("error_description");
+      if (hashError || errorDescription) {
+        setError(errorDescription?.replace(/\+/g, " ") || hashError || "Authentication failed");
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+  }, []);
+
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
+    setError("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/onboarding`,
+        redirectTo: `${window.location.origin}/dashboard`,
       }
-    })
+    });
+
+    console.log("google sign in")
+
     if (error) {
       setError(error.message);
-    } else {
-      setTimeout(() => {
-        setGoogleLoading(false);
-        navigate({ to: "/onboarding" });
-      }, 1400);
+      setGoogleLoading(false);
     }
+    // No else block needed because Supabase will navigate the browser away to Google.
   }
 
   async function handleFormSubmit(e: React.FormEvent) {
@@ -67,7 +81,7 @@ function SignupPage() {
     setError("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -76,9 +90,10 @@ function SignupPage() {
 
     if (error) {
       setError(error.message);
+    } else if (!data.session) {
+      setError("Success! Please check your email to confirm your account.");
     } else {
-      // User created successfully — now pick domain
-      setStep("domain");
+      navigate({ to: "/dashboard" });
     }
   }
 
@@ -88,7 +103,7 @@ function SignupPage() {
     // Simulate account creation — replace with Supabase auth
     setTimeout(() => {
       try {
-        localStorage.setItem("mf_profile", JSON.stringify({ name, domain: domainPick, created_at: Date.now() }));
+        setCookie("mf_profile", JSON.stringify({ name, domain: domainPick, created_at: Date.now() }));
       } catch { }
       navigate({ to: "/onboarding" });
     }, 1800);

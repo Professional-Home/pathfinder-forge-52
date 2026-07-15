@@ -7,23 +7,23 @@ import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Phone } from "lucide-rea
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../utils/supabase";
 
-export const Route = createFileRoute("/dashboard/$domain/enroll/$courseId")({
+export const Route = createFileRoute("/dashboard/enroll/$courseId")({
   component: CourseEnrollmentPage,
 });
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
 function CourseEnrollmentPage() {
-  const { domain, courseId } = Route.useParams();
+  const { courseId } = Route.useParams();
   const navigate = useNavigate();
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["course", courseId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("course")
+        .from("courses")
         .select("*")
-        .eq("course_id", courseId)
+        .eq("id", courseId)
         .single();
 
       if (error) throw error;
@@ -98,7 +98,7 @@ function CourseEnrollmentPage() {
 
       // Redirect after 2 seconds
       setTimeout(() => {
-        navigate({ to: "/dashboard/$domain/courses", params: { domain } });
+        navigate({ to: "/dashboard/courses" });
       }, 2000);
     } catch (err: any) {
       console.error("Enrollment error:", err);
@@ -111,8 +111,7 @@ function CourseEnrollmentPage() {
     <div className="max-w-2xl mx-auto space-y-8">
       <div>
         <Link
-          to="/dashboard/$domain/courses"
-          params={{ domain }}
+          to="/dashboard/courses"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="h-4 w-4" /> Back to courses

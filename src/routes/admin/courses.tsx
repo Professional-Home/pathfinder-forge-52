@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Eye, EyeOff, BookOpen } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/utils/supabase";
+import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
 import { FilterDropdown } from "@/components/admin/FilterDropdown";
 import { AdminPagination, usePagination } from "@/components/admin/AdminPagination";
-import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ConfirmationDialog } from "@/components/admin/ConfirmationDialog";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { AdminDataTable, AdminToolbar } from "@/components/admin/admin-shared";
@@ -35,12 +35,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  INITIAL_COURSES,
-  type AdminCourse,
-  type CourseDifficulty,
-  type CourseStatus,
-} from "@/lib/adminMockData";
+
+interface AdminCourse {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  duration: string;
+  thumbnail: string;
+  students_enrolled: number;
+  created_at: string;
+}
 
 export const Route = createFileRoute("/admin/courses")({
   component: AdminCoursesPage,
@@ -52,15 +57,12 @@ const emptyForm = {
   description: "",
   category: "",
   duration: "",
-  difficulty: "beginner" as CourseDifficulty,
-  status: "draft" as CourseStatus,
   thumbnail: "",
 };
 
 function AdminCoursesPage() {
-  const [courses, setCourses] = useState<AdminCourse[]>(INITIAL_COURSES);
+  const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -70,20 +72,33 @@ function AdminCoursesPage() {
   const [form, setForm] = useState(emptyForm);
 
   const categories = useMemo(
-    () => [...new Set(courses.map((c) => c.category))],
+    () => [...new Set(courses.map((c) => c.category).filter(Boolean))],
     [courses],
   );
+
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  async function fetchCourses() {
+    const { data } = await supabase
+      .from("courses")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) {
+      setCourses(data);
+    }
+  }
 
   const filtered = useMemo(() => {
     return courses.filter((c) => {
       const matchesSearch =
-        c.title.toLowerCase().includes(search.toLowerCase()) ||
-        c.description.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === "all" || c.status === statusFilter;
+        (c.title || "").toLowerCase().includes(search.toLowerCase()) ||
+        (c.description || "").toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === "all" || c.category === categoryFilter;
-      return matchesSearch && matchesStatus && matchesCategory;
+      return matchesSearch && matchesCategory;
     });
-  }, [courses, search, statusFilter, categoryFilter]);
+  }, [courses, search, categoryFilter]);
 
   const { paginatedItems, totalPages } = usePagination(filtered, PAGE_SIZE, currentPage);
 
@@ -98,61 +113,51 @@ function AdminCoursesPage() {
     setForm({
       title: course.title,
       description: course.description,
-      category: course.category,
-      duration: course.duration,
-      difficulty: course.difficulty,
-      status: course.status,
-      thumbnail: course.thumbnail,
+      category: course.category || "",
+      duration: course.duration || "",
+      thumbnail: course.thumbnail || "",
     });
     setDialogOpen(true);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.title.trim()) return;
+    
+    const payload = {
+      title: form.title,
+      description: form.description,
+      category: form.category,
+      duration: form.duration,
+      thumbnail: form.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=240&fit=crop",
+    };
+
     if (editingId) {
-      setCourses((prev) =>
-        prev.map((c) =>
-          c.id === editingId
-            ? {
-                ...c,
-                ...form,
-                thumbnail:
-                  form.thumbnail ||
-                  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=240&fit=crop",
-              }
-            : c,
-        ),
-      );
+      const { error } = await supabase.from("courses").update(payload).eq("id", editingId);
+      if (error) console.error("Error updating course:", error);
+      if (!error) {
+        setCourses((prev) =>
+          prev.map((c) => (c.id === editingId ? { ...c, ...payload } as AdminCourse : c))
+        );
+      }
     } else {
-      const newCourse: AdminCourse = {
-        id: `c${Date.now()}`,
-        ...form,
-        thumbnail:
-          form.thumbnail ||
-          "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=240&fit=crop",
-        studentsEnrolled: 0,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setCourses((prev) => [newCourse, ...prev]);
+      const { data, error } = await supabase.from("courses").insert(payload).select().single();
+      if (error) console.error("Error inserting course:", error);
+      if (data && !error) {
+        setCourses((prev) => [data as AdminCourse, ...prev]);
+      }
     }
     setDialogOpen(false);
     setForm(emptyForm);
     setEditingId(null);
   }
 
-  function togglePublish(id: string) {
-    setCourses((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, status: c.status === "published" ? "draft" : "published" }
-          : c,
-      ),
-    );
-  }
-
-  function confirmDelete() {
+  async function confirmDelete() {
     if (deletingId) {
-      setCourses((prev) => prev.filter((c) => c.id !== deletingId));
+      const { error } = await supabase.from("courses").delete().eq("id", deletingId);
+      if (error) console.error("Error deleting course:", error);
+      if (!error) {
+        setCourses((prev) => prev.filter((c) => c.id !== deletingId));
+      }
       setDeletingId(null);
     }
     setDeleteOpen(false);
@@ -181,15 +186,6 @@ function AdminCoursesPage() {
           placeholder="Search courses..."
         />
         <FilterDropdown
-          value={statusFilter}
-          onChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}
-          options={[
-            { label: "All Status", value: "all" },
-            { label: "Published", value: "published" },
-            { label: "Draft", value: "draft" },
-          ]}
-        />
-        <FilterDropdown
           value={categoryFilter}
           onChange={(v) => { setCategoryFilter(v); setCurrentPage(1); }}
           options={[
@@ -216,8 +212,6 @@ function AdminCoursesPage() {
                   <TableHead>Course</TableHead>
                   <TableHead className="hidden md:table-cell">Category</TableHead>
                   <TableHead className="hidden sm:table-cell">Duration</TableHead>
-                  <TableHead className="hidden lg:table-cell">Difficulty</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -241,26 +235,8 @@ function AdminCoursesPage() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-sm">{course.category}</TableCell>
                     <TableCell className="hidden sm:table-cell text-sm">{course.duration}</TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <StatusBadge status={course.difficulty} />
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={course.status} />
-                    </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => togglePublish(course.id)}
-                          title={course.status === "published" ? "Unpublish" : "Publish"}
-                        >
-                          {course.status === "published" ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(course)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -333,39 +309,6 @@ function AdminCoursesPage() {
                   placeholder="e.g. 6 weeks"
                   className="border-border"
                 />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Difficulty</Label>
-                <Select
-                  value={form.difficulty}
-                  onValueChange={(v) => setForm({ ...form, difficulty: v as CourseDifficulty })}
-                >
-                  <SelectTrigger className="border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={form.status}
-                  onValueChange={(v) => setForm({ ...form, status: v as CourseStatus })}
-                >
-                  <SelectTrigger className="border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <div className="space-y-2">

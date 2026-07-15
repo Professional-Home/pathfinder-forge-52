@@ -2,30 +2,32 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Calendar, Video, Clock } from "lucide-react";
 import { mockUser } from "@/lib/mockUser";
 import { type Domain, DOMAINS } from "@/lib/domain";
-import { MentorRow } from "@/components/dashboard-shared";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/utils/supabase";
 
-export const Route = createFileRoute("/dashboard/$domain/mentors")({
+export const Route = createFileRoute("/dashboard/mentors")({
   component: MentorsPage,
 });
 
-const ALL_MENTORS = [
-  { id: "m_1", name: "Jonas W.", tag: "Sr. Engineer, Vercel · Career coaching", price: "$60", lane: "student", matchReason: "Matches your Interaction skill gap" },
-  { id: "m_2", name: "Elena T.", tag: "Design Lead, Airbnb · Portfolio review", price: "$85", lane: "student", matchReason: "Matches your Visual skill gap" },
-  { id: "m_3", name: "Kwame O.", tag: "Recruiter, Meta · Interview prep", price: "$45", lane: "student", matchReason: "Relevant to Module 4" },
-  { id: "m_4", name: "Aditi R.", tag: "Head of Product, Notion", price: "$180", lane: "startup", matchReason: "Seed stage GTM expert" },
-  { id: "m_5", name: "Marcus L.", tag: "Postdoc, MIT · NLP methodology", price: "$80", lane: "researcher", matchReason: "NLP methodology match" },
-];
-
 function MentorsPage() {
-  const { domain } = Route.useParams();
-  const user = { ...mockUser, lane: domain as Domain };
+  const user = { ...mockUser, lane: "student" as Domain };
   
+  const { data: mentors = [], isLoading } = useQuery({
+    queryKey: ["mentors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("mentors").select("*");
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   const booked = user.bookedMentors.map(b => {
-    const mentor = ALL_MENTORS.find(m => m.id === b.mentorId);
+    // Just mock booked for now or match by index
+    const mentor = mentors[0] || { name: "Elena T.", expertise: ["Design"], experience: "10 yrs" };
     return { ...b, mentor };
   }).filter(b => b.mentor);
 
-  const available = ALL_MENTORS.filter(m => m.lane === user.lane);
+  const available = mentors;
 
   return (
     <div className="space-y-12">
@@ -48,7 +50,7 @@ function MentorsPage() {
                   </div>
                   <div>
                     <div className="text-sm font-medium">{b.mentor!.name}</div>
-                    <div className="text-xs text-muted-foreground">{b.mentor!.tag.split('·')[0]}</div>
+                    <div className="text-xs text-muted-foreground">{b.mentor!.experience}</div>
                   </div>
                 </div>
                 <div className="mt-4 space-y-2 text-sm text-muted-foreground">
@@ -87,15 +89,15 @@ function MentorsPage() {
                 </div>
                 <div>
                   <div className="font-display text-xl">{m.name}</div>
-                  <div className="text-sm text-muted-foreground">{m.tag}</div>
+                  <div className="text-sm text-muted-foreground">{m.experience}</div>
                   <div className="mt-2 inline-flex rounded-md bg-surface px-2 py-1 text-[11px] text-muted-foreground">
-                    ✓ {m.matchReason}
+                    ✓ Matches: {(m.expertise || []).join(", ")}
                   </div>
                 </div>
               </div>
               
               <div className="flex flex-col gap-3 border-t border-border pt-4 md:items-end md:border-0 md:pt-0">
-                <div className="font-mono text-xl">{m.price}<span className="text-sm text-muted-foreground">/session</span></div>
+                <div className="font-mono text-xl">Free<span className="text-sm text-muted-foreground">/session</span></div>
                 <button className="rounded-md bg-foreground px-6 py-2 text-sm font-medium text-background hover:opacity-90 transition">
                   Book session
                 </button>

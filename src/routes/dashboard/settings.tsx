@@ -4,13 +4,12 @@ import { mockUser } from "@/lib/mockUser";
 import type { Domain } from "@/lib/domain";
 import { supabase } from "@/utils/supabase";
 
-export const Route = createFileRoute("/dashboard/$domain/settings")({
+export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsPage,
 });
 
 function SettingsPage() {
-  const { domain } = Route.useParams();
-  const user = { ...mockUser, lane: domain as Domain };
+  const user = { ...mockUser, lane: "student" as Domain };
   const navigate = useNavigate();
 
   async function handleLogout() {

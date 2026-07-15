@@ -11,8 +11,13 @@ import { supabase } from "@/utils/supabase";
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
-export const Route = createFileRoute("/dashboard/$domain")({
-  beforeLoad: async () => {
+export const Route = createFileRoute("/dashboard")({
+  beforeLoad: async ({ location }) => {
+    // If we're coming back from an OAuth provider, give Supabase a moment to parse the hash
+    if (location.hash.includes('access_token')) {
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       throw redirect({
@@ -24,8 +29,7 @@ export const Route = createFileRoute("/dashboard/$domain")({
 });
 
 function DashboardLayout() {
-  const { domain } = Route.useParams();
-  const user = { ...mockUser, lane: domain as Domain };
+  const user = { ...mockUser, lane: "student" as Domain };
   return (
     <div className="min-h-screen bg-surface text-foreground">
       <div className="mx-auto flex flex-col lg:grid lg:max-w-[1400px] lg:grid-cols-[240px_1fr]">
@@ -51,13 +55,13 @@ function Sidebar({ domain }: { domain: Domain }) {
   const path = location.pathname;
 
   const nav = [
-    { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard/$domain" },
-    { icon: BookOpen, label: "Guidance", to: "/dashboard/$domain/guidance" },
-    { icon: Users, label: "Mentors", to: "/dashboard/$domain/mentors" },
-    { icon: GradIcon, label: "Courses", to: "/dashboard/$domain/courses" },
-    { icon: Award, label: "Certificates", to: "/dashboard/$domain/certificates" },
-    { icon: Wallet, label: "Payments", to: "/dashboard/$domain/payments" },
-    { icon: Settings, label: "Settings", to: "/dashboard/$domain/settings" },
+    { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard" },
+    { icon: BookOpen, label: "Guidance", to: "/dashboard/guidance" },
+    { icon: Users, label: "Mentors", to: "/dashboard/mentors" },
+    { icon: GradIcon, label: "Courses", to: "/dashboard/courses" },
+    { icon: Award, label: "Certificates", to: "/dashboard/certificates" },
+    { icon: Wallet, label: "Payments", to: "/dashboard/payments" },
+    { icon: Settings, label: "Settings", to: "/dashboard/settings" },
   ];
 
   return (
@@ -72,12 +76,11 @@ function Sidebar({ domain }: { domain: Domain }) {
       </div>
       <nav className="flex flex-col gap-0.5 text-sm">
         {nav.map((n) => {
-          const active = path.includes(n.to.replace('/$domain', `/${domain}`)) || (n.to === "/dashboard/$domain" && path === `/dashboard/${domain}`);
+          const active = path.includes(n.to) && n.to !== "/dashboard" || (n.to === "/dashboard" && path === "/dashboard");
           return (
             <Link
               key={n.label}
               to={n.to}
-              params={{ domain }}
               className={`flex items-center gap-3 rounded-md px-3 py-2 text-left transition ${
                 active ? "bg-background text-foreground" : "text-muted-foreground hover:bg-background hover:text-foreground"
               }`}
@@ -106,21 +109,20 @@ function MobileNav({ domain }: { domain: Domain }) {
   const path = location.pathname;
 
   const nav = [
-    { icon: LayoutDashboard, label: "Home", to: "/dashboard/$domain" },
-    { icon: BookOpen, label: "Guidance", to: "/dashboard/$domain/guidance" },
-    { icon: Users, label: "Mentors", to: "/dashboard/$domain/mentors" },
-    { icon: GradIcon, label: "Courses", to: "/dashboard/$domain/courses" },
+    { icon: LayoutDashboard, label: "Home", to: "/dashboard" },
+    { icon: BookOpen, label: "Guidance", to: "/dashboard/guidance" },
+    { icon: Users, label: "Mentors", to: "/dashboard/mentors" },
+    { icon: GradIcon, label: "Courses", to: "/dashboard/courses" },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
       {nav.map((n) => {
-        const active = path.includes(n.to.replace('/$domain', `/${domain}`)) || (n.to === "/dashboard/$domain" && path === `/dashboard/${domain}`);
+        const active = path.includes(n.to) && n.to !== "/dashboard" || (n.to === "/dashboard" && path === "/dashboard");
         return (
           <Link
             key={n.label}
             to={n.to}
-            params={{ domain }}
             className={`flex flex-col items-center gap-1.5 text-[10px] font-medium transition ${
               active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
@@ -163,25 +165,9 @@ function TopBar({ user, currentDomain }: { user: any; currentDomain: Domain }) {
           <span className="sm:hidden">{d.label}</span>
         </div>
         
-        <div className="hidden text-xs text-muted-foreground md:block ml-4">Switch lane (preview):</div>
-        <div className="hidden gap-1 md:flex">
-          {(Object.keys(DOMAINS) as Domain[]).map((id) => {
-            const I = icons[id as keyof typeof icons];
-            const active = id === currentDomain;
-            return (
-              <Link
-                key={id}
-                to="/dashboard/$domain"
-                params={{ domain: id }}
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition ${
-                  active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-accent"
-                }`}
-              >
-                <I className="h-3 w-3" />
-                {DOMAINS[id].label}
-              </Link>
-            );
-          })}
+        <div className="hidden items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs text-muted-foreground md:flex">
+          <span className="h-2 w-2 rounded-full bg-student"></span>
+          Student Area
         </div>
       </div>
       <div className="flex items-center gap-2">

@@ -150,7 +150,7 @@ function Hero() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </motion.div>
             </Link>
-            <Link to="/dashboard/$domain" params={{ domain: "student" }} className="w-full sm:w-auto">
+            <Link to="/dashboard" className="w-full sm:w-auto">
               <motion.div
                 whileHover={{
                   borderColor: "hsl(var(--foreground))",

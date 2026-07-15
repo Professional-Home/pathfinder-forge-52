@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/utils/supabase";
 import { Plus, Pencil, Trash2, UserPlus, Users } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
 import { FilterDropdown } from "@/components/admin/FilterDropdown";
 import { AdminPagination, usePagination } from "@/components/admin/AdminPagination";
-import { StatusBadge } from "@/components/admin/StatusBadge";
 import { ConfirmationDialog } from "@/components/admin/ConfirmationDialog";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { AdminDataTable, AdminToolbar } from "@/components/admin/admin-shared";
@@ -34,12 +34,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  INITIAL_MENTORS,
-  INITIAL_COURSES,
-  type AdminMentor,
-  type MentorStatus,
-} from "@/lib/adminMockData";
+
+
+interface AdminMentor {
+  id: string;
+  name: string;
+  email: string;
+  expertise: string[];
+  experience: string;
+  avatar: string;
+  mentor_courses?: { course_id: string }[];
+}
 
 export const Route = createFileRoute("/admin/mentors")({
   component: AdminMentorsPage,
@@ -51,13 +56,12 @@ const emptyForm = {
   email: "",
   expertise: "",
   experience: "",
-  status: "active" as MentorStatus,
 };
 
 function AdminMentorsPage() {
-  const [mentors, setMentors] = useState<AdminMentor[]>(INITIAL_MENTORS);
+  const [mentors, setMentors] = useState<AdminMentor[]>([]);
+  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -68,16 +72,35 @@ function AdminMentorsPage() {
   const [form, setForm] = useState(emptyForm);
   const [selectedCourse, setSelectedCourse] = useState("");
 
+  useEffect(() => {
+    fetchMentors();
+    fetchCourses();
+  }, []);
+
+  async function fetchMentors() {
+    const { data, error } = await supabase
+      .from("mentors")
+      .select("*, mentor_courses(course_id)")
+      .order("created_at", { ascending: false });
+    if (error) console.error("Error fetching mentors:", error);
+    if (data) setMentors(data);
+  }
+
+  async function fetchCourses() {
+    const { data, error } = await supabase.from("courses").select("id, title");
+    if (error) console.error("Error fetching courses:", error);
+    if (data) setCourses(data);
+  }
+
   const filtered = useMemo(() => {
     return mentors.filter((m) => {
       const matchesSearch =
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.email.toLowerCase().includes(search.toLowerCase()) ||
-        m.expertise.some((e) => e.toLowerCase().includes(search.toLowerCase()));
-      const matchesStatus = statusFilter === "all" || m.status === statusFilter;
-      return matchesSearch && matchesStatus;
+        (m.name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (m.email || "").toLowerCase().includes(search.toLowerCase()) ||
+        (m.expertise || []).some((e) => e.toLowerCase().includes(search.toLowerCase()));
+      return matchesSearch;
     });
-  }, [mentors, search, statusFilter]);
+  }, [mentors, search]);
 
   const { paginatedItems, totalPages } = usePagination(filtered, PAGE_SIZE, currentPage);
 
@@ -90,38 +113,33 @@ function AdminMentorsPage() {
   function openEdit(mentor: AdminMentor) {
     setEditingId(mentor.id);
     setForm({
-      name: mentor.name,
-      email: mentor.email,
-      expertise: mentor.expertise.join(", "),
-      experience: mentor.experience,
-      status: mentor.status,
+      name: mentor.name || "",
+      email: mentor.email || "",
+      expertise: mentor.expertise ? mentor.expertise.join(", ") : "",
+      experience: mentor.experience || "",
     });
     setDialogOpen(true);
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.name.trim() || !form.email.trim()) return;
     const expertise = form.expertise.split(",").map((e) => e.trim()).filter(Boolean);
+    const payload = {
+      name: form.name,
+      email: form.email,
+      expertise,
+      experience: form.experience,
+      avatar: form.name.charAt(0).toUpperCase(),
+    };
+
     if (editingId) {
-      setMentors((prev) =>
-        prev.map((m) =>
-          m.id === editingId
-            ? { ...m, ...form, expertise, avatar: form.name.charAt(0).toUpperCase() }
-            : m,
-        ),
-      );
+      const { error } = await supabase.from("mentors").update(payload).eq("id", editingId);
+      if (error) console.error("Error updating mentor:", error);
+      if (!error) fetchMentors();
     } else {
-      const newMentor: AdminMentor = {
-        id: `m${Date.now()}`,
-        name: form.name,
-        email: form.email,
-        expertise,
-        experience: form.experience,
-        status: form.status,
-        coursesAssigned: [],
-        avatar: form.name.charAt(0).toUpperCase(),
-      };
-      setMentors((prev) => [newMentor, ...prev]);
+      const { error } = await supabase.from("mentors").insert(payload);
+      if (error) console.error("Error inserting mentor:", error);
+      if (!error) fetchMentors();
     }
     setDialogOpen(false);
     setForm(emptyForm);
@@ -134,29 +152,28 @@ function AdminMentorsPage() {
     setAssignOpen(true);
   }
 
-  function handleAssign() {
+  async function handleAssign() {
     if (!assigningId || !selectedCourse) return;
-    setMentors((prev) =>
-      prev.map((m) =>
-        m.id === assigningId && !m.coursesAssigned.includes(selectedCourse)
-          ? { ...m, coursesAssigned: [...m.coursesAssigned, selectedCourse] }
-          : m,
-      ),
-    );
+    const { error } = await supabase.from("mentor_courses").insert({
+      mentor_id: assigningId,
+      course_id: selectedCourse,
+    });
+    if (error) console.error("Error assigning course:", error);
+    if (!error) fetchMentors();
     setAssignOpen(false);
     setAssigningId(null);
     setSelectedCourse("");
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (deletingId) {
-      setMentors((prev) => prev.filter((m) => m.id !== deletingId));
+      const { error } = await supabase.from("mentors").delete().eq("id", deletingId);
+      if (error) console.error("Error deleting mentor:", error);
+      if (!error) fetchMentors();
       setDeletingId(null);
     }
     setDeleteOpen(false);
   }
-
-  const availableCourses = INITIAL_COURSES.map((c) => c.title);
 
   return (
     <>
@@ -180,15 +197,6 @@ function AdminMentorsPage() {
           onChange={(v) => { setSearch(v); setCurrentPage(1); }}
           placeholder="Search mentors..."
         />
-        <FilterDropdown
-          value={statusFilter}
-          onChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}
-          options={[
-            { label: "All Status", value: "all" },
-            { label: "Active", value: "active" },
-            { label: "Inactive", value: "inactive" },
-          ]}
-        />
       </AdminToolbar>
 
       {filtered.length === 0 ? (
@@ -209,7 +217,6 @@ function AdminMentorsPage() {
                   <TableHead className="hidden md:table-cell">Expertise</TableHead>
                   <TableHead className="hidden lg:table-cell">Experience</TableHead>
                   <TableHead className="hidden sm:table-cell">Courses</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -229,7 +236,7 @@ function AdminMentorsPage() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="flex flex-wrap gap-1">
-                        {mentor.expertise.slice(0, 2).map((e) => (
+                        {(mentor.expertise || []).slice(0, 2).map((e) => (
                           <span
                             key={e}
                             className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px]"
@@ -237,9 +244,9 @@ function AdminMentorsPage() {
                             {e}
                           </span>
                         ))}
-                        {mentor.expertise.length > 2 && (
+                        {(mentor.expertise || []).length > 2 && (
                           <span className="text-[10px] text-muted-foreground">
-                            +{mentor.expertise.length - 2}
+                            +{(mentor.expertise || []).length - 2}
                           </span>
                         )}
                       </div>
@@ -248,10 +255,7 @@ function AdminMentorsPage() {
                       {mentor.experience}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-sm">
-                      {mentor.coursesAssigned.length || "—"}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={mentor.status} />
+                      {(mentor.mentor_courses || []).length || "—"}
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
@@ -336,21 +340,6 @@ function AdminMentorsPage() {
                 className="border-border"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select
-                value={form.status}
-                onValueChange={(v) => setForm({ ...form, status: v as MentorStatus })}
-              >
-                <SelectTrigger className="border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
@@ -374,8 +363,8 @@ function AdminMentorsPage() {
                   <SelectValue placeholder="Choose a course" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableCourses.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  {courses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

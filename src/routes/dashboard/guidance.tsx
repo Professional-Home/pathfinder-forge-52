@@ -4,7 +4,7 @@ import { mockUser } from "@/lib/mockUser";
 import { type Domain } from "@/lib/domain";
 import { Card } from "@/components/dashboard-shared";
 
-export const Route = createFileRoute("/dashboard/$domain/guidance")({
+export const Route = createFileRoute("/dashboard/guidance")({
   component: GuidancePage,
 });
 
@@ -49,8 +49,7 @@ function GuideCard({ guide, isRead, isBookmarked }: { guide: any, isRead: boolea
 }
 
 function GuidancePage() {
-  const { domain } = Route.useParams();
-  const user = { ...mockUser, lane: domain as Domain };
+  const user = { ...mockUser, lane: "student" as Domain };
   
   // 1. For You
   const forYouGuides = GUIDES.filter(g => g.relevantLanes.includes(user.lane) && !user.readHistory.includes(g.id)).slice(0, 3);

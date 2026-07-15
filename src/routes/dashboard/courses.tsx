@@ -5,35 +5,32 @@ import { supabase } from "../../utils/supabase";
 import { useQuery } from "@tanstack/react-query";
 
 interface Course {
-  course_id: number;
-  course_name: string | null;
-  course_description: string | null;
-  course_duration: string | null;
-  course_fee: number | null;
-  domain: string | null;
-  title: string | null;
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  duration: string;
+  thumbnail: string;
 }
 
-export const Route = createFileRoute("/dashboard/$domain/courses")({
+export const Route = createFileRoute("/dashboard/courses")({
   component: CoursesPage,
 });
 
 function CoursesPage() {
-  const { domain } = Route.useParams();
-  const isValidDomain = isDomain(domain);
+  const domain = "all";
+  const isValidDomain = true;
 
   const { data: courses = [], isLoading: loading, isError, error } = useQuery({
-    queryKey: ["courses", domain],
+    queryKey: ["courses"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("course")
-        .select("*")
-        .eq("domain", domain);
+        .from("courses")
+        .select("*");
 
       if (error) throw error;
       return (data || []) as Course[];
     },
-    enabled: isValidDomain, // don't query for garbage domain params
     staleTime: 1000 * 60 * 15,
   });
 
@@ -76,33 +73,28 @@ function CoursesPage() {
           <div className="mb-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">Available Courses</div>
           <div className="grid gap-4 md:grid-cols-2">
             {courses.map(course => (
-              <div key={course.course_id} className="flex flex-col justify-between rounded-xl border border-border bg-background p-6 hover:border-foreground/20 transition-colors">
+              <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background p-6 hover:border-foreground/20 transition-colors">
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="inline-flex rounded bg-surface px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {course.title}
+                      {course.category}
                     </div>
-                    {course.course_fee !== null && course.course_fee !== undefined && (
-                      <div className="font-mono text-xl">
-                        {course.course_fee === 0 ? "Free" : `₹${course.course_fee}`}
-                      </div>
-                    )}
                   </div>
-                  <h3 className="mt-4 font-display text-2xl">{course.course_name || course.title}</h3>
+                  <h3 className="mt-4 font-display text-2xl">{course.title}</h3>
                   <div className="mt-1 text-sm text-muted-foreground">
-                    {course.course_duration ? `${course.course_duration}` : "Self-paced"}
+                    {course.duration ? `${course.duration}` : "Self-paced"}
                   </div>
-                  {course.course_description && (
+                  {course.description && (
                     <p className="mt-4 text-sm text-muted-foreground line-clamp-2">
-                      {course.course_description}
+                      {course.description}
                     </p>
                   )}
                 </div>
 
                 <div className="mt-8 border-t border-border pt-4">
                   <Link
-                    to="/dashboard/$domain/enroll/$courseId"
-                    params={{ domain, courseId: String(course.course_id) }}
+                    to="/dashboard/enroll/$courseId"
+                    params={{ courseId: String(course.id) }}
                     className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 transition"
                   >
                     <Play className="h-3.5 w-3.5" /> Start learning

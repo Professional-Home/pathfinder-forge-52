@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, GraduationCap, Rocket, Microscope, Sparkl
 import { Wordmark } from "@/components/brand";
 import { DOMAINS, type Domain } from "@/lib/domain";
 import { supabase } from "@/utils/supabase";
+import { getCookie, setCookie } from "@/lib/cookies";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -265,10 +266,10 @@ function Onboarding() {
 
     // Redirect to dashboard if onboarding is already completed
     try {
-      const profile = localStorage.getItem("mf_profile");
+      const profile = getCookie("mf_profile");
       if (profile) {
         const { domain } = JSON.parse(profile);
-        navigate({ to: "/dashboard/$domain", params: { domain: domain || "student" } });
+        navigate({ to: "/dashboard" });
       }
     } catch { }
   }, []);
@@ -276,16 +277,16 @@ function Onboarding() {
   // resume
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("mf_answers");
-      const s = localStorage.getItem("mf_step");
+      const raw = getCookie("mf_answers");
+      const s = getCookie("mf_step");
       if (raw) setAnswers(JSON.parse(raw));
       if (s) setStep(parseInt(s, 10) || 0);
     } catch { }
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem("mf_answers", JSON.stringify(answers));
-      localStorage.setItem("mf_step", String(step));
+      setCookie("mf_answers", JSON.stringify(answers));
+      setCookie("mf_step", String(step));
     } catch { }
   }, [answers, step]);
 
@@ -317,11 +318,10 @@ function Onboarding() {
   function finish() {
     setBuilding(true);
     try {
-      localStorage.setItem("mf_profile", JSON.stringify({ ...answers, completed_at: Date.now() }));
+      setCookie("mf_profile", JSON.stringify({ ...answers, completed_at: Date.now() }));
     } catch { }
     setTimeout(() => {
-      const d = (answers.domain as Domain) || "student";
-      navigate({ to: "/dashboard/$domain", params: { domain: d } });
+      navigate({ to: "/dashboard" });
     }, 2200);
   }
 

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   BookOpen,
   Users,
@@ -20,11 +21,10 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   DASHBOARD_STATS,
   ENROLLMENT_CHART_DATA,
-  INITIAL_COURSES,
-  INITIAL_ENROLLMENTS,
   INITIAL_SESSIONS,
 } from "@/lib/adminMockData";
 import { getAdminUser } from "@/lib/adminAuth";
+import { supabase } from "@/utils/supabase";
 
 export const Route = createFileRoute("/admin/dashboard")({
   component: AdminDashboardPage,
@@ -43,9 +43,37 @@ const quickActions = [
 
 function AdminDashboardPage() {
   const user = getAdminUser();
-  const recentEnrollments = INITIAL_ENROLLMENTS.slice(0, 4);
-  const latestCourses = INITIAL_COURSES.slice(0, 3);
   const upcomingSessions = INITIAL_SESSIONS.filter((s) => s.status === "upcoming").slice(0, 3);
+
+  const [userCount, setUserCount] = useState<number>(0);
+  const [googleCount, setGoogleCount] = useState<number>(0);
+  const [coursesCount, setCoursesCount] = useState<number>(0);
+  const [mentorsCount, setMentorsCount] = useState<number>(0);
+  const [recentEnrollments, setRecentEnrollments] = useState<any[]>([]);
+  const [latestCourses, setLatestCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      const [userRes, googleRes, courseRes, mentorRes, enrollmentsRes, latestCoursesRes] = await Promise.all([
+        supabase.from("users").select("*", { count: 'exact', head: true }),
+        supabase.rpc('get_google_user_count'),
+        supabase.from("courses").select("*", { count: 'exact', head: true }),
+        supabase.from("mentors").select("*", { count: 'exact', head: true }),
+        supabase.from("enrollments").select("*, courses(title)").order("enrollment_date", { ascending: false }).limit(4),
+        supabase.from("courses").select("*").order("created_at", { ascending: false }).limit(3)
+      ]);
+
+      if (!userRes.error) setUserCount(userRes.count || 0);
+      if (!googleRes.error) setGoogleCount(googleRes.data || 0);
+      if (!courseRes.error) setCoursesCount(courseRes.count || 0);
+      if (!mentorRes.error) setMentorsCount(mentorRes.count || 0);
+      if (enrollmentsRes.data) setRecentEnrollments(enrollmentsRes.data);
+      if (latestCoursesRes.data) setLatestCourses(latestCoursesRes.data);
+    }
+
+    fetchDashboardData();
+  }, []);
+
 
   return (
     <>
@@ -54,12 +82,12 @@ function AdminDashboardPage() {
         sub="Here's what's happening across courses, students, mentors, and guidance."
       />
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-        <DashboardCard title="Total Courses" value={DASHBOARD_STATS.totalCourses} icon={BookOpen} trend="+2 this month" />
-        <DashboardCard title="Published" value={DASHBOARD_STATS.publishedCourses} icon={FileText} accent="researcher" />
-        <DashboardCard title="Draft Courses" value={DASHBOARD_STATS.draftCourses} icon={FileText} accent="startup" />
-        <DashboardCard title="Total Students" value={DASHBOARD_STATS.totalStudents.toLocaleString()} icon={GraduationCap} trend="+12% vs last month" />
-        <DashboardCard title="Total Mentors" value={DASHBOARD_STATS.totalMentors} icon={Users} accent="startup" />
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
+        <DashboardCard title="Total Courses" value={coursesCount.toString()} icon={BookOpen} trend="+2 this month" />
+        {/* //<DashboardCard title="Published" value={DASHBOARD_STATS.publishedCourses} icon={FileText} accent="researcher" />
+        <DashboardCard title="Draft Courses" value={DASHBOARD_STATS.draftCourses} icon={FileText} accent="startup" /> */}
+        <DashboardCard title="Total Students" value={(userCount + googleCount).toLocaleString()} icon={GraduationCap} trend="+12% vs last month" />
+        <DashboardCard title="Total Mentors" value={mentorsCount.toString()} icon={Users} accent="startup" />
         <DashboardCard title="Upcoming Sessions" value={DASHBOARD_STATS.upcomingSessions} icon={Calendar} accent="researcher" />
       </div>
 
@@ -102,9 +130,8 @@ function AdminDashboardPage() {
           {recentEnrollments.map((e) => (
             <AdminListRow
               key={e.id}
-              primary={e.studentName}
-              secondary={e.courseName}
-              trailing={<StatusBadge status={e.status} />}
+              primary={e.student_name}
+              secondary={e.courses?.title || "—"}
             />
           ))}
           <AdminLinkRow label="View all enrollments" to="/admin/enrollments" />
@@ -118,7 +145,6 @@ function AdminDashboardPage() {
                 <div className="truncate text-sm font-medium">{c.title}</div>
                 <div className="text-xs text-muted-foreground">{c.category} · {c.duration}</div>
               </div>
-              <StatusBadge status={c.status} />
             </div>
           ))}
           <AdminLinkRow label="Manage courses" to="/admin/courses" />

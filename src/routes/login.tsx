@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, GraduationCap, Rocket, Microscope, Sparkles } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
+import { getCookie } from "@/lib/cookies";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -38,21 +39,31 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hashError = hashParams.get("error");
+      const errorDescription = hashParams.get("error_description");
+      if (hashError || errorDescription) {
+        setError(errorDescription?.replace(/\+/g, " ") || hashError || "Authentication failed");
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+  }, []);
+
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
+    setError("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/onboarding`,
+        redirectTo: `${window.location.origin}/dashboard`,
       }
-    })
+    });
+
     if (error) {
       setError(error.message);
-    } else {
-      setTimeout(() => {
-        setGoogleLoading(false);
-        navigate({ to: "/onboarding" });
-      }, 2000);
+      setGoogleLoading(false);
     }
   }
 
@@ -67,22 +78,16 @@ function LoginPage() {
       email,
       password,
     });
+
     if (error) {
       setError(error.message);
+      setLoading(false);
+      return;
     }
 
     setError("");
     setLoading(false);
-    // Simulate auth — replace with real Supabase auth
-    setTimeout(() => {
-      const profile = localStorage.getItem("mf_profile");
-      if (profile) {
-        const { domain } = JSON.parse(profile);
-        navigate({ to: "/dashboard/$domain", params: { domain: domain || "student" } });
-      } else {
-        navigate({ to: "/onboarding" });
-      }
-    }, 1600);
+    navigate({ to: "/dashboard" });
   }
 
   const orbs = [

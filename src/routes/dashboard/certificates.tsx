@@ -1,14 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Award, Download } from "lucide-react";
-import { mockUser } from "@/lib/mockUser";
+import { mockUser, type Lane } from "@/lib/mockUser";
 
-export const Route = createFileRoute("/dashboard/$domain/certificates")({
+export const Route = createFileRoute("/dashboard/certificates")({
   component: CertificatesPage,
 });
 
 function CertificatesPage() {
-  const { domain } = Route.useParams();
-  const user = { ...mockUser, lane: domain as Domain };
+  const user = { ...mockUser, lane: "student" as Lane };
 
   return (
     <div className="space-y-12">

@@ -157,13 +157,12 @@ export function SiteHeader() {
               {session ? (
                 <>
                   <Link
-                    to="/dashboard/$domain"
-                    params={{ domain: "student" }}
+                    to="/dashboard"
                     className="hidden text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline"
                   >
                     Dashboard
                   </Link>
-                  <Link to="/dashboard/$domain" params={{ domain: "student" }}>
+                  <Link to="/dashboard">
                     <div className="grid h-7 w-7 place-items-center overflow-hidden rounded-full border border-border bg-foreground/90 text-xs font-medium text-background transition-transform hover:scale-105 sm:h-8 sm:w-8 sm:text-sm">
                       {session.user?.user_metadata?.avatar_url ? (
                         <img
@@ -295,8 +294,7 @@ export function SiteHeader() {
 
                 {session && (
                   <Link
-                    to="/dashboard/$domain"
-                    params={{ domain: "student" }}
+                    to="/dashboard"
                     onClick={() => setMenuOpen(false)}
                     className="mt-10 inline-flex items-center justify-center rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background"
                   >

@@ -4,13 +4,12 @@ import { mockUser, type User } from "@/lib/mockUser";
 import { type Domain } from "@/lib/domain";
 import { Card, Greeting, MentorRow, GuidanceRow } from "@/components/dashboard-shared";
 
-export const Route = createFileRoute("/dashboard/$domain/")({
+export const Route = createFileRoute("/dashboard/")({
   component: DashboardOverview,
 });
 
 function DashboardOverview() {
-  const { domain } = Route.useParams();
-  const user = { ...mockUser, lane: domain as Domain };
+  const user = { ...mockUser, lane: "student" as Domain };
   return (
     <>
       <Greeting 
