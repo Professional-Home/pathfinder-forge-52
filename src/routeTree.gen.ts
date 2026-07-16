@@ -28,6 +28,7 @@ import { Route as DashboardMentorsRouteImport } from './routes/dashboard/mentors
 import { Route as DashboardGuidanceRouteImport } from './routes/dashboard/guidance'
 import { Route as DashboardCoursesRouteImport } from './routes/dashboard/courses'
 import { Route as DashboardCertificatesRouteImport } from './routes/dashboard/certificates'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminGuidanceRouteImport } from './routes/admin/guidance'
@@ -131,6 +132,11 @@ const DashboardCertificatesRoute = DashboardCertificatesRouteImport.update({
   path: '/certificates',
   getParentRoute: () => DashboardRoute,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMentorsRoute = AdminMentorsRouteImport.update({
   id: '/mentors',
   path: '/mentors',
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
   '/dashboard/guidance': typeof DashboardGuidanceRoute
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
   '/dashboard/guidance': typeof DashboardGuidanceRoute
@@ -242,6 +250,7 @@ export interface FileRoutesById {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
   '/dashboard/guidance': typeof DashboardGuidanceRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/auth/callback'
     | '/dashboard/certificates'
     | '/dashboard/courses'
     | '/dashboard/guidance'
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/auth/callback'
     | '/dashboard/certificates'
     | '/dashboard/courses'
     | '/dashboard/guidance'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/auth/callback'
     | '/dashboard/certificates'
     | '/dashboard/courses'
     | '/dashboard/guidance'
@@ -350,6 +362,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   ReturnPolicyRoute: typeof ReturnPolicyRoute
   SignupRoute: typeof SignupRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -487,6 +500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardCertificatesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/mentors': {
       id: '/admin/mentors'
       path: '/mentors'
@@ -598,6 +618,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   ReturnPolicyRoute: ReturnPolicyRoute,
   SignupRoute: SignupRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

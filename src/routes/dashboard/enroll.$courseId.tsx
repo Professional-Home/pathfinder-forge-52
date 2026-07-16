@@ -32,9 +32,9 @@ function CourseEnrollmentPage() {
   });
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone_no: "",
+    student_name: "",
+    student_email: "",
+    student_number: "",
   });
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -50,45 +50,15 @@ function CourseEnrollmentPage() {
     setErrorMsg("");
 
     try {
-      // Step 1: Check if the user already exists by email
-      const { data: existingUser, error: lookupError } = await supabase
-        .from("users")
-        .select("user_id")
-        .eq("email", formData.email)
-        .maybeSingle();
-
-      if (lookupError) throw lookupError;
-
-      let userId: number;
-
-      if (existingUser) {
-        // User already exists — reuse their id
-        userId = existingUser.user_id;
-      } else {
-        // Step 2a: Create a new user
-        const { data: newUser, error: userError } = await supabase
-          .from("users")
-          .insert({
-            name: formData.name,
-            email: formData.email,
-            phone_no: formData.phone_no || null,
-          })
-          .select("user_id")
-          .single();
-
-        console.log(newUser)
-
-        if (userError) throw userError;
-        userId = newUser.user_id;
-      }
-
-      // Step 3: Create enrollment (upsert guards against duplicate enrollments)
+      // Insert directly into enrollments_users table
       const { error: enrollError } = await supabase
-        .from("enrollments")
+        .from("enrollments_users")
         .insert({
-          user_id: userId,
-          course_id: Number(courseId),
-          status: "Active",
+          student_name: formData.student_name,
+          student_email: formData.student_email,
+          student_number: formData.student_number ? Number(formData.student_number) : null,
+          course_id: courseId,
+          enrollment_date: new Date().toISOString(),
         });
 
       // Ignore unique-constraint violation (user already enrolled)
@@ -139,12 +109,12 @@ function CourseEnrollmentPage() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="student_name">Full Name</Label>
               <Input
-                id="name"
-                name="name"
+                id="student_name"
+                name="student_name"
                 placeholder="John Doe"
-                value={formData.name}
+                value={formData.student_name}
                 onChange={handleChange}
                 disabled={submitState === "loading"}
                 required
@@ -152,13 +122,13 @@ function CourseEnrollmentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="student_email">Email Address</Label>
               <Input
-                id="email"
-                name="email"
+                id="student_email"
+                name="student_email"
                 type="email"
                 placeholder="john@example.com"
-                value={formData.email}
+                value={formData.student_email}
                 onChange={handleChange}
                 disabled={submitState === "loading"}
                 required
@@ -166,13 +136,13 @@ function CourseEnrollmentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone_no">Phone Number</Label>
+              <Label htmlFor="student_number">Student Number</Label>
               <Input
-                id="phone_no"
-                name="phone_no"
-                type="tel"
-                placeholder="+1 234 567 8900"
-                value={formData.phone_no}
+                id="student_number"
+                name="student_number"
+                type="number"
+                placeholder="e.g. 12345"
+                value={formData.student_number}
                 onChange={handleChange}
                 disabled={submitState === "loading"}
               />

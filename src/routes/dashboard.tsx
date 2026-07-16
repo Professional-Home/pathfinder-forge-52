@@ -13,16 +13,22 @@ import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ location }) => {
-    // If we're coming back from an OAuth provider, give Supabase a moment to parse the hash
-    if (location.hash.includes('access_token')) {
-      return;
+    // OAuth callback: Supabase appends #access_token=... to the redirect URL.
+    // We wait briefly for the Supabase client to auto-exchange the token,
+    // then do a clean redirect so the hash never appears in the final URL.
+    if (location.hash?.includes('access_token')) {
+      await new Promise((r) => setTimeout(r, 400));
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Throw a clean redirect — TanStack Router navigates without the hash
+        throw redirect({ to: '/dashboard', replace: true });
+      }
+      // Rare: token invalid — fall through to login redirect below
     }
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      throw redirect({
-        to: '/login',
-      });
+      throw redirect({ to: '/login' });
     }
   },
   component: DashboardLayout,
@@ -30,6 +36,7 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardLayout() {
   const user = { ...mockUser, lane: "student" as Domain };
+
   return (
     <div className="min-h-screen bg-surface text-foreground">
       <div className="mx-auto flex flex-col lg:grid lg:max-w-[1400px] lg:grid-cols-[240px_1fr]">

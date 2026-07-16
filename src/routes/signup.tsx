@@ -33,14 +33,20 @@ type DomainPick = "student" | "startup" | "researcher" | null;
 
 function SignupPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<"form" | "domain">("form");
+  const [step, setStep] = useState<"form" | "otp" | "domain">("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [college, setCollege] = useState("");
+  const [degree, setDegree] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [domainPick, setDomainPick] = useState<DomainPick>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
@@ -84,16 +90,94 @@ function SignupPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: name,
+          mobile,
+          college,
+          degree,
+        }
+      }
     });
+
+    // Supabase silently "succeeds" for already-registered but unconfirmed emails
+    // — identities will be an empty array in that case. Detect and resend OTP.
+    const alreadyRegistered =
+      !error &&
+      data.user &&
+      Array.isArray(data.user.identities) &&
+      data.user.identities.length === 0;
+
+    if (alreadyRegistered) {
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email,
+      });
+      setLoading(false);
+      if (resendError) {
+        // Rate-limit or other resend error
+        setError(resendError.message.includes("rate")
+          ? "Please wait 60 seconds before requesting another code."
+          : resendError.message);
+      } else {
+        setStep("otp");
+      }
+      return;
+    }
 
     setLoading(false);
 
     if (error) {
       setError(error.message);
     } else if (!data.session) {
-      setError("Success! Please check your email to confirm your account.");
+      setStep("otp");
     } else {
-      navigate({ to: "/dashboard" });
+      setStep("domain");
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: "signup",
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setStep("domain");
+    }
+  }
+
+  async function handleResendOtp() {
+    if (resendCooldown > 0 || resendLoading) return;
+    setResendLoading(true);
+    setError("");
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+    setResendLoading(false);
+    if (resendError) {
+      setError(resendError.message.includes("rate")
+        ? "Please wait 60 seconds before requesting another code."
+        : resendError.message);
+    } else {
+      // Start 60s cooldown
+      setResendCooldown(60);
+      const timer = setInterval(() => {
+        setResendCooldown((s) => {
+          if (s <= 1) { clearInterval(timer); return 0; }
+          return s - 1;
+        });
+      }, 1000);
     }
   }
 
@@ -209,7 +293,7 @@ function SignupPage() {
         <div className="h-0.5 w-full bg-border">
           <motion.div
             className="h-full bg-foreground"
-            animate={{ width: step === "form" ? "50%" : "100%" }}
+            animate={{ width: step === "form" ? "33%" : step === "otp" ? "66%" : "100%" }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           />
         </div>
@@ -239,7 +323,7 @@ function SignupPage() {
                 >
                   <Sparkles className="h-3 w-3" />
                 </motion.div>
-                Step 1 of 2 — Account details
+                Step 1 of 3 — Account details
               </motion.div>
 
               <h1 className="font-display text-4xl">
@@ -254,7 +338,7 @@ function SignupPage() {
                 {/* Name */}
                 <div className="space-y-1.5">
                   <label htmlFor="signup-name" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                    First name
+                    Full Name *
                   </label>
                   <motion.div
                     className="overflow-hidden rounded-xl border bg-surface-elevated"
@@ -267,8 +351,9 @@ function SignupPage() {
                       onChange={(e) => setName(e.target.value)}
                       onFocus={() => setFocusedField("name")}
                       onBlur={() => setFocusedField(null)}
-                      placeholder="Alex"
-                      autoComplete="given-name"
+                      placeholder="Alex Doe"
+                      autoComplete="name"
+                      required
                       className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
                     />
                   </motion.div>
@@ -277,7 +362,7 @@ function SignupPage() {
                 {/* Email */}
                 <div className="space-y-1.5">
                   <label htmlFor="signup-email" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                    Email
+                    Email Address *
                   </label>
                   <motion.div
                     className="overflow-hidden rounded-xl border bg-surface-elevated"
@@ -292,6 +377,76 @@ function SignupPage() {
                       onBlur={() => setFocusedField(null)}
                       placeholder="you@example.com"
                       autoComplete="email"
+                      required
+                      className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
+                    />
+                  </motion.div>
+                </div>
+
+                {/* Mobile */}
+                <div className="space-y-1.5">
+                  <label htmlFor="signup-mobile" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                    Mobile Number (WhatsApp) *
+                  </label>
+                  <motion.div
+                    className="overflow-hidden rounded-xl border bg-surface-elevated"
+                    style={{ boxShadow: focusedField === "mobile" ? "0 0 0 3px oklch(0.55 0.15 255 / 0.1)" : "none" }}
+                  >
+                    <input
+                      id="signup-mobile"
+                      type="tel"
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value)}
+                      onFocus={() => setFocusedField("mobile")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="+1 234 567 8900"
+                      autoComplete="tel"
+                      required
+                      className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
+                    />
+                  </motion.div>
+                </div>
+
+                {/* College */}
+                <div className="space-y-1.5">
+                  <label htmlFor="signup-college" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                    College/University Name *
+                  </label>
+                  <motion.div
+                    className="overflow-hidden rounded-xl border bg-surface-elevated"
+                    style={{ boxShadow: focusedField === "college" ? "0 0 0 3px oklch(0.55 0.15 255 / 0.1)" : "none" }}
+                  >
+                    <input
+                      id="signup-college"
+                      type="text"
+                      value={college}
+                      onChange={(e) => setCollege(e.target.value)}
+                      onFocus={() => setFocusedField("college")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="Harvard University"
+                      required
+                      className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
+                    />
+                  </motion.div>
+                </div>
+
+                {/* Degree */}
+                <div className="space-y-1.5">
+                  <label htmlFor="signup-degree" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                    Degree
+                  </label>
+                  <motion.div
+                    className="overflow-hidden rounded-xl border bg-surface-elevated"
+                    style={{ boxShadow: focusedField === "degree" ? "0 0 0 3px oklch(0.55 0.15 255 / 0.1)" : "none" }}
+                  >
+                    <input
+                      id="signup-degree"
+                      type="text"
+                      value={degree}
+                      onChange={(e) => setDegree(e.target.value)}
+                      onFocus={() => setFocusedField("degree")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="B.Sc. Computer Science"
                       className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
                     />
                   </motion.div>
@@ -300,7 +455,7 @@ function SignupPage() {
                 {/* Password */}
                 <div className="space-y-1.5">
                   <label htmlFor="signup-password" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                    Password
+                    Password *
                   </label>
                   <motion.div
                     className="relative overflow-hidden rounded-xl border bg-surface-elevated"
@@ -315,6 +470,7 @@ function SignupPage() {
                       onBlur={() => setFocusedField(null)}
                       placeholder="Min. 8 characters"
                       autoComplete="new-password"
+                      required
                       className="w-full bg-transparent px-4 py-3.5 pr-12 text-sm outline-none placeholder:text-muted-foreground/50"
                     />
                     <button
@@ -435,6 +591,131 @@ function SignupPage() {
                 </p>
               </form>
             </motion.div>
+          ) : step === "otp" ? (
+            <motion.div
+              key="otp-step"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-sm"
+            >
+              {/* Badge */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface-elevated px-3 py-1 text-xs text-muted-foreground"
+              >
+                <Sparkles className="h-3 w-3" />
+                Step 2 of 3 — Verify email
+              </motion.div>
+
+              <h1 className="font-display text-4xl">
+                Check your<br />
+                <span className="italic text-muted-foreground">email.</span>
+              </h1>
+              <p className="mt-3 text-sm text-muted-foreground">
+                We've sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>. Enter it below to verify your account.
+              </p>
+
+              <form onSubmit={handleVerifyOtp} className="mt-8 space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="signup-otp" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                    Verification Code
+                  </label>
+                  <motion.div
+                    className="overflow-hidden rounded-xl border bg-surface-elevated"
+                    style={{ boxShadow: focusedField === "otp" ? "0 0 0 3px oklch(0.55 0.15 255 / 0.1)" : "none" }}
+                  >
+                    <input
+                      id="signup-otp"
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      onFocus={() => setFocusedField("otp")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="123456"
+                      required
+                      className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50 tracking-[0.5em] text-center font-mono"
+                      maxLength={6}
+                    />
+                  </motion.div>
+                </div>
+
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -6, height: 0 }}
+                      className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <motion.button
+                  type="submit"
+                  disabled={loading || otp.length < 6}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-50"
+                >
+                  <AnimatePresence mode="wait">
+                    {loading ? (
+                      <motion.span
+                        key="otp-loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center gap-2"
+                      >
+                        <motion.span
+                          className="inline-block h-4 w-4 rounded-full border-2 border-background/30 border-t-background"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                        />
+                        Verifying...
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="otp-idle"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center gap-2"
+                      >
+                        Verify <ArrowRight className="h-3.5 w-3.5" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={resendCooldown > 0 || resendLoading}
+                    className="text-xs text-foreground font-medium hover:opacity-70 transition disabled:opacity-40"
+                  >
+                    {resendLoading
+                      ? "Sending…"
+                      : resendCooldown > 0
+                      ? `Resend code in ${resendCooldown}s`
+                      : "Resend code"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep("form")}
+                    className="text-xs text-muted-foreground hover:text-foreground transition underline underline-offset-4"
+                  >
+                    Use a different email
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           ) : (
             <motion.div
               key="domain-step"
@@ -452,7 +733,7 @@ function SignupPage() {
                 className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface-elevated px-3 py-1 text-xs text-muted-foreground"
               >
                 <Sparkles className="h-3 w-3" />
-                Step 2 of 2 — Pick your lane
+                Step 3 of 3 — Pick your lane
               </motion.div>
 
               <h1 className="font-display text-4xl">
