@@ -53,7 +53,7 @@ function AdminEnrollmentsPage() {
 
   async function fetchEnrollments() {
     const { data } = await supabase
-      .from("enrollments")
+      .from("enrollments_users")
       .select("*, courses(title)")
       .order("enrollment_date", { ascending: false });
     if (data) setEnrollments(data);

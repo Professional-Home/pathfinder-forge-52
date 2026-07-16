@@ -14,6 +14,7 @@ export const adminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", shortLabel: "Home", to: "/admin/dashboard" },
   { icon: BookOpen, label: "Course Management", shortLabel: "Courses", to: "/admin/courses" },
   { icon: GraduationCap, label: "Course Enrollments", shortLabel: "Students", to: "/admin/enrollments" },
+  { icon: Users, label: "Users", shortLabel: "Users", to: "/admin/users" },
   { icon: Users, label: "Mentor Management", shortLabel: "Mentors", to: "/admin/mentors" },
   { icon: Calendar, label: "Guidance Management", shortLabel: "Guidance", to: "/admin/guidance" },
 ];

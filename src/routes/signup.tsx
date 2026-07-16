@@ -132,6 +132,12 @@ function SignupPage() {
     } else if (!data.session) {
       setStep("otp");
     } else {
+      // Direct signup with session (email confirmation disabled) — save user
+      await supabase.from("users").insert({
+        name,
+        email,
+        phone_no: mobile || null,
+      });
       setStep("domain");
     }
   }
@@ -152,6 +158,12 @@ function SignupPage() {
     if (error) {
       setError(error.message);
     } else {
+      // Save user to public users table
+      await supabase.from("users").insert({
+        name,
+        email,
+        phone_no: mobile || null,
+      });
       setStep("domain");
     }
   }

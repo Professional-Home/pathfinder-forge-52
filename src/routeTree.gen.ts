@@ -29,6 +29,7 @@ import { Route as DashboardGuidanceRouteImport } from './routes/dashboard/guidan
 import { Route as DashboardCoursesRouteImport } from './routes/dashboard/courses'
 import { Route as DashboardCertificatesRouteImport } from './routes/dashboard/certificates'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminGuidanceRouteImport } from './routes/admin/guidance'
@@ -137,6 +138,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMentorsRoute = AdminMentorsRouteImport.update({
   id: '/mentors',
   path: '/mentors',
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/users'
     | '/auth/callback'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/users'
     | '/auth/callback'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/users'
     | '/auth/callback'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -507,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/mentors': {
       id: '/admin/mentors'
       path: '/mentors'
@@ -566,6 +585,7 @@ interface AdminRouteChildren {
   AdminGuidanceRoute: typeof AdminGuidanceRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMentorsRoute: typeof AdminMentorsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -575,6 +595,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminGuidanceRoute: AdminGuidanceRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMentorsRoute: AdminMentorsRoute,
+  AdminUsersRoute: AdminUsersRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

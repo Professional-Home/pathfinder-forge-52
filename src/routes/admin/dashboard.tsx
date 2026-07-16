@@ -8,6 +8,8 @@ import {
   FileText,
   Plus,
   TrendingUp,
+  Mail,
+  UserPlus,
 } from "lucide-react";
 import { AdminGreeting, AdminCard, AdminListRow, AdminLinkRow } from "@/components/admin/admin-shared";
 import { DashboardCard } from "@/components/admin/DashboardCard";
@@ -51,16 +53,18 @@ function AdminDashboardPage() {
   const [mentorsCount, setMentorsCount] = useState<number>(0);
   const [recentEnrollments, setRecentEnrollments] = useState<any[]>([]);
   const [latestCourses, setLatestCourses] = useState<any[]>([]);
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchDashboardData() {
-      const [userRes, googleRes, courseRes, mentorRes, enrollmentsRes, latestCoursesRes] = await Promise.all([
+      const [userRes, googleRes, courseRes, mentorRes, enrollmentsRes, latestCoursesRes, newUsersRes] = await Promise.all([
         supabase.from("users").select("*", { count: 'exact', head: true }),
         supabase.rpc('get_google_user_count'),
         supabase.from("courses").select("*", { count: 'exact', head: true }),
         supabase.from("mentors").select("*", { count: 'exact', head: true }),
         supabase.from("enrollments").select("*, courses(title)").order("enrollment_date", { ascending: false }).limit(4),
-        supabase.from("courses").select("*").order("created_at", { ascending: false }).limit(3)
+        supabase.from("courses").select("*").order("created_at", { ascending: false }).limit(3),
+        supabase.rpc("get_all_users"),
       ]);
 
       if (!userRes.error) setUserCount(userRes.count || 0);
@@ -69,6 +73,7 @@ function AdminDashboardPage() {
       if (!mentorRes.error) setMentorsCount(mentorRes.count || 0);
       if (enrollmentsRes.data) setRecentEnrollments(enrollmentsRes.data);
       if (latestCoursesRes.data) setLatestCourses(latestCoursesRes.data);
+      if (newUsersRes.data) setRecentUsers(newUsersRes.data);
     }
 
     fetchDashboardData();
@@ -163,6 +168,39 @@ function AdminDashboardPage() {
             </div>
           ))}
           <AdminLinkRow label="Manage sessions" to="/admin/guidance" />
+        </AdminCard>
+      </div>
+
+      {/* New Users section */}
+      <div className="mt-8">
+        <AdminCard title="New Users" hint="Most recently registered">
+          {recentUsers.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">No users yet.</p>
+          ) : (
+            <div className="divide-y divide-border/60">
+              {recentUsers.slice(0, 5).map((u) => {
+                const initials = (u.full_name || u.email || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+                return (
+                  <div key={u.id} className="flex items-center gap-4 py-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-student/10 text-xs font-semibold text-student">
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{u.full_name || u.email || "—"}</div>
+                      <div className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        {u.email || "—"}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-[10px] text-muted-foreground">
+                      {u.provider === "google" ? "Google" : "Email"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <AdminLinkRow label="View all users" to="/admin/users" />
         </AdminCard>
       </div>
     </>

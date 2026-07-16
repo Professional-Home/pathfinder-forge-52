@@ -20,7 +20,28 @@ export const Route = createFileRoute("/dashboard")({
       await new Promise((r) => setTimeout(r, 400));
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Throw a clean redirect — TanStack Router navigates without the hash
+        const { user } = session;
+
+        // Save Google / OAuth user into public.users if not already present
+        if (user?.email) {
+          const { data: existing } = await supabase
+            .from('users')
+            .select('user_id')
+            .eq('email', user.email)
+            .maybeSingle();
+
+          if (!existing) {
+            await supabase.from('users').insert({
+              name: user.user_metadata?.full_name
+                || user.user_metadata?.name
+                || user.email.split('@')[0],
+              email: user.email,
+              phone_no: user.user_metadata?.phone ?? null,
+            });
+          }
+        }
+
+        // Clean redirect — TanStack Router navigates without the hash
         throw redirect({ to: '/dashboard', replace: true });
       }
       // Rare: token invalid — fall through to login redirect below
@@ -33,6 +54,7 @@ export const Route = createFileRoute("/dashboard")({
   },
   component: DashboardLayout,
 });
+
 
 function DashboardLayout() {
   const user = { ...mockUser, lane: "student" as Domain };
