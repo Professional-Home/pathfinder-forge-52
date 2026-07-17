@@ -21,18 +21,40 @@ function CoursesPage() {
   const domain = "all";
   const isValidDomain = true;
 
-  const { data: courses = [], isLoading: loading, isError, error } = useQuery({
+  const { data: coursesData, isLoading: loading, isError, error } = useQuery({
     queryKey: ["courses"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userEmail = user?.email;
+
       const { data, error } = await supabase
         .from("courses")
         .select("*");
 
       if (error) throw error;
-      return (data || []) as Course[];
+      
+      let enrolledIds: string[] = [];
+      if (userEmail) {
+        const { data: enrollments, error: enrollError } = await supabase
+          .from("enrollments_users")
+          .select("course_id")
+          .eq("student_email", userEmail);
+          
+        if (enrollments && !enrollError) {
+          enrolledIds = enrollments.map(e => e.course_id);
+        }
+      }
+
+      return {
+        courses: (data || []) as Course[],
+        enrolledIds
+      };
     },
     staleTime: 1000 * 60 * 15,
   });
+
+  const courses = coursesData?.courses || [];
+  const enrolledIds = coursesData?.enrolledIds || [];
 
   if (!isValidDomain) {
     return (
@@ -92,13 +114,19 @@ function CoursesPage() {
                 </div>
 
                 <div className="mt-8 border-t border-border pt-4">
-                  <Link
-                    to="/dashboard/enroll/$courseId"
-                    params={{ courseId: String(course.id) }}
-                    className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 transition"
-                  >
-                    <Play className="h-3.5 w-3.5" /> Start learning
-                  </Link>
+                  {enrolledIds.includes(String(course.id)) ? (
+                    <div className="inline-flex items-center gap-2 rounded-md bg-muted px-4 py-2 text-sm text-muted-foreground cursor-default">
+                      <BookOpen className="h-3.5 w-3.5" /> Enrolled
+                    </div>
+                  ) : (
+                    <Link
+                      to="/dashboard/enroll/$courseId"
+                      params={{ courseId: String(course.id) }}
+                      className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 transition"
+                    >
+                      <Play className="h-3.5 w-3.5" /> Start learning
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}

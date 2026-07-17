@@ -9,22 +9,45 @@ export const Route = createFileRoute("/dashboard/mentors")({
   component: MentorsPage,
 });
 
+import { Link } from "@tanstack/react-router";
+
 function MentorsPage() {
   const user = { ...mockUser, lane: "student" as Domain };
   
-  const { data: mentors = [], isLoading } = useQuery({
+  const { data: mentorsData, isLoading } = useQuery({
     queryKey: ["mentors"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("mentors").select("*");
+      const { data: { user } } = await supabase.auth.getUser();
+      const userEmail = user?.email;
+
+      const { data: mentors, error } = await supabase.from("mentors").select("*");
       if (error) throw error;
-      return data || [];
+      
+      let bookedIds: string[] = [];
+      if (userEmail) {
+        const { data: bookings, error: bookingError } = await supabase
+          .from("mentor_bookings")
+          .select("mentor_id")
+          .eq("student_email", userEmail);
+          
+        if (bookings && !bookingError) {
+          bookedIds = bookings.map(b => b.mentor_id);
+        }
+      }
+
+      return {
+        mentors: mentors || [],
+        bookedIds
+      };
     }
   });
 
-  const booked = user.bookedMentors.map(b => {
-    // Just mock booked for now or match by index
-    const mentor = mentors[0] || { name: "Elena T.", expertise: ["Design"], experience: "10 yrs" };
-    return { ...b, mentor };
+  const mentors = mentorsData?.mentors || [];
+  const bookedIds = mentorsData?.bookedIds || [];
+
+  const booked = bookedIds.map(id => {
+    const mentor = mentors.find(m => m.id === id);
+    return { date: "Thursday · 4:00 PM", mentor };
   }).filter(b => b.mentor);
 
   const available = mentors;
@@ -98,9 +121,19 @@ function MentorsPage() {
               
               <div className="flex flex-col gap-3 border-t border-border pt-4 md:items-end md:border-0 md:pt-0">
                 <div className="font-mono text-xl">Free<span className="text-sm text-muted-foreground">/session</span></div>
-                <button className="rounded-md bg-foreground px-6 py-2 text-sm font-medium text-background hover:opacity-90 transition">
-                  Book session
-                </button>
+                {bookedIds.includes(m.id) ? (
+                  <div className="inline-flex items-center gap-2 rounded-md bg-muted px-6 py-2 text-sm font-medium text-muted-foreground cursor-default">
+                    Enrolled
+                  </div>
+                ) : (
+                  <Link
+                    to="/dashboard/book/$mentorId"
+                    params={{ mentorId: String(m.id) }}
+                    className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-2 text-sm font-medium text-background hover:opacity-90 transition"
+                  >
+                    Book session
+                  </Link>
+                )}
               </div>
             </div>
           ))}

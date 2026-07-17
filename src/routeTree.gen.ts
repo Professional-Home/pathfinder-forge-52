@@ -37,6 +37,7 @@ import { Route as AdminEnrollmentsRouteImport } from './routes/admin/enrollments
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
 import { Route as DashboardEnrollCourseIdRouteImport } from './routes/dashboard/enroll.$courseId'
+import { Route as DashboardBookMentorIdRouteImport } from './routes/dashboard/book.$mentorId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -178,6 +179,11 @@ const DashboardEnrollCourseIdRoute = DashboardEnrollCourseIdRouteImport.update({
   path: '/enroll/$courseId',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardBookMentorIdRoute = DashboardBookMentorIdRouteImport.update({
+  id: '/book/$mentorId',
+  path: '/book/$mentorId',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
 }
 export interface FileRoutesByTo {
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
 }
 export interface FileRoutesById {
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
 }
 export interface FileRouteTypes {
@@ -299,6 +308,7 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/dashboard/'
+    | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/dashboard'
+    | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
   id:
     | '__root__'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/dashboard/'
+    | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
   fileRoutesById: FileRoutesById
 }
@@ -575,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardEnrollCourseIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/book/$mentorId': {
+      id: '/dashboard/book/$mentorId'
+      path: '/book/$mentorId'
+      fullPath: '/dashboard/book/$mentorId'
+      preLoaderRoute: typeof DashboardBookMentorIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
@@ -608,6 +627,7 @@ interface DashboardRouteChildren {
   DashboardPaymentsRoute: typeof DashboardPaymentsRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardBookMentorIdRoute: typeof DashboardBookMentorIdRoute
   DashboardEnrollCourseIdRoute: typeof DashboardEnrollCourseIdRoute
 }
 
@@ -619,6 +639,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardPaymentsRoute: DashboardPaymentsRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardBookMentorIdRoute: DashboardBookMentorIdRoute,
   DashboardEnrollCourseIdRoute: DashboardEnrollCourseIdRoute,
 }
 

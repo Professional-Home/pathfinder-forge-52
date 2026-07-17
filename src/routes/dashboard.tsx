@@ -10,6 +10,7 @@ import { Rocket, Microscope, GraduationCap as GradIcon2 } from "lucide-react";
 import { supabase } from "@/utils/supabase";
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async ({ location }) => {
@@ -57,7 +58,22 @@ export const Route = createFileRoute("/dashboard")({
 
 
 function DashboardLayout() {
-  const user = { ...mockUser, lane: "student" as Domain };
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from("profile").select("*").eq("id", user.id).single();
+      return data || { name: user.email?.split("@")[0] || "User", email: user.email };
+    }
+  });
+
+  const user = { 
+    ...mockUser, 
+    name: profile?.name || mockUser.name,
+    email: profile?.email || mockUser.email,
+    lane: "student" as Domain 
+  };
 
   return (
     <div className="min-h-screen bg-surface text-foreground">

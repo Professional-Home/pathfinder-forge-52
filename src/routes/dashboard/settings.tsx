@@ -3,14 +3,30 @@ import { User, Bell, Shield, LogOut } from "lucide-react";
 import { mockUser } from "@/lib/mockUser";
 import type { Domain } from "@/lib/domain";
 import { supabase } from "@/utils/supabase";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/dashboard/settings")({
   component: SettingsPage,
 });
 
+import { useState } from "react";
+
 function SettingsPage() {
-  const user = { ...mockUser, lane: "student" as Domain };
   const navigate = useNavigate();
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from("profile").select("*").eq("id", user.id).single();
+      return data || { name: user.email?.split("@")[0], email: user.email };
+    }
+  });
+
+  const user = { ...mockUser, lane: "student" as Domain };
 
   async function handleLogout() {
     const { error } = await supabase.auth.signOut();
@@ -21,6 +37,41 @@ function SettingsPage() {
       console.log('Successfully logged out');
       navigate({ to: '/' });
     }
+  }
+
+  async function handleSaveProfile(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    setSaveMessage("");
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+    const mobile = formData.get("mobile") as string;
+    const college = formData.get("college") as string;
+    const degree = formData.get("degree") as string;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Update profile table
+    await supabase.from("profile").update({
+      name,
+      mobile,
+      college,
+      degree
+    }).eq("id", user.id);
+
+    // Update users table
+    await supabase.from("users").update({
+      name,
+      phone_no: mobile
+    }).eq("id", user.id);
+
+    setSaving(false);
+    setSaveMessage("Profile updated successfully!");
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => setSaveMessage(""), 3000);
   }
 
   return (
@@ -47,14 +98,26 @@ function SettingsPage() {
               </div>
             </div>
 
-            <div className="grid gap-6 pt-6 md:grid-cols-2">
+            <form onSubmit={handleSaveProfile} className="grid gap-6 pt-6 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Full Name</label>
-                <input type="text" defaultValue={user.name} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-foreground focus:outline-none" />
+                <input name="name" type="text" defaultValue={profile?.name || user.name} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-foreground focus:outline-none" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Email Address</label>
-                <input type="email" defaultValue={user.email} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-foreground focus:outline-none" />
+                <input type="email" defaultValue={profile?.email || user.email} disabled className="w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground cursor-not-allowed" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Mobile Number</label>
+                <input name="mobile" type="tel" defaultValue={profile?.mobile || ""} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-foreground focus:outline-none" placeholder="+1 234 567 8900" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">College / University</label>
+                <input name="college" type="text" defaultValue={profile?.college || ""} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-foreground focus:outline-none" placeholder="University Name" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Degree</label>
+                <input name="degree" type="text" defaultValue={profile?.degree || ""} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-foreground focus:outline-none" placeholder="e.g. B.Sc. Computer Science" />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground">Default Lane</label>
@@ -65,12 +128,13 @@ function SettingsPage() {
                 </select>
                 <p className="text-[11px] text-muted-foreground mt-1">Changing your lane will completely reconfigure your learning path, mentors, and guidance feed.</p>
               </div>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button className="rounded-md bg-foreground px-4 py-2 text-xs font-medium text-background hover:opacity-90 transition">
-                Save changes
+            <div className="mt-6 flex items-center justify-end gap-4">
+              {saveMessage && <span className="text-xs font-medium text-green-600 dark:text-green-400">{saveMessage}</span>}
+              <button disabled={saving} className="rounded-md bg-foreground px-4 py-2 text-xs font-medium text-background hover:opacity-90 transition disabled:opacity-50">
+                {saving ? "Saving..." : "Save changes"}
               </button>
             </div>
+            </form>
           </div>
         </section>
 

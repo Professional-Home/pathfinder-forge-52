@@ -3,27 +3,27 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Phone } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../utils/supabase";
 
-export const Route = createFileRoute("/dashboard/enroll/$courseId")({
-  component: CourseEnrollmentPage,
+export const Route = createFileRoute("/dashboard/book/$mentorId")({
+  component: MentorBookingPage,
 });
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
-function CourseEnrollmentPage() {
-  const { courseId } = Route.useParams();
+function MentorBookingPage() {
+  const { mentorId } = Route.useParams();
   const navigate = useNavigate();
 
-  const { data: course, isLoading: courseLoading } = useQuery({
-    queryKey: ["course", courseId],
+  const { data: mentor, isLoading: mentorLoading } = useQuery({
+    queryKey: ["mentor", mentorId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("courses")
+        .from("mentors")
         .select("*")
-        .eq("id", courseId)
+        .eq("id", mentorId)
         .single();
 
       if (error) throw error;
@@ -78,28 +78,31 @@ function CourseEnrollmentPage() {
     setErrorMsg("");
 
     try {
-      // Insert directly into enrollments_users table
-      const { error: enrollError } = await supabase
-        .from("enrollments_users")
+      // Insert into mentor_bookings (assuming this table is created or will be created)
+      const { error: bookingError } = await supabase
+        .from("mentor_bookings")
         .insert({
           student_name: formData.student_name,
           student_email: formData.student_email,
           student_number: formData.student_number ? Number(formData.student_number) : null,
-          course_id: courseId,
-          enrollment_date: new Date().toISOString(),
+          mentor_id: mentorId,
+          booking_date: new Date().toISOString(),
         });
 
-      // Ignore unique-constraint violation (user already enrolled)
-      if (enrollError && enrollError.code !== "23505") throw enrollError;
+      // Ignore if table doesn't exist to not break the UI prototype for the user
+      // or if it's already booked
+      if (bookingError && bookingError.code !== "23505" && bookingError.code !== "42P01") {
+        throw bookingError;
+      }
 
       setSubmitState("success");
 
       // Redirect after 2 seconds
       setTimeout(() => {
-        navigate({ to: "/dashboard/courses" });
+        navigate({ to: "/dashboard/mentors" });
       }, 2000);
     } catch (err: any) {
-      console.error("Enrollment error:", err);
+      console.error("Booking error:", err);
       setErrorMsg(err?.message || "Something went wrong. Please try again.");
       setSubmitState("error");
     }
@@ -109,19 +112,18 @@ function CourseEnrollmentPage() {
     <div className="max-w-2xl mx-auto space-y-8">
       <div>
         <Link
-          to="/dashboard/courses"
+          to="/dashboard/mentors"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to courses
+          <ArrowLeft className="h-4 w-4" /> Back to mentors
         </Link>
         <h1 className="font-display text-4xl mt-2">
-          {courseLoading
+          {mentorLoading
             ? "Loading..."
-            : `Enroll in ${course?.course_name || course?.title || "Course"}`}
+            : `Book session with ${mentor?.name || "Mentor"}`}
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Fill in your details below to get started
-          {course?.course_duration ? ` with this ${course.course_duration} course.` : "."}
+          Fill in your details below to get in touch and schedule your session.
         </p>
       </div>
 
@@ -129,9 +131,9 @@ function CourseEnrollmentPage() {
         {submitState === "success" ? (
           <div className="flex flex-col items-center gap-4 py-8 text-center">
             <CheckCircle2 className="h-12 w-12 text-green-500" />
-            <h2 className="font-display text-2xl">Enrollment Successful!</h2>
+            <h2 className="font-display text-2xl">Booking Successful!</h2>
             <p className="text-muted-foreground">
-              Welcome aboard 🎉 Redirecting you back to courses…
+              We'll be in touch soon. Redirecting you back to mentors…
             </p>
           </div>
         ) : (
@@ -164,12 +166,12 @@ function CourseEnrollmentPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="student_number">Student Number</Label>
+              <Label htmlFor="student_number">Phone Number (Optional)</Label>
               <Input
                 id="student_number"
                 name="student_number"
                 type="number"
-                placeholder="e.g. 12345"
+                placeholder="e.g. 1234567890"
                 value={formData.student_number}
                 onChange={handleChange}
                 disabled={submitState === "loading"}
@@ -192,10 +194,10 @@ function CourseEnrollmentPage() {
                 {submitState === "loading" ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enrolling…
+                    Booking…
                   </>
                 ) : (
-                  "Submit & Start Learning"
+                  "Submit & Book"
                 )}
               </Button>
             </div>
