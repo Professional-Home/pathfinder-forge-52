@@ -40,6 +40,7 @@ function LoginPage() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   useEffect(() => {
+    // Handle error hashes
     if (window.location.hash) {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const hashError = hashParams.get("error");
@@ -49,7 +50,18 @@ function LoginPage() {
         window.history.replaceState(null, "", window.location.pathname);
       }
     }
-  }, []);
+
+    // Listen for Google Login success
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        navigate({ to: "/dashboard" });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
