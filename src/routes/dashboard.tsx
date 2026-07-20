@@ -136,15 +136,7 @@ function Sidebar({ domain }: { domain: Domain }) {
           );
         })}
       </nav>
-      <div className="mt-auto space-y-3 text-xs text-muted-foreground">
-        <div className="rounded-lg border border-border bg-surface-elevated p-3">
-          <div className="font-medium text-foreground">Re-take the quiz</div>
-          <div className="mt-1">Your goals shift. Your path can too.</div>
-          <Link to="/onboarding" className="mt-3 inline-flex items-center gap-1 text-foreground">
-            Update <ArrowRight className="h-3 w-3" />
-          </Link>
-        </div>
-      </div>
+      <div className="mt-auto" />
     </aside>
   );
 }

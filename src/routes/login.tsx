@@ -412,26 +412,7 @@ function LoginPage() {
                 </AnimatePresence>
               </motion.button>
 
-              {/* Divider */}
-              <div className="relative flex items-center gap-3 py-1">
-                <div className="flex-1 border-t border-border" />
-                <span className="text-xs text-muted-foreground">or sign in with email</span>
-                <div className="flex-1 border-t border-border" />
-              </div>
 
-              {/* Demo Login Button */}
-              <motion.button
-                type="button"
-                onClick={() => {
-                  setEmail("demo@example.com");
-                  setPassword("password123");
-                }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex w-full items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-background px-5 py-3.5 text-sm font-medium text-muted-foreground transition hover:text-foreground hover:border-border-strong"
-              >
-                Auto-fill Demo Credentials
-              </motion.button>
 
               {/* Sign up link */}
               <p className="text-center text-sm text-muted-foreground">
