@@ -101,11 +101,11 @@ function Sidebar({ domain }: { domain: Domain }) {
 
   const nav = [
     { icon: LayoutDashboard, label: "Dashboard", to: "/dashboard" },
-    { icon: BookOpen, label: "Guidance", to: "/dashboard/guidance" },
+    // { icon: BookOpen, label: "Guidance", to: "/dashboard/guidance" },
     { icon: Users, label: "Mentors", to: "/dashboard/mentors" },
     { icon: GradIcon, label: "Courses", to: "/dashboard/courses" },
     { icon: Award, label: "Certificates", to: "/dashboard/certificates" },
-    { icon: Wallet, label: "Payments", to: "/dashboard/payments" },
+    // { icon: Wallet, label: "Payments", to: "/dashboard/payments" },
     { icon: Settings, label: "Settings", to: "/dashboard/settings" },
   ];
 
@@ -155,20 +155,23 @@ function MobileNav({ domain }: { domain: Domain }) {
 
   const nav = [
     { icon: LayoutDashboard, label: "Home", to: "/dashboard" },
-    { icon: BookOpen, label: "Guidance", to: "/dashboard/guidance" },
+    // { icon: BookOpen, label: "Guidance", to: "/dashboard/guidance" },
     { icon: Users, label: "Mentors", to: "/dashboard/mentors" },
     { icon: GradIcon, label: "Courses", to: "/dashboard/courses" },
+    { icon: Award, label: "Certificates", to: "/dashboard/certificates" },
+    // { icon: Wallet, label: "Payments", to: "/dashboard/payments" },
+    { icon: Settings, label: "Settings", to: "/dashboard/settings" },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-background px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-6 overflow-x-auto border-t border-border bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {nav.map((n) => {
         const active = path.includes(n.to) && n.to !== "/dashboard" || (n.to === "/dashboard" && path === "/dashboard");
         return (
           <Link
             key={n.label}
             to={n.to}
-            className={`flex flex-col items-center gap-1.5 text-[10px] font-medium transition ${
+            className={`flex min-w-[4rem] flex-col items-center gap-1.5 text-[10px] font-medium transition ${
               active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
