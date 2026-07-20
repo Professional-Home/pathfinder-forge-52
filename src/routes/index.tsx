@@ -64,7 +64,6 @@ function Landing() {
       <RevealWrapper><GrowthPath /></RevealWrapper>
       <RevealWrapper><HowItWorks /></RevealWrapper>
       <RevealWrapper><ProductPreview /></RevealWrapper>
-      <RevealWrapper><Loops /></RevealWrapper>
       <RevealWrapper><WhyMicrylis /></RevealWrapper>
       <SiteFooter />
     </div>
@@ -123,7 +122,7 @@ function Hero() {
             <span className="truncate">15 questions. Then a path built around you.</span>
           </motion.div>
 
-          <h1 className="font-display text-[2.35rem] leading-[1.05] sm:text-5xl md:text-7xl lg:text-8xl">
+          <h1 className="font-display text-[2.35rem] leading-[1.05] sm:text-3xl md:text-5xl lg:text-6xl">
             <div className="overflow-hidden pb-1">
               <motion.div variants={itemVariants}>
                 Don&apos;t Just Learn Biology<br />
@@ -165,8 +164,8 @@ function Hero() {
           </motion.div>
         </div>
 
-        <motion.div variants={itemVariants} className="col-span-full mt-4 w-full overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_20px_60px_-30px_rgba(0,0,0,0.15)] sm:mt-8">
-          <div className="grid grid-cols-2 divide-y divide-border md:grid-cols-5 md:divide-x md:divide-y-0">
+        <motion.div variants={itemVariants} className="col-span-full mt-4 w-full overflow-hidden rounded-2xl border border-border bg-border shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_20px_60px_-30px_rgba(0,0,0,0.15)] sm:mt-8">
+          <div className="grid grid-cols-2 gap-px md:grid-cols-5">
             {[
               { top: "30+", bottom: "Students Learning" },
               { top: "Online", bottom: "Industry Projects" },
@@ -294,7 +293,6 @@ function HowItWorks() {
             icon={Users}
             chipTitle="Expert Matching"
             chipSubtitle="Matched to vetted mentors, advisors, and collaborators."
-            link={{ text: "Explore mentors", href: "#loops" }}
             backgroundVisual={<ExpertVisual />}
             imageSrc="/Expert Matching.jpeg"
           />
@@ -577,44 +575,6 @@ function ProductPreview() {
   );
 }
 
-function Loops() {
-  return (
-    <section id="loops" className="scroll-mt-24 border-b border-border/60 bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:gap-16 sm:px-6 sm:py-24 md:grid-cols-2">
-        <div>
-          <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">04 — Mentors</div>
-          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl">
-            Experts you can actually reach.
-          </h2>
-          <p className="mt-6 max-w-md text-muted-foreground">
-            Every mentor sets their rate above a quality floor. You see reviews,
-            response times, and availability — then book a slot and pay per session.
-          </p>
-        </div>
-        <div className="space-y-3">
-          {[
-            { n: "Marcus L.", r: "Postdoc, MIT · NLP methodology", p: "$80", tag: "researcher" as const },
-            { n: "Aditi R.", r: "Head of Product, Notion · 0→1", p: "$180", tag: "startup" as const },
-            { n: "Jonas W.", r: "Sr. Engineer, Vercel · Career coaching", p: "$60", tag: "student" as const },
-          ].map((m) => (
-            <div key={m.n} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-elevated p-3.5 sm:p-4">
-              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-display ${DOMAINS[m.tag].softBgClass} ${DOMAINS[m.tag].accentClass}`}>
-                  {m.n[0]}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">{m.n}</div>
-                  <div className="truncate text-xs text-muted-foreground">{m.r}</div>
-                </div>
-              </div>
-              <div className="shrink-0 text-xs font-mono sm:text-sm">{m.p}<span className="text-muted-foreground">/session</span></div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function WhyMicrylis() {
   const [open, setOpen] = useState<number | null>(0);

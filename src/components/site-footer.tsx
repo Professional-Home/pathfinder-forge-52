@@ -18,9 +18,8 @@ const COMPANY_LINKS = [
 ] as const;
 
 const SOCIAL_LINKS = [
-  { name: "Instagram", href: "https://instagram.com/micrylis", icon: Instagram },
-  { name: "LinkedIn", href: "https://linkedin.com/company/micrylis", icon: Linkedin },
-  { name: "Email", href: "mailto:hello@micrylis.com", icon: Mail },
+  { name: "Instagram", href: "https://www.instagram.com/micrylis?igsh=cjR4ZGR1am1ubmI0", icon: Instagram },
+  { name: "LinkedIn", href: "https://www.linkedin.com/in/micrylis-biotech-a4a4063aa/", icon: Linkedin },
 ] as const;
 
 export function SiteFooter() {
@@ -105,55 +104,31 @@ export function SiteFooter() {
               <ul className="space-y-4 text-sm text-white/60">
                 <li>
                   <a
-                    href="mailto:hello@micrylis.com"
+                    href="mailto:contact@micrylisbiotech.com"
                     className="group flex items-start gap-3 transition-colors hover:text-white"
                   >
                     <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/80 group-hover:bg-[#2dd4bf]/15 group-hover:text-[#5eead4]">
                       <Mail className="h-3.5 w-3.5" strokeWidth={2} />
                     </span>
                     <span>
-                      <span className="block font-medium text-white/90">hello@micrylis.com</span>
+                      <span className="block font-medium text-white/90">contact@micrylisbiotech.com</span>
                       <span className="text-xs text-white/45">General inquiries</span>
                     </span>
                   </a>
                 </li>
+
                 <li>
                   <a
-                    href="mailto:support@micrylis.com"
-                    className="group flex items-start gap-3 transition-colors hover:text-white"
-                  >
-                    <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/80 group-hover:bg-[#2dd4bf]/15 group-hover:text-[#5eead4]">
-                      <Mail className="h-3.5 w-3.5" strokeWidth={2} />
-                    </span>
-                    <span>
-                      <span className="block font-medium text-white/90">support@micrylis.com</span>
-                      <span className="text-xs text-white/45">Support & billing</span>
-                    </span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="tel:+15551234567"
-                    className="group flex items-start gap-3 transition-colors hover:text-white"
+                    href="tel:+91 88490 05635"
+                    className="group flex items-center gap-3 transition-colors hover:text-white"
                   >
                     <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/80 group-hover:bg-[#2dd4bf]/15 group-hover:text-[#5eead4]">
                       <Phone className="h-3.5 w-3.5" strokeWidth={2} />
                     </span>
-                    <span className="font-medium text-white/90">+1 (555) 123-4567</span>
+                    <span className="font-medium text-white/90">+91 88490 05635</span>
                   </a>
                 </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/80">
-                    <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
-                  </span>
-                  <span className="leading-relaxed">
-                    Micrylis Inc.
-                    <br />
-                    123 Innovation Drive, Suite 400
-                    <br />
-                    San Francisco, CA 94105
-                  </span>
-                </li>
+
               </ul>
             </div>
           </div>

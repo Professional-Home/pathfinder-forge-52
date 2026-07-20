@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
+import { X } from "lucide-react";
 
 const NAV_LINKS = [
   { name: "For you", href: "#lanes" },
@@ -90,6 +91,16 @@ export function SiteHeader() {
     return () => {
       document.body.style.overflow = "";
     };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && menuOpen) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [menuOpen]);
 
   const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -216,7 +227,7 @@ export function SiteHeader() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28 }}
-            className="fixed inset-0 z-40 lg:hidden"
+            className="fixed inset-0 z-[60] lg:hidden"
           >
             <button
               type="button"
@@ -256,9 +267,9 @@ export function SiteHeader() {
                     type="button"
                     aria-label="Close menu"
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-full p-1"
+                    className="rounded-full p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
-                    <GridMenuIcon className="bg-foreground" />
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
               </div>
