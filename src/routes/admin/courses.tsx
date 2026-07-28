@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/utils/supabase";
-import { Plus, Pencil, Trash2, BookOpen } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Plus, BookOpen } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
 import { FilterDropdown } from "@/components/admin/FilterDropdown";
@@ -9,24 +8,10 @@ import { AdminPagination, usePagination } from "@/components/admin/AdminPaginati
 import { ConfirmationDialog } from "@/components/admin/ConfirmationDialog";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { AdminDataTable, AdminToolbar } from "@/components/admin/admin-shared";
+import { DashboardCard } from "@/components/admin/DashboardCard";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import { CourseActionMenu } from "@/components/admin/courses/CourseActionMenu";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -35,132 +20,81 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface AdminCourse {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  duration: string;
-  thumbnail: string;
-  students_enrolled: number;
-  created_at: string;
-}
+import {
+  deleteCourse,
+  duplicateCourse,
+  filterAndSortCourses,
+  getAllCourses,
+  initializeCourseStore,
+  toggleCourseStatus,
+} from "@/lib/courses/store";
+import { getCourseStats } from "@/lib/courses/data";
+import type { CourseRecord, CourseSortOption } from "@/lib/courses/types";
+import { FileText, Star } from "lucide-react";
 
 export const Route = createFileRoute("/admin/courses")({
   component: AdminCoursesPage,
 });
 
-const PAGE_SIZE = 5;
-const emptyForm = {
-  title: "",
-  description: "",
-  category: "",
-  duration: "",
-  thumbnail: "",
-};
+const PAGE_SIZE = 6;
 
 function AdminCoursesPage() {
-  const [courses, setCourses] = useState<AdminCourse[]>([]);
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState<CourseRecord[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sort, setSort] = useState<CourseSortOption>("updated-desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    initializeCourseStore();
+    setCourses(getAllCourses());
+  }, []);
 
   const categories = useMemo(
     () => [...new Set(courses.map((c) => c.category).filter(Boolean))],
     [courses],
   );
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
+  const stats = useMemo(() => getCourseStats(courses), [courses]);
 
-  async function fetchCourses() {
-    const { data } = await supabase
-      .from("courses")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (data) {
-      setCourses(data);
-    }
-  }
-
-  const filtered = useMemo(() => {
-    return courses.filter((c) => {
-      const matchesSearch =
-        (c.title || "").toLowerCase().includes(search.toLowerCase()) ||
-        (c.description || "").toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = categoryFilter === "all" || c.category === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [courses, search, categoryFilter]);
+  const filtered = useMemo(
+    () =>
+      filterAndSortCourses(courses, {
+        search,
+        status: statusFilter,
+        category: categoryFilter,
+        sort,
+      }),
+    [courses, search, statusFilter, categoryFilter, sort],
+  );
 
   const { paginatedItems, totalPages } = usePagination(filtered, PAGE_SIZE, currentPage);
 
-  function openAdd() {
-    setEditingId(null);
-    setForm(emptyForm);
-    setDialogOpen(true);
+  function refresh() {
+    setCourses(getAllCourses());
   }
 
-  function openEdit(course: AdminCourse) {
-    setEditingId(course.id);
-    setForm({
-      title: course.title,
-      description: course.description,
-      category: course.category || "",
-      duration: course.duration || "",
-      thumbnail: course.thumbnail || "",
-    });
-    setDialogOpen(true);
-  }
-
-  async function handleSave() {
-    if (!form.title.trim()) return;
-    
-    const payload = {
-      title: form.title,
-      description: form.description,
-      category: form.category,
-      duration: form.duration,
-      thumbnail: form.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=240&fit=crop",
-    };
-
-    if (editingId) {
-      const { error } = await supabase.from("courses").update(payload).eq("id", editingId);
-      if (error) console.error("Error updating course:", error);
-      if (!error) {
-        setCourses((prev) =>
-          prev.map((c) => (c.id === editingId ? { ...c, ...payload } as AdminCourse : c))
-        );
-      }
-    } else {
-      const { data, error } = await supabase.from("courses").insert(payload).select().single();
-      if (error) console.error("Error inserting course:", error);
-      if (data && !error) {
-        setCourses((prev) => [data as AdminCourse, ...prev]);
-      }
-    }
-    setDialogOpen(false);
-    setForm(emptyForm);
-    setEditingId(null);
-  }
-
-  async function confirmDelete() {
+  function handleDelete() {
     if (deletingId) {
-      const { error } = await supabase.from("courses").delete().eq("id", deletingId);
-      if (error) console.error("Error deleting course:", error);
-      if (!error) {
-        setCourses((prev) => prev.filter((c) => c.id !== deletingId));
-      }
+      deleteCourse(deletingId);
+      refresh();
       setDeletingId(null);
     }
     setDeleteOpen(false);
+  }
+
+  function handleDuplicate(id: string) {
+    duplicateCourse(id);
+    refresh();
+  }
+
+  function handleTogglePublish(id: string) {
+    toggleCourseStatus(id);
+    refresh();
   }
 
   return (
@@ -173,24 +107,63 @@ function AdminCoursesPage() {
           { label: "Courses" },
         ]}
         actions={
-          <Button onClick={openAdd} className="bg-foreground text-background hover:bg-foreground/90">
-            <Plus className="h-4 w-4" /> Add Course
+          <Button asChild className="bg-foreground text-background hover:bg-foreground/90">
+            <Link to="/admin/courses/new">
+              <Plus className="h-4 w-4" /> Add Course
+            </Link>
           </Button>
         }
       />
 
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <DashboardCard title="Total Courses" value={String(stats.total)} icon={BookOpen} />
+        <DashboardCard title="Published" value={String(stats.published)} icon={FileText} accent="researcher" />
+        <DashboardCard title="Draft Courses" value={String(stats.draft)} icon={FileText} accent="startup" />
+        <DashboardCard title="Featured" value={String(stats.featured)} icon={Star} accent="student" />
+      </div>
+
       <AdminToolbar>
         <SearchBar
           value={search}
-          onChange={(v) => { setSearch(v); setCurrentPage(1); }}
+          onChange={(v) => {
+            setSearch(v);
+            setCurrentPage(1);
+          }}
           placeholder="Search courses..."
         />
         <FilterDropdown
+          value={statusFilter}
+          onChange={(v) => {
+            setStatusFilter(v);
+            setCurrentPage(1);
+          }}
+          options={[
+            { label: "All Status", value: "all" },
+            { label: "Published", value: "published" },
+            { label: "Draft", value: "draft" },
+          ]}
+        />
+        <FilterDropdown
           value={categoryFilter}
-          onChange={(v) => { setCategoryFilter(v); setCurrentPage(1); }}
+          onChange={(v) => {
+            setCategoryFilter(v);
+            setCurrentPage(1);
+          }}
           options={[
             { label: "All Categories", value: "all" },
             ...categories.map((c) => ({ label: c, value: c })),
+          ]}
+        />
+        <FilterDropdown
+          value={sort}
+          onChange={(v) => setSort(v as CourseSortOption)}
+          options={[
+            { label: "Recently Updated", value: "updated-desc" },
+            { label: "Oldest Updated", value: "updated-asc" },
+            { label: "Name A–Z", value: "name-asc" },
+            { label: "Name Z–A", value: "name-desc" },
+            { label: "Fee: Low to High", value: "fee-asc" },
+            { label: "Fee: High to Low", value: "fee-desc" },
           ]}
         />
       </AdminToolbar>
@@ -201,61 +174,74 @@ function AdminCoursesPage() {
           title="No courses found"
           description="Try adjusting your search or filters, or add a new course."
           actionLabel="Add Course"
-          onAction={openAdd}
+          onAction={() => navigate({ to: "/admin/courses/new" })}
         />
       ) : (
         <>
           <AdminDataTable>
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Course</TableHead>
-                  <TableHead className="hidden md:table-cell">Category</TableHead>
-                  <TableHead className="hidden sm:table-cell">Duration</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedItems.map((course) => (
-                  <TableRow key={course.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={course.thumbnail}
-                          alt={course.title}
-                          className="h-10 w-14 rounded-md object-cover"
-                        />
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium">{course.title}</div>
-                          <div className="truncate text-xs text-muted-foreground max-w-[200px]">
-                            {course.description}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Course</TableHead>
+                    <TableHead className="hidden md:table-cell">Duration</TableHead>
+                    <TableHead className="hidden sm:table-cell">Mode</TableHead>
+                    <TableHead className="hidden lg:table-cell">Fee</TableHead>
+                    <TableHead className="hidden md:table-cell">Status</TableHead>
+                    <TableHead className="hidden xl:table-cell">Last Updated</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedItems.map((course) => (
+                    <TableRow key={course.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3 min-w-[200px]">
+                          <img
+                            src={course.thumbnail}
+                            alt={course.name}
+                            className="h-10 w-14 shrink-0 rounded-md object-cover"
+                          />
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium">{course.name}</div>
+                            <div className="truncate text-xs text-muted-foreground max-w-[220px]">
+                              {course.shortDescription}
+                            </div>
+                            {course.featured && (
+                              <StatusBadge status="Featured" className="mt-1 normal-case tracking-normal text-[9px]" />
+                            )}
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm">{course.category}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm">{course.duration}</TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(course)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setDeletingId(course.id);
-                            setDeleteOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm">{course.duration}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-sm">{course.mode}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm font-medium">{course.programFee}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <StatusBadge status={course.status} />
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">
+                        {course.lastUpdated}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end">
+                          <CourseActionMenu
+                            courseId={course.id}
+                            slug={course.slug}
+                            status={course.status}
+                            onDelete={() => {
+                              setDeletingId(course.id);
+                              setDeleteOpen(true);
+                            }}
+                            onDuplicate={() => handleDuplicate(course.id)}
+                            onTogglePublish={() => handleTogglePublish(course.id)}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </AdminDataTable>
           <div className="mt-4">
             <AdminPagination
@@ -267,78 +253,13 @@ function AdminCoursesPage() {
         </>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl">
-              {editingId ? "Edit Course" : "Add Course"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="border-border"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="border-border"
-                rows={3}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Input
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="border-border"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration</Label>
-                <Input
-                  value={form.duration}
-                  onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                  placeholder="e.g. 6 weeks"
-                  className="border-border"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Thumbnail URL</Label>
-              <Input
-                value={form.thumbnail}
-                onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
-                placeholder="https://..."
-                className="border-border"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} className="bg-foreground text-background hover:bg-foreground/90">
-              {editingId ? "Save Changes" : "Create Course"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <ConfirmationDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Delete Course"
         description="Are you sure you want to delete this course? This action cannot be undone."
         confirmLabel="Delete"
-        onConfirm={confirmDelete}
+        onConfirm={handleDelete}
         destructive
       />
     </>

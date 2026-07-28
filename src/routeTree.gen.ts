@@ -22,12 +22,14 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardPaymentsRouteImport } from './routes/dashboard/payments'
 import { Route as DashboardMentorsRouteImport } from './routes/dashboard/mentors'
 import { Route as DashboardGuidanceRouteImport } from './routes/dashboard/guidance'
 import { Route as DashboardCoursesRouteImport } from './routes/dashboard/courses'
 import { Route as DashboardCertificatesRouteImport } from './routes/dashboard/certificates'
+import { Route as CoursesSlugRouteImport } from './routes/courses/$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
@@ -38,6 +40,9 @@ import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
 import { Route as DashboardEnrollCourseIdRouteImport } from './routes/dashboard/enroll.$courseId'
 import { Route as DashboardBookMentorIdRouteImport } from './routes/dashboard/book.$mentorId'
+import { Route as AdminCoursesNewRouteImport } from './routes/admin/courses/new'
+import { Route as AdminCoursesCourseIdPreviewRouteImport } from './routes/admin/courses/$courseId.preview'
+import { Route as AdminCoursesCourseIdEditRouteImport } from './routes/admin/courses/$courseId.edit'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -104,6 +109,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const CoursesIndexRoute = CoursesIndexRouteImport.update({
+  id: '/courses/',
+  path: '/courses/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -133,6 +143,11 @@ const DashboardCertificatesRoute = DashboardCertificatesRouteImport.update({
   id: '/certificates',
   path: '/certificates',
   getParentRoute: () => DashboardRoute,
+} as any)
+const CoursesSlugRoute = CoursesSlugRouteImport.update({
+  id: '/courses/$slug',
+  path: '/courses/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
@@ -184,6 +199,23 @@ const DashboardBookMentorIdRoute = DashboardBookMentorIdRouteImport.update({
   path: '/book/$mentorId',
   getParentRoute: () => DashboardRoute,
 } as any)
+const AdminCoursesNewRoute = AdminCoursesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminCoursesRoute,
+} as any)
+const AdminCoursesCourseIdPreviewRoute =
+  AdminCoursesCourseIdPreviewRouteImport.update({
+    id: '/$courseId/preview',
+    path: '/$courseId/preview',
+    getParentRoute: () => AdminCoursesRoute,
+  } as any)
+const AdminCoursesCourseIdEditRoute =
+  AdminCoursesCourseIdEditRouteImport.update({
+    id: '/$courseId/edit',
+    path: '/$courseId/edit',
+    getParentRoute: () => AdminCoursesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -198,7 +230,7 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
-  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/guidance': typeof AdminGuidanceRoute
@@ -206,15 +238,20 @@ export interface FileRoutesByFullPath {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
   '/dashboard/guidance': typeof DashboardGuidanceRoute
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
+  '/admin/courses/$courseId/edit': typeof AdminCoursesCourseIdEditRoute
+  '/admin/courses/$courseId/preview': typeof AdminCoursesCourseIdPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -228,7 +265,7 @@ export interface FileRoutesByTo {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
-  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/guidance': typeof AdminGuidanceRoute
@@ -236,15 +273,20 @@ export interface FileRoutesByTo {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
   '/dashboard/guidance': typeof DashboardGuidanceRoute
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/courses': typeof CoursesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
+  '/admin/courses/$courseId/edit': typeof AdminCoursesCourseIdEditRoute
+  '/admin/courses/$courseId/preview': typeof AdminCoursesCourseIdPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -260,7 +302,7 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
-  '/admin/courses': typeof AdminCoursesRoute
+  '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/guidance': typeof AdminGuidanceRoute
@@ -268,15 +310,20 @@ export interface FileRoutesById {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
   '/dashboard/guidance': typeof DashboardGuidanceRoute
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
+  '/admin/courses/$courseId/edit': typeof AdminCoursesCourseIdEditRoute
+  '/admin/courses/$courseId/preview': typeof AdminCoursesCourseIdPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -301,15 +348,20 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/users'
     | '/auth/callback'
+    | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
     | '/dashboard/guidance'
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/courses/'
     | '/dashboard/'
+    | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
+    | '/admin/courses/$courseId/edit'
+    | '/admin/courses/$courseId/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -331,15 +383,20 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/users'
     | '/auth/callback'
+    | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
     | '/dashboard/guidance'
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/courses'
     | '/dashboard'
+    | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
+    | '/admin/courses/$courseId/edit'
+    | '/admin/courses/$courseId/preview'
   id:
     | '__root__'
     | '/'
@@ -362,15 +419,20 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/users'
     | '/auth/callback'
+    | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
     | '/dashboard/guidance'
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/courses/'
     | '/dashboard/'
+    | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
+    | '/admin/courses/$courseId/edit'
+    | '/admin/courses/$courseId/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -387,6 +449,8 @@ export interface RootRouteChildren {
   ReturnPolicyRoute: typeof ReturnPolicyRoute
   SignupRoute: typeof SignupRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  CoursesSlugRoute: typeof CoursesSlugRoute
+  CoursesIndexRoute: typeof CoursesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -482,6 +546,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/courses/': {
+      id: '/courses/'
+      path: '/courses'
+      fullPath: '/courses/'
+      preLoaderRoute: typeof CoursesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/settings': {
       id: '/dashboard/settings'
       path: '/settings'
@@ -523,6 +594,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/certificates'
       preLoaderRoute: typeof DashboardCertificatesRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/courses/$slug': {
+      id: '/courses/$slug'
+      path: '/courses/$slug'
+      fullPath: '/courses/$slug'
+      preLoaderRoute: typeof CoursesSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
       id: '/auth/callback'
@@ -594,11 +672,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardBookMentorIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/admin/courses/new': {
+      id: '/admin/courses/new'
+      path: '/new'
+      fullPath: '/admin/courses/new'
+      preLoaderRoute: typeof AdminCoursesNewRouteImport
+      parentRoute: typeof AdminCoursesRoute
+    }
+    '/admin/courses/$courseId/preview': {
+      id: '/admin/courses/$courseId/preview'
+      path: '/$courseId/preview'
+      fullPath: '/admin/courses/$courseId/preview'
+      preLoaderRoute: typeof AdminCoursesCourseIdPreviewRouteImport
+      parentRoute: typeof AdminCoursesRoute
+    }
+    '/admin/courses/$courseId/edit': {
+      id: '/admin/courses/$courseId/edit'
+      path: '/$courseId/edit'
+      fullPath: '/admin/courses/$courseId/edit'
+      preLoaderRoute: typeof AdminCoursesCourseIdEditRouteImport
+      parentRoute: typeof AdminCoursesRoute
+    }
   }
 }
 
+interface AdminCoursesRouteChildren {
+  AdminCoursesNewRoute: typeof AdminCoursesNewRoute
+  AdminCoursesCourseIdEditRoute: typeof AdminCoursesCourseIdEditRoute
+  AdminCoursesCourseIdPreviewRoute: typeof AdminCoursesCourseIdPreviewRoute
+}
+
+const AdminCoursesRouteChildren: AdminCoursesRouteChildren = {
+  AdminCoursesNewRoute: AdminCoursesNewRoute,
+  AdminCoursesCourseIdEditRoute: AdminCoursesCourseIdEditRoute,
+  AdminCoursesCourseIdPreviewRoute: AdminCoursesCourseIdPreviewRoute,
+}
+
+const AdminCoursesRouteWithChildren = AdminCoursesRoute._addFileChildren(
+  AdminCoursesRouteChildren,
+)
+
 interface AdminRouteChildren {
-  AdminCoursesRoute: typeof AdminCoursesRoute
+  AdminCoursesRoute: typeof AdminCoursesRouteWithChildren
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminEnrollmentsRoute: typeof AdminEnrollmentsRoute
   AdminGuidanceRoute: typeof AdminGuidanceRoute
@@ -608,7 +723,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminCoursesRoute: AdminCoursesRoute,
+  AdminCoursesRoute: AdminCoursesRouteWithChildren,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminEnrollmentsRoute: AdminEnrollmentsRoute,
   AdminGuidanceRoute: AdminGuidanceRoute,
@@ -661,6 +776,8 @@ const rootRouteChildren: RootRouteChildren = {
   ReturnPolicyRoute: ReturnPolicyRoute,
   SignupRoute: SignupRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  CoursesSlugRoute: CoursesSlugRoute,
+  CoursesIndexRoute: CoursesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -11,7 +11,8 @@ type StatusVariant =
   | "upcoming"
   | "beginner"
   | "intermediate"
-  | "advanced";
+  | "advanced"
+  | "featured";
 
 const variantStyles: Record<StatusVariant, string> = {
   published: "bg-student-soft text-student border-student/20",
@@ -25,6 +26,7 @@ const variantStyles: Record<StatusVariant, string> = {
   beginner: "bg-researcher-soft text-researcher border-researcher/20",
   intermediate: "bg-startup-soft text-startup border-startup/20",
   advanced: "bg-student-soft text-student border-student/20",
+  featured: "bg-startup-soft text-startup border-startup/20",
 };
 
 export function StatusBadge({
