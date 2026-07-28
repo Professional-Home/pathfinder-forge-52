@@ -29,7 +29,12 @@ const COMPANY_LINKS = [
   { name: "Refund Policy", to: "/refund-policy" as const },
 ] as const;
 
+function isHashSelector(href: string): href is `#${string}` {
+  return href.startsWith("#");
+}
+
 function scrollToHash(hash: string) {
+  if (!isHashSelector(hash)) return;
   const el = document.querySelector(hash);
   if (el) {
     el.scrollIntoView({ behavior: "smooth" });
@@ -73,6 +78,8 @@ export function SiteHeader() {
       setIsScrolled(window.scrollY > 28);
       const scrollPos = window.scrollY + 120;
       for (const link of NAV_LINKS) {
+        if ("isRoute" in link && link.isRoute) continue;
+        if (!isHashSelector(link.href)) continue;
         const section = document.querySelector(link.href);
         if (!(section instanceof HTMLElement)) continue;
         if (
