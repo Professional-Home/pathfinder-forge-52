@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { name: "How it works", href: "#how" },
   { name: "Product", href: "#preview" },
   { name: "Mentors", href: "#loops" },
+  { name: "Courses", href: "/courses", isRoute: true as const },
 ] as const;
 
 const EXPLORE_LINKS = [
@@ -18,6 +19,7 @@ const EXPLORE_LINKS = [
   { name: "How it works", href: "/#how" },
   { name: "Product", href: "/#preview" },
   { name: "Mentors", href: "/#loops" },
+  { name: "Courses", href: "/courses", isRoute: true as const },
 ] as const;
 
 const COMPANY_LINKS = [
@@ -141,7 +143,21 @@ export function SiteHeader() {
 
             <nav className="hidden min-w-0 items-center justify-center gap-0.5 justify-self-center text-[12px] font-medium text-muted-foreground lg:flex">
               {NAV_LINKS.map((link) => {
-                const isActive = activeSection === link.href.slice(1);
+                const isActive =
+                  "isRoute" in link && link.isRoute
+                    ? false
+                    : activeSection === link.href.slice(1);
+                if ("isRoute" in link && link.isRoute) {
+                  return (
+                    <Link
+                      key={link.name}
+                      to={link.href}
+                      className="relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors hover:text-foreground"
+                    >
+                      {link.name}
+                    </Link>
+                  );
+                }
                 return (
                   <a
                     key={link.name}
@@ -277,16 +293,27 @@ export function SiteHeader() {
               <div className="flex flex-1 flex-col overflow-y-auto px-6 py-8">
                 <span className="mb-4 text-xs tracking-wide text-muted-foreground">Explore</span>
                 <div className="mb-8 flex flex-col gap-4 text-[17px] font-medium text-foreground">
-                  {EXPLORE_LINKS.map((link) => (
-                    <a
-                      key={link.name}
-                      href={link.href}
-                      onClick={(e) => onNavClick(e, link.href.replace("/", ""))}
-                      className="transition-colors hover:text-muted-foreground"
-                    >
-                      {link.name}
-                    </a>
-                  ))}
+                  {EXPLORE_LINKS.map((link) =>
+                    "isRoute" in link && link.isRoute ? (
+                      <Link
+                        key={link.name}
+                        to={link.href}
+                        onClick={() => setMenuOpen(false)}
+                        className="transition-colors hover:text-muted-foreground"
+                      >
+                        {link.name}
+                      </Link>
+                    ) : (
+                      <a
+                        key={link.name}
+                        href={link.href}
+                        onClick={(e) => onNavClick(e, link.href.replace("/", ""))}
+                        className="transition-colors hover:text-muted-foreground"
+                      >
+                        {link.name}
+                      </a>
+                    ),
+                  )}
                 </div>
 
                 <span className="mb-4 text-xs tracking-wide text-muted-foreground">Company</span>
