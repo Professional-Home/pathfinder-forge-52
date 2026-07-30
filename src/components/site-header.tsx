@@ -1,26 +1,17 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
+import {
+  HOME_SECTIONS,
+  PUBLIC_EXPLORE_LINKS,
+  PUBLIC_NAV_LINKS,
+  SCROLL_SPY_OFFSET,
+  type HomeSectionId,
+} from "@/lib/nav-config";
 import { X } from "lucide-react";
-
-const NAV_LINKS = [
-  { name: "For you", href: "#lanes" },
-  { name: "How it works", href: "#how" },
-  { name: "Product", href: "#preview" },
-  { name: "Mentors", href: "#loops" },
-  { name: "Courses", href: "/courses", isRoute: true as const },
-] as const;
-
-const EXPLORE_LINKS = [
-  { name: "For you", href: "/#lanes" },
-  { name: "How it works", href: "/#how" },
-  { name: "Product", href: "/#preview" },
-  { name: "Mentors", href: "/#loops" },
-  { name: "Courses", href: "/courses", isRoute: true as const },
-] as const;
 
 const COMPANY_LINKS = [
   { name: "About & Contact", to: "/about" as const },
@@ -33,7 +24,7 @@ function isHashSelector(href: string): href is `#${string}` {
   return href.startsWith("#");
 }
 
-function scrollToHash(hash: string) {
+function scrollToSection(hash: string) {
   if (!isHashSelector(hash)) return;
   const el = document.querySelector(hash);
   if (el) {
@@ -41,6 +32,18 @@ function scrollToHash(hash: string) {
     return;
   }
   window.location.href = `/${hash}`;
+}
+
+function detectActiveSection(): HomeSectionId {
+  const scrollPos = window.scrollY + SCROLL_SPY_OFFSET;
+  let current: HomeSectionId = "top";
+  for (const id of HOME_SECTIONS) {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= scrollPos) {
+      current = id;
+    }
+  }
+  return current;
 }
 
 function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
@@ -53,9 +56,26 @@ function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
   );
 }
 
+function NavPill({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <motion.span
+      layoutId="site-nav-pill"
+      className="absolute inset-0 rounded-full border border-border bg-surface-elevated/80"
+      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+    />
+  );
+}
+
 export function SiteHeader() {
+  const location = useLocation();
+  const pathname = location.pathname;
+  const isHome = pathname === "/";
+  const isProjectsRoute =
+    pathname === "/projects" || pathname.startsWith("/projects/");
+
   const [isScrolled, setIsScrolled] = useState(false);
-  const [activeSection, setActiveSection] = useState("");
+  const [activeSection, setActiveSection] = useState<HomeSectionId>("top");
   const [menuOpen, setMenuOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
 
@@ -63,37 +83,31 @@ export function SiteHeader() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 28);
-      const scrollPos = window.scrollY + 120;
-      for (const link of NAV_LINKS) {
-        if ("isRoute" in link && link.isRoute) continue;
-        if (!isHashSelector(link.href)) continue;
-        const section = document.querySelector(link.href);
-        if (!(section instanceof HTMLElement)) continue;
-        if (
-          section.offsetTop <= scrollPos &&
-          section.offsetTop + section.offsetHeight > scrollPos
-        ) {
-          setActiveSection(link.href.slice(1));
-        }
+      if (isHome) {
+        setActiveSection(detectActiveSection());
       }
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isHome]);
+
+  useEffect(() => {
+    if (isHome) {
+      setActiveSection(detectActiveSection());
+    }
+  }, [isHome, pathname]);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -112,13 +126,67 @@ export function SiteHeader() {
     return () => window.removeEventListener("resize", handleResize);
   }, [menuOpen]);
 
-  const onNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const onHashNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     setMenuOpen(false);
-    scrollToHash(href);
+    if (isHome) {
+      scrollToSection(href);
+      if (isHashSelector(href)) {
+        setActiveSection(href.slice(1) as HomeSectionId);
+      }
+    } else {
+      window.location.href = `/${href}`;
+    }
   };
 
+  const onLogoClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (isHome) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setActiveSection("top");
+        setMenuOpen(false);
+      }
+    },
+    [isHome],
+  );
+
   const pill = isScrolled;
+
+  const renderNavItem = (link: (typeof PUBLIC_NAV_LINKS)[number]) => {
+    if ("isRoute" in link && link.isRoute) {
+      const active = isProjectsRoute;
+      return (
+        <Link
+          key={link.name}
+          to={link.href}
+          className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${
+            active ? "text-foreground" : "hover:text-foreground"
+          }`}
+        >
+          <span className="relative z-10">{link.name}</span>
+          <NavPill active={active} />
+        </Link>
+      );
+    }
+
+    const sectionId = link.sectionId;
+    const isActive = isHome && activeSection === sectionId;
+
+    return (
+      <a
+        key={link.name}
+        href={link.href}
+        onClick={(e) => onHashNavClick(e, link.href)}
+        className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${
+          isActive ? "text-foreground" : "hover:text-foreground"
+        }`}
+      >
+        <span className="relative z-10">{link.name}</span>
+        <NavPill active={isActive} />
+      </a>
+    );
+  };
 
   return (
     <>
@@ -146,45 +214,10 @@ export function SiteHeader() {
                 : "min-h-[52px] grid-cols-[auto_1fr_auto] rounded-none border border-transparent bg-transparent px-3 py-1.5 shadow-none backdrop-blur-none sm:min-h-[56px] sm:px-5 md:px-6"
             }`}
           >
-            <Wordmark compact={pill} className="justify-self-start" />
+            <Wordmark compact={pill} className="justify-self-start" onClick={onLogoClick} />
 
             <nav className="hidden min-w-0 items-center justify-center gap-0.5 justify-self-center text-[12px] font-medium text-muted-foreground lg:flex">
-              {NAV_LINKS.map((link) => {
-                const isActive =
-                  "isRoute" in link && link.isRoute
-                    ? false
-                    : activeSection === link.href.slice(1);
-                if ("isRoute" in link && link.isRoute) {
-                  return (
-                    <Link
-                      key={link.name}
-                      to={link.href}
-                      className="relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors hover:text-foreground"
-                    >
-                      {link.name}
-                    </Link>
-                  );
-                }
-                return (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    onClick={(e) => onNavClick(e, link.href)}
-                    className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${
-                      isActive ? "text-foreground" : "hover:text-foreground"
-                    }`}
-                  >
-                    <span className="relative z-10">{link.name}</span>
-                    {isActive && (
-                      <motion.span
-                        layoutId="site-nav-pill"
-                        className="absolute inset-0 rounded-full border border-border bg-surface-elevated/80"
-                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                      />
-                    )}
-                  </a>
-                );
-              })}
+              {PUBLIC_NAV_LINKS.map(renderNavItem)}
             </nav>
 
             <div className="flex items-center justify-self-end gap-2 sm:gap-2.5">
@@ -300,13 +333,15 @@ export function SiteHeader() {
               <div className="flex flex-1 flex-col overflow-y-auto px-6 py-8">
                 <span className="mb-4 text-xs tracking-wide text-muted-foreground">Explore</span>
                 <div className="mb-8 flex flex-col gap-4 text-[17px] font-medium text-foreground">
-                  {EXPLORE_LINKS.map((link) =>
+                  {PUBLIC_EXPLORE_LINKS.map((link) =>
                     "isRoute" in link && link.isRoute ? (
                       <Link
                         key={link.name}
                         to={link.href}
                         onClick={() => setMenuOpen(false)}
-                        className="transition-colors hover:text-muted-foreground"
+                        className={`transition-colors ${
+                          isProjectsRoute ? "text-foreground" : "hover:text-muted-foreground"
+                        }`}
                       >
                         {link.name}
                       </Link>
@@ -314,7 +349,16 @@ export function SiteHeader() {
                       <a
                         key={link.name}
                         href={link.href}
-                        onClick={(e) => onNavClick(e, link.href.replace("/", ""))}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setMenuOpen(false);
+                          if (isHome) {
+                            scrollToSection(link.href.replace("/", ""));
+                            setActiveSection(link.sectionId);
+                          } else {
+                            window.location.href = link.href;
+                          }
+                        }}
                         className="transition-colors hover:text-muted-foreground"
                       >
                         {link.name}
