@@ -21,8 +21,10 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
+import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardPaymentsRouteImport } from './routes/dashboard/payments'
 import { Route as DashboardMentorsRouteImport } from './routes/dashboard/mentors'
@@ -104,6 +106,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -112,6 +119,11 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
 const CoursesIndexRoute = CoursesIndexRouteImport.update({
   id: '/courses/',
   path: '/courses/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
+  id: '/projects/$slug',
+  path: '/projects/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
@@ -245,8 +257,10 @@ export interface FileRoutesByFullPath {
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/projects/$slug': typeof ProjectsSlugRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/projects/': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
@@ -280,8 +294,10 @@ export interface FileRoutesByTo {
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/projects/$slug': typeof ProjectsSlugRoute
   '/courses': typeof CoursesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/projects': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
@@ -317,8 +333,10 @@ export interface FileRoutesById {
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/projects/$slug': typeof ProjectsSlugRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/projects/': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
   '/dashboard/enroll/$courseId': typeof DashboardEnrollCourseIdRoute
@@ -355,8 +373,10 @@ export interface FileRouteTypes {
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/projects/$slug'
     | '/courses/'
     | '/dashboard/'
+    | '/projects/'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
@@ -390,8 +410,10 @@ export interface FileRouteTypes {
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/projects/$slug'
     | '/courses'
     | '/dashboard'
+    | '/projects'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
@@ -426,8 +448,10 @@ export interface FileRouteTypes {
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/projects/$slug'
     | '/courses/'
     | '/dashboard/'
+    | '/projects/'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
     | '/dashboard/enroll/$courseId'
@@ -450,7 +474,9 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
+  ProjectsSlugRoute: typeof ProjectsSlugRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
+  ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -539,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/': {
+      id: '/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof ProjectsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/': {
       id: '/dashboard/'
       path: '/'
@@ -551,6 +584,13 @@ declare module '@tanstack/react-router' {
       path: '/courses'
       fullPath: '/courses/'
       preLoaderRoute: typeof CoursesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/$slug': {
+      id: '/projects/$slug'
+      path: '/projects/$slug'
+      fullPath: '/projects/$slug'
+      preLoaderRoute: typeof ProjectsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/settings': {
@@ -777,7 +817,9 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   CoursesSlugRoute: CoursesSlugRoute,
+  ProjectsSlugRoute: ProjectsSlugRoute,
   CoursesIndexRoute: CoursesIndexRoute,
+  ProjectsIndexRoute: ProjectsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
