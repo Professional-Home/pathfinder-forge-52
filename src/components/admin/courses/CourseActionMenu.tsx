@@ -46,7 +46,7 @@ export function CourseActionMenu({
       <DropdownMenuContent align="end" className="w-48">
         {isPublished && (
           <DropdownMenuItem asChild>
-            <a href={`/courses/${slug}`} target="_blank" rel="noopener noreferrer">
+            <a href={`/projects/${slug}`} target="_blank" rel="noopener noreferrer">
               <Eye className="mr-2 h-4 w-4" />
               View
             </a>

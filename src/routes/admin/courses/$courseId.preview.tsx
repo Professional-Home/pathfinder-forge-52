@@ -34,7 +34,7 @@ function CoursePreviewPage() {
           </div>
           {course.status === "published" && (
             <Button variant="outline" size="sm" asChild>
-              <a href={`/courses/${course.slug}`} target="_blank" rel="noopener noreferrer">
+              <a href={`/projects/${course.slug}`} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4" />
                 Live page
               </a>

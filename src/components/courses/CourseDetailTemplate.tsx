@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   ArrowRight,
   Award,
   Check,
@@ -10,8 +9,8 @@ import {
   IndianRupee,
   Sparkles,
 } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { Wordmark } from "@/components/brand";
 import type { CoursePageContent, CourseRecord } from "@/lib/courses/types";
 
 const themeColors = {
@@ -79,13 +78,12 @@ function CourseHero({ course, content }: { course: CourseRecord; content: Course
         backgroundSize: "28px 28px",
       }} />
 
-      <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28 md:pb-24 md:pt-32">
+      <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 md:pb-24">
         <Link
-          to="/courses"
-          className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+          to="/projects"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" />
-          All courses
+          ← All projects
         </Link>
 
         <motion.div
@@ -148,12 +146,14 @@ function CourseHero({ course, content }: { course: CourseRecord; content: Course
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          className="mt-12 overflow-hidden rounded-2xl border border-border shadow-xl sm:mt-16"
+          className="mt-10 overflow-hidden rounded-2xl border border-border/80 shadow-2xl ring-1 ring-border/40 sm:mt-12"
         >
           <img
             src={content.hero.coverImage}
             alt={content.hero.title}
-            className="aspect-[21/9] w-full object-cover"
+            loading="eager"
+            decoding="async"
+            className="aspect-[21/9] w-full object-cover transition-transform duration-700 hover:scale-[1.02]"
           />
         </motion.div>
       </div>
@@ -167,19 +167,7 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
-          <Wordmark />
-          <Link
-            to="/courses"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Back to courses</span>
-            <span className="sm:hidden">Courses</span>
-          </Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       <CourseHero course={course} content={content} />
 
@@ -196,10 +184,7 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {content.aboutProgram.highlights.map((item) => (
-                <div
-                  key={item}
-                  className="flex items-start gap-3 rounded-xl border border-border bg-surface-elevated p-4"
-                >
+                <div key={item} className="flex items-start gap-3 rounded-xl border border-border/70 bg-background/60 p-4 backdrop-blur-sm transition hover:border-border-strong hover:shadow-md">
                   <div className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${theme.soft}`}>
                     <Check className={`h-3 w-3 ${theme.accent}`} />
                   </div>
@@ -234,7 +219,7 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {content.whyJoin.map((card, i) => (
               <Reveal key={card.title} delay={i * 0.06}>
-                <div className="group h-full rounded-2xl border border-border bg-background p-6 transition hover:-translate-y-1 hover:border-border-strong hover:shadow-lg">
+                <div className="group h-full rounded-2xl border border-border/70 bg-background/70 p-5 backdrop-blur-sm transition hover:-translate-y-1 hover:border-border-strong hover:shadow-lg sm:p-6">
                   <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ${theme.soft}`}>
                     <Award className={`h-5 w-5 ${theme.accent}`} />
                   </div>

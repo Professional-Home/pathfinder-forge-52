@@ -1,4 +1,5 @@
 import type { CourseRecord } from "./types";
+import { PROJECT_IMAGES } from "@/lib/project-images";
 
 const IIT_BADGE =
   "Pre Incubated at IIT Gandhinagar Innovation & Entrepreneurship Center";
@@ -11,10 +12,8 @@ export const BIOPLASTIC_COURSE: CourseRecord = {
     "A 30-day intensive online research internship mastering biodegradable materials from first principles to commercialization.",
   fullDescription:
     "The BioPlastic Innovation Program is a 30-day intensive research and industry accelerator designed for ambitious students, researchers, innovators, and aspiring entrepreneurs who want to master biodegradable materials from first principles to commercialization.",
-  thumbnail:
-    "https://images.unsplash.com/photo-1532187863486-abf9db581951?w=800&h=500&fit=crop",
-  coverImage:
-    "https://images.unsplash.com/photo-1621451537827-932d0124595d?w=1600&h=900&fit=crop",
+  thumbnail: PROJECT_IMAGES.bioplastic.thumbnail,
+  coverImage: PROJECT_IMAGES.bioplastic.cover,
   duration: "30 Days",
   mode: "Online",
   programFee: "₹1999",
@@ -52,8 +51,7 @@ export const BIOPLASTIC_COURSE: CourseRecord = {
       duration: "30 Days",
       mode: "Online",
       programFee: "₹1999",
-      coverImage:
-        "https://images.unsplash.com/photo-1621451537827-932d0124595d?w=1600&h=900&fit=crop",
+      coverImage: PROJECT_IMAGES.bioplastic.cover,
     },
     aboutProgram: {
       paragraphs: [
@@ -233,10 +231,8 @@ export const AI_DRUG_DISCOVERY_COURSE: CourseRecord = {
     "A 30-day online research internship introducing AI-powered drug discovery through bioinformatics, ML, and computational biology.",
   fullDescription:
     "Drug discovery is one of the most data-rich and computationally demanding challenges in modern science. This 30-day online research internship introduces students to AI-driven drug discovery through bioinformatics, machine learning, cheminformatics, computational biology, and modern pharmaceutical research workflows.",
-  thumbnail:
-    "https://images.unsplash.com/photo-1576086213369-97a306d36557?w=800&h=500&fit=crop",
-  coverImage:
-    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1600&h=900&fit=crop",
+  thumbnail: PROJECT_IMAGES.drugDiscovery.thumbnail,
+  coverImage: PROJECT_IMAGES.drugDiscovery.cover,
   duration: "30 Days",
   mode: "Online",
   programFee: "₹1999",
@@ -275,8 +271,7 @@ export const AI_DRUG_DISCOVERY_COURSE: CourseRecord = {
       duration: "30 Days",
       mode: "Online",
       programFee: "₹1999",
-      coverImage:
-        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1600&h=900&fit=crop",
+      coverImage: PROJECT_IMAGES.drugDiscovery.cover,
     },
     aboutProgram: {
       paragraphs: [
