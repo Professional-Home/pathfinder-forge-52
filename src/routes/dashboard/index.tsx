@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Play, Calendar, BookOpen, Users, Award, TrendingUp, Clock, ArrowUpRight } from "lucide-react";
 import { mockUser, type User } from "@/lib/mockUser";
-import { type Domain } from "@/lib/domain";
+import { type Domain, DOMAINS } from "@/lib/domain";
 import { Card, Greeting, MentorRow, GuidanceRow } from "@/components/dashboard-shared";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/utils/supabase";
-import { DOMAINS } from "@/lib/domain";
+import { mergeDashboardCourses } from "@/lib/courses/dashboard-courses";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard/")({
@@ -258,7 +258,7 @@ function DashboardCourses() {
         }
       }
 
-      return { courses: data || [], enrolledIds };
+      return { courses: mergeDashboardCourses(data || []), enrolledIds };
     }
   });
 
@@ -281,7 +281,18 @@ function DashboardCourses() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {courses.map(course => (
-        <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background p-5 hover:border-foreground/20 transition-colors">
+        <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
+          {course.thumbnail && (
+            <div className="aspect-[2/1] overflow-hidden">
+              <img
+                src={course.thumbnail}
+                alt={course.title}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
+          <div className="flex flex-1 flex-col justify-between p-5">
           <div>
             <div className="inline-flex rounded bg-surface px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">
               {course.category}
@@ -305,6 +316,7 @@ function DashboardCourses() {
                 <Play className="h-3 w-3" /> Start learning
               </Link>
             )}
+          </div>
           </div>
         </div>
       ))}
