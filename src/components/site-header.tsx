@@ -35,15 +35,19 @@ function scrollToSection(hash: string) {
 }
 
 function detectActiveSection(): HomeSectionId {
-  const scrollPos = window.scrollY + SCROLL_SPY_OFFSET;
-  let current: HomeSectionId = "top";
+  const anchor = SCROLL_SPY_OFFSET;
+  let active: HomeSectionId = "top";
+
   for (const id of HOME_SECTIONS) {
     const el = document.getElementById(id);
-    if (el && el.offsetTop <= scrollPos) {
-      current = id;
+    if (!el) continue;
+    const top = el.getBoundingClientRect().top;
+    if (top <= anchor) {
+      active = id;
     }
   }
-  return current;
+
+  return active;
 }
 
 function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
@@ -92,22 +96,47 @@ export function SiteHeader() {
   }, []);
 
   useEffect(() => {
+    if (!isHome) return;
+
+    const sectionEls = HOME_SECTIONS.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    if (sectionEls.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      () => {
+        setActiveSection(detectActiveSection());
+      },
+      {
+        root: null,
+        rootMargin: `-${SCROLL_SPY_OFFSET}px 0px -55% 0px`,
+        threshold: [0, 0.15, 0.35, 0.5, 0.75, 1],
+      },
+    );
+
+    sectionEls.forEach((el) => observer.observe(el));
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 28);
-      if (isHome) {
-        setActiveSection(detectActiveSection());
-      }
+      setActiveSection(detectActiveSection());
     };
+
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [isHome]);
 
   useEffect(() => {
-    if (isHome) {
-      setActiveSection(detectActiveSection());
-    }
-  }, [isHome, pathname]);
+    const handleScrollOnly = () => {
+      setIsScrolled(window.scrollY > 28);
+    };
+    if (isHome) return;
+    handleScrollOnly();
+    window.addEventListener("scroll", handleScrollOnly, { passive: true });
+    return () => window.removeEventListener("scroll", handleScrollOnly);
+  }, [isHome]);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -171,7 +200,7 @@ export function SiteHeader() {
     }
 
     const sectionId = link.sectionId;
-    const isActive = isHome && activeSection === sectionId;
+    const isActive = isHome && !isProjectsRoute && activeSection === sectionId;
 
     return (
       <a
