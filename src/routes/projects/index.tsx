@@ -61,17 +61,12 @@ function ProjectsListingPage() {
 
       <section className="py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                <Sparkles className="h-3 w-3 text-student" />
-                Available now
-              </div>
-              <h2 className="font-display text-2xl sm:text-3xl">Featured projects</h2>
+          <div className="mb-8">
+            <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-student" />
+              Available now
             </div>
-            <p className="hidden max-w-xs text-right text-sm text-muted-foreground sm:block">
-              {projects.length} research programs · Online · Certificate included
-            </p>
+            <h2 className="font-display text-2xl sm:text-3xl">Featured projects</h2>
           </div>
 
           {projects.length > 0 ? (
