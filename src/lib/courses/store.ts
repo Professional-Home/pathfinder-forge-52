@@ -3,6 +3,37 @@ import type { CourseFormData, CourseRecord, CourseSortOption } from "./types";
 
 const STORAGE_KEY = "micrylis-course-records";
 
+function syncSeedMedia(courses: CourseRecord[]): CourseRecord[] {
+  let changed = false;
+  const synced = courses.map((course) => {
+    const seed = SEED_COURSES.find((s) => s.id === course.id);
+    if (!seed) return course;
+
+    const needsThumbnail = course.thumbnail !== seed.thumbnail;
+    const needsCover = course.coverImage !== seed.coverImage;
+    const needsHeroCover = course.content.hero.coverImage !== seed.content.hero.coverImage;
+
+    if (!needsThumbnail && !needsCover && !needsHeroCover) return course;
+
+    changed = true;
+    return {
+      ...course,
+      thumbnail: seed.thumbnail,
+      coverImage: seed.coverImage,
+      content: {
+        ...course.content,
+        hero: {
+          ...course.content.hero,
+          coverImage: seed.content.hero.coverImage,
+        },
+      },
+    };
+  });
+
+  if (changed) writeStorage(synced);
+  return synced;
+}
+
 function isBrowser() {
   return typeof window !== "undefined";
 }
@@ -25,13 +56,14 @@ function writeStorage(courses: CourseRecord[]) {
 
 export function initializeCourseStore(): CourseRecord[] {
   const existing = readStorage();
-  if (existing && existing.length > 0) return existing;
+  if (existing && existing.length > 0) return syncSeedMedia(existing);
   writeStorage(SEED_COURSES);
   return SEED_COURSES;
 }
 
 export function getAllCourses(): CourseRecord[] {
-  return readStorage() ?? SEED_COURSES;
+  const courses = readStorage() ?? SEED_COURSES;
+  return syncSeedMedia(courses);
 }
 
 export function getCourseById(id: string): CourseRecord | undefined {
