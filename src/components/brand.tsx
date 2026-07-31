@@ -5,6 +5,7 @@ type WordmarkProps = {
   inverted?: boolean;
   compact?: boolean;
   theme?: "light" | "dark";
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 };
 
 export function Wordmark({
@@ -12,12 +13,14 @@ export function Wordmark({
   inverted = false,
   compact = false,
   theme = "light",
+  onClick,
 }: WordmarkProps) {
   const isDark = theme === "dark" || inverted;
 
   return (
     <Link
       to="/"
+      onClick={onClick}
       className={`inline-flex items-center gap-2 transition-opacity hover:opacity-80 ${className}`}
     >
       <img

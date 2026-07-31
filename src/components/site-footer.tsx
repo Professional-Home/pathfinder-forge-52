@@ -1,12 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react";
+import { Instagram, Linkedin, Mail, Phone } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 
 const PLATFORM_LINKS = [
-  { name: "How it works", href: "/#how" },
-  { name: "Product", href: "/#preview" },
-  { name: "Mentors", href: "/#loops" },
-  { name: "For you", href: "/#lanes" },
+  { name: "For you", href: "/#top" },
+  { name: "How it works", href: "/#lanes" },
+  { name: "Platform", href: "/#how" },
+  { name: "Products", href: "/#preview" },
+  { name: "Projects", href: "/projects" },
 ] as const;
 
 const COMPANY_LINKS = [
@@ -40,7 +41,7 @@ export function SiteFooter() {
             <Wordmark theme="dark" />
             <p className="mt-4 max-w-xs text-[15px] leading-relaxed text-white/65">
               The premium operating system for personalized growth. Quantify your path,
-              learn with mentors, and unlock peak outcomes.
+              learn through research projects, and unlock peak outcomes.
             </p>
 
             <div className="mt-6 flex items-center gap-3">
@@ -68,12 +69,21 @@ export function SiteFooter() {
               <ul className="space-y-3">
                 {PLATFORM_LINKS.map((link) => (
                   <li key={link.name}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-white/60 transition-colors hover:text-white"
-                    >
-                      {link.name}
-                    </a>
+                    {link.href.startsWith("/projects") ? (
+                      <Link
+                        to="/projects"
+                        className="text-sm text-white/60 transition-colors hover:text-white"
+                      >
+                        {link.name}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-white/60 transition-colors hover:text-white"
+                      >
+                        {link.name}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -128,7 +138,6 @@ export function SiteFooter() {
                     <span className="font-medium text-white/90">+91 88490 05635</span>
                   </a>
                 </li>
-
               </ul>
             </div>
           </div>

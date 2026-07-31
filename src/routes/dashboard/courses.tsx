@@ -1,17 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Play, BookOpen } from "lucide-react";
 import { type Domain, DOMAINS, isDomain } from "@/lib/domain";
+import { mergeDashboardCourses, type DashboardCourse } from "@/lib/courses/dashboard-courses";
 import { supabase } from "../../utils/supabase";
 import { useQuery } from "@tanstack/react-query";
 
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  duration: string;
-  thumbnail: string;
-}
+interface Course extends DashboardCourse {}
 
 export const Route = createFileRoute("/dashboard/courses")({
   component: CoursesPage,
@@ -46,7 +40,7 @@ function CoursesPage() {
       }
 
       return {
-        courses: (data || []) as Course[],
+        courses: mergeDashboardCourses((data || []) as Course[]),
         enrolledIds
       };
     },
@@ -95,7 +89,18 @@ function CoursesPage() {
           <div className="mb-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">Available Courses</div>
           <div className="grid gap-4 md:grid-cols-2">
             {courses.map(course => (
-              <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background p-6 hover:border-foreground/20 transition-colors">
+              <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
+                {course.thumbnail && (
+                  <div className="aspect-[2/1] overflow-hidden">
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex flex-1 flex-col justify-between p-6">
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="inline-flex rounded bg-surface px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -127,6 +132,7 @@ function CoursesPage() {
                       <Play className="h-3.5 w-3.5" /> Start learning
                     </Link>
                   )}
+                </div>
                 </div>
               </div>
             ))}

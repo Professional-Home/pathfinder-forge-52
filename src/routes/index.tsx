@@ -92,7 +92,7 @@ function Hero() {
   };
 
   return (
-    <section className="relative overflow-hidden border-b border-border/60">
+    <section id="top" className="relative overflow-hidden border-b border-border/60 scroll-mt-24">
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.35]">
         <div className="absolute -top-40 left-1/2 h-[420px] w-[min(900px,140vw)] -translate-x-1/2 rounded-full bg-gradient-to-br from-student/25 via-startup/15 to-researcher/25 blur-3xl" />
         <motion.div
@@ -140,12 +140,12 @@ function Hero() {
           </motion.p>
 
           <motion.div variants={itemVariants} className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link to="/signup" className="w-full sm:w-auto">
+            <Link to="/projects" className="w-full sm:w-auto">
               <motion.div
                 whileTap={{ scale: 0.97 }}
                 className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-transparent bg-black px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:border-black hover:bg-white hover:text-black focus-visible:border-black focus-visible:bg-white focus-visible:text-black active:border-black active:bg-white active:text-black sm:w-auto sm:py-3"
               >
-                Start the 5-minute quiz
+                Explore Projects
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </motion.div>
             </Link>
@@ -266,9 +266,9 @@ function HowItWorks() {
   return (
     <section id="how" className="scroll-mt-24 border-b border-border/60 bg-surface/30">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-24 md:py-32">
-        <div className="mb-12 text-center sm:mb-16 md:mb-20">
+        <div className="mb-12 sm:mb-16 md:mb-20">
           <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">02 — Platform Features</div>
-          <h2 className="font-display text-3xl tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">Your journey to mastery.</h2>
+          <h2 className="max-w-2xl font-display text-3xl tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">Your journey to mastery.</h2>
         </div>
 
         <div className="space-y-16 sm:space-y-24 md:space-y-32">
@@ -506,7 +506,7 @@ function ProductPreview() {
     <section id="preview" className="scroll-mt-24 border-b border-border/60">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-24">
         <div className="mb-10 max-w-2xl sm:mb-14">
-          <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">03 — Product</div>
+          <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">03 — Products</div>
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl">
             A dashboard that changes shape for who you are.
           </h2>
@@ -520,7 +520,7 @@ function ProductPreview() {
           </div>
           <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4 p-4 md:p-6">
             <div className="lg:col-span-3 flex overflow-x-auto space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 rounded-lg bg-surface p-3 text-xs text-muted-foreground no-scrollbar">
-              {["Dashboard", "Guidance", "Mentors", "Courses", "Certificates", "Payments"].map((i, idx) => (
+              {["Dashboard", "Guidance", "Projects", "Certificates", "Payments"].map((i, idx) => (
                 <div key={i} className={`whitespace-nowrap rounded px-3 py-1.5 lg:px-2 ${idx === 0 ? "bg-background text-foreground" : ""}`}>
                   {i}
                 </div>
@@ -543,10 +543,12 @@ function ProductPreview() {
                 </div>
               </div>
               <div className="sm:col-span-2 rounded-lg border border-border bg-background p-5">
-                <div className="text-xs text-muted-foreground">Suggested mentor</div>
+                <div className="text-xs text-muted-foreground">Suggested expert</div>
                 <div className="mt-3 font-display text-lg">Priya N.</div>
-                <div className="mt-0.5 text-xs text-muted-foreground">Ex-Stripe · Fundraising</div>
-                <div className="mt-4 inline-flex rounded bg-foreground px-2 py-1 text-[11px] text-background">Book · $120</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">Biotech · Research</div>
+                <div className="mt-4 inline-flex cursor-default rounded-full border border-transparent bg-black px-3 py-1 text-[11px] font-medium text-white transition-colors hover:border-black hover:bg-white hover:text-black">
+                  Book session
+                </div>
               </div>
               <div className="sm:col-span-3 rounded-lg border border-border bg-background p-5">
                 <div className="text-xs text-muted-foreground">Guidance for you</div>
