@@ -199,7 +199,7 @@ export function SiteHeader() {
       );
     }
 
-    const sectionId = link.sectionId;
+    const sectionId = "sectionId" in link ? link.sectionId : "top";
     const isActive = isHome && !isProjectsRoute && activeSection === sectionId;
 
     return (
@@ -383,7 +383,9 @@ export function SiteHeader() {
                           setMenuOpen(false);
                           if (isHome) {
                             scrollToSection(link.href.replace("/", ""));
-                            setActiveSection(link.sectionId);
+                            if ("sectionId" in link && link.sectionId) {
+                              setActiveSection(link.sectionId);
+                            }
                           } else {
                             window.location.href = link.href;
                           }

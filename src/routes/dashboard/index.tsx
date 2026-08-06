@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Play, Calendar, BookOpen, Users, Award, TrendingUp, Clock, ArrowUpRight } from "lucide-react";
+import { Play, Calendar, BookOpen, Users, Award, TrendingUp, Clock, ArrowUpRight, Lock, MessageCircle } from "lucide-react";
 import { mockUser, type User } from "@/lib/mockUser";
 import { type Domain, DOMAINS } from "@/lib/domain";
 import { Card, Greeting, MentorRow, GuidanceRow } from "@/components/dashboard-shared";
@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/utils/supabase";
 import { mergeDashboardCourses } from "@/lib/courses/dashboard-courses";
 import { Link } from "@tanstack/react-router";
+import { generateWhatsAppLink } from "@/utils/whatsapp";
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardOverview,
@@ -52,36 +53,42 @@ function DashboardOverview() {
       const userEmail = user?.email;
       if (!userEmail) return [];
 
-      const [enrollments, bookings] = await Promise.all([
-        supabase
+      let enrollmentsData: any[] = [];
+      let bookingsData: any[] = [];
+
+      try {
+        const res = await supabase
           .from("enrollments_users")
-          .select("course_id, enrolled_at, courses(title)")
+          .select("*")
           .eq("student_email", userEmail)
-          .order("enrolled_at", { ascending: false })
-          .limit(3),
-        supabase
+          .limit(3);
+        enrollmentsData = res.data || [];
+      } catch (e) {}
+
+      try {
+        const res = await supabase
           .from("mentor_bookings")
-          .select("mentor_id, booked_at, mentors(name)")
+          .select("*")
           .eq("student_email", userEmail)
-          .order("booked_at", { ascending: false })
-          .limit(3),
-      ]);
+          .limit(3);
+        bookingsData = res.data || [];
+      } catch (e) {}
 
       const items: { type: string; label: string; time: string; icon: string }[] = [];
 
-      (enrollments.data || []).forEach((e: any) => {
+      enrollmentsData.forEach((e: any) => {
         items.push({
           type: "enrollment",
-          label: `Enrolled in ${e.courses?.title || "a course"}`,
+          label: `Enrolled in Course #${e.course_id || ""}`,
           time: e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "Recently",
           icon: "course",
         });
       });
 
-      (bookings.data || []).forEach((b: any) => {
+      bookingsData.forEach((b: any) => {
         items.push({
           type: "booking",
-          label: `Booked ${b.mentors?.name || "a mentor"}`,
+          label: `Booked Mentor Session`,
           time: b.booked_at ? new Date(b.booked_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "Recently",
           icon: "mentor",
         });
@@ -258,12 +265,13 @@ function DashboardCourses() {
         }
       }
 
-      return { courses: mergeDashboardCourses(data || []), enrolledIds };
+      return { courses: mergeDashboardCourses(data || []), enrolledIds, userEmail };
     }
   });
 
   const courses = coursesData?.courses || [];
   const enrolledIds = coursesData?.enrolledIds || [];
+  const userEmail = coursesData?.userEmail || "";
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground animate-pulse">Loading courses...</div>;
@@ -280,46 +288,64 @@ function DashboardCourses() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {courses.map(course => (
-        <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
-          {course.thumbnail && (
-            <div className="aspect-[2/1] overflow-hidden">
-              <img
-                src={course.thumbnail}
-                alt={course.title}
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
-            </div>
-          )}
-          <div className="flex flex-1 flex-col justify-between p-5">
-          <div>
-            <div className="inline-flex rounded bg-surface px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-              {course.category}
-            </div>
-            <h3 className="mt-4 font-display text-lg">{course.title}</h3>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {course.duration ? course.duration : "Self-paced"}
-            </div>
-          </div>
-          <div className="mt-6 border-t border-border pt-4">
-            {enrolledIds.includes(String(course.id)) ? (
-              <div className="inline-flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground cursor-default">
-                <BookOpen className="h-3 w-3" /> Enrolled
+      {courses.map(course => {
+        const isEnrolled = enrolledIds.includes(String(course.id));
+        const whatsappLink = isEnrolled
+          ? generateWhatsAppLink(undefined, course.title, userEmail)
+          : "";
+
+        return (
+          <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
+            {course.thumbnail && (
+              <div className="aspect-[2/1] overflow-hidden">
+                <img
+                  src={course.thumbnail}
+                  alt={course.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
               </div>
-            ) : (
-              <Link
-                to="/dashboard/enroll/$courseId"
-                params={{ courseId: String(course.id) }}
-                className="inline-flex items-center gap-2 rounded-md bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 transition"
-              >
-                <Play className="h-3 w-3" /> Start learning
-              </Link>
             )}
+            <div className="flex flex-1 flex-col justify-between p-5">
+              <div>
+                <div className="inline-flex rounded bg-surface px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {course.category}
+                </div>
+                <h3 className="mt-4 font-display text-lg">{course.title}</h3>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {course.duration ? course.duration : "Self-paced"}
+                </div>
+              </div>
+              <div className="mt-6 border-t border-border pt-4 flex items-center justify-between gap-2">
+                {isEnrolled ? (
+                  <>
+                    <div className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1.5 text-xs text-muted-foreground cursor-not-allowed border border-border font-medium">
+                      <Lock className="h-3 w-3 text-emerald-500" /> Enrolled
+                    </div>
+                    <a
+                      href={whatsappLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[#25D366] hover:bg-[#20bd5a] px-2.5 py-1.5 text-xs text-white font-medium transition shadow-sm"
+                    >
+                      <MessageCircle className="h-3 w-3 fill-white" /> Support
+                    </a>
+                  </>
+                ) : (
+                  <a
+                    href={course.applyUrl || (String(course.title).toLowerCase().includes("drug") ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-md bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 transition font-medium"
+                  >
+                    <Play className="h-3 w-3" /> Apply Now
+                  </a>
+                )}
+              </div>
+            </div>
           </div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

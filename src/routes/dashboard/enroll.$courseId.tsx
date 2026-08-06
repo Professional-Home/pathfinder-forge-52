@@ -1,109 +1,43 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Phone } from "lucide-react";
+import { ArrowLeft, ExternalLink, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../utils/supabase";
+import { SEED_COURSES } from "@/lib/courses/data";
 
 export const Route = createFileRoute("/dashboard/enroll/$courseId")({
   component: CourseEnrollmentPage,
 });
 
-type SubmitState = "idle" | "loading" | "success" | "error";
-
 function CourseEnrollmentPage() {
   const { courseId } = Route.useParams();
-  const navigate = useNavigate();
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["course", courseId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("courses")
         .select("*")
         .eq("id", courseId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      if (data) return data;
+
+      // Fallback to seed courses
+      const seed = SEED_COURSES.find(
+        (c) => c.id === courseId || c.slug === courseId
+      );
+      return seed || null;
     },
   });
 
-  const [formData, setFormData] = useState({
-    student_name: "",
-    student_email: "",
-    student_number: "",
-  });
-  const [submitState, setSubmitState] = useState<SubmitState>("idle");
-  const [errorMsg, setErrorMsg] = useState("");
-
-  useEffect(() => {
-    async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      
-      const { data: profile } = await supabase
-        .from("profile")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-        
-      if (profile) {
-        setFormData(prev => ({
-          ...prev,
-          student_name: profile.name || prev.student_name,
-          student_email: profile.email || prev.student_email,
-          student_number: profile.mobile || prev.student_number,
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          student_email: user.email || prev.student_email,
-        }));
-      }
-    }
-    loadProfile();
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitState("loading");
-    setErrorMsg("");
-
-    try {
-      // Insert directly into enrollments_users table
-      const { error: enrollError } = await supabase
-        .from("enrollments_users")
-        .insert({
-          student_name: formData.student_name,
-          student_email: formData.student_email,
-          student_number: formData.student_number ? Number(formData.student_number) : null,
-          course_id: courseId,
-          enrollment_date: new Date().toISOString(),
-        });
-
-      // Ignore unique-constraint violation (user already enrolled)
-      if (enrollError && enrollError.code !== "23505") throw enrollError;
-
-      setSubmitState("success");
-
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        navigate({ to: "/dashboard/courses" });
-      }, 2000);
-    } catch (err: any) {
-      console.error("Enrollment error:", err);
-      setErrorMsg(err?.message || "Something went wrong. Please try again.");
-      setSubmitState("error");
-    }
-  };
+  const courseTitle = course?.title || course?.name || course?.course_name || "Research Project";
+  const applyUrl =
+    course?.apply_url ||
+    course?.applyUrl ||
+    (String(courseTitle).toLowerCase().includes("drug")
+      ? "https://forms.gle/83HAsS9PwXmLXiox6"
+      : "https://forms.gle/JiUaRVJYRuFtgtBc6");
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -115,92 +49,36 @@ function CourseEnrollmentPage() {
           <ArrowLeft className="h-4 w-4" /> Back to courses
         </Link>
         <h1 className="font-display text-4xl mt-2">
-          {courseLoading
-            ? "Loading..."
-            : `Enroll in ${course?.course_name || course?.title || "Course"}`}
+          {courseLoading ? "Loading..." : `Apply for ${courseTitle}`}
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Fill in your details below to get started
-          {course?.course_duration ? ` with this ${course.course_duration} course.` : "."}
+          Complete your application via our official Google Form.
         </p>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface-elevated p-8">
-        {submitState === "success" ? (
-          <div className="flex flex-col items-center gap-4 py-8 text-center">
-            <CheckCircle2 className="h-12 w-12 text-green-500" />
-            <h2 className="font-display text-2xl">Enrollment Successful!</h2>
-            <p className="text-muted-foreground">
-              Welcome aboard 🎉 Redirecting you back to courses…
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="student_name">Full Name</Label>
-              <Input
-                id="student_name"
-                name="student_name"
-                placeholder="John Doe"
-                value={formData.student_name}
-                onChange={handleChange}
-                disabled={submitState === "loading"}
-                required
-              />
-            </div>
+      <div className="rounded-xl border border-border bg-surface-elevated p-8 text-center space-y-6">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-student/10 text-student">
+          <Sparkles className="h-8 w-8" />
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="student_email">Email Address</Label>
-              <Input
-                id="student_email"
-                name="student_email"
-                type="email"
-                placeholder="john@example.com"
-                value={formData.student_email}
-                onChange={handleChange}
-                disabled={submitState === "loading"}
-                required
-              />
-            </div>
+        <div>
+          <h2 className="font-display text-2xl">{courseTitle}</h2>
+          <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+            Click below to open the application form. Make sure to fill in all required details.
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="student_number">Student Number</Label>
-              <Input
-                id="student_number"
-                name="student_number"
-                type="number"
-                placeholder="e.g. 12345"
-                value={formData.student_number}
-                onChange={handleChange}
-                disabled={submitState === "loading"}
-              />
-            </div>
-
-            {submitState === "error" && (
-              <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {errorMsg}
-              </div>
-            )}
-
-            <div className="pt-4 border-t border-border">
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={submitState === "loading"}
-              >
-                {submitState === "loading" ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enrolling…
-                  </>
-                ) : (
-                  "Submit & Start Learning"
-                )}
-              </Button>
-            </div>
-          </form>
-        )}
+        <div className="pt-4">
+          <a
+            href={applyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-6 py-3.5 text-sm font-semibold text-background hover:opacity-90 transition"
+          >
+            Open Google Form Application
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        </div>
       </div>
     </div>
   );

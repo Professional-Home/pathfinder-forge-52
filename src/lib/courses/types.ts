@@ -92,6 +92,7 @@ export interface CourseRecord {
   featured: boolean;
   status: CourseStatus;
   lastUpdated: string;
+  applyUrl?: string;
   content: CoursePageContent;
 }
 

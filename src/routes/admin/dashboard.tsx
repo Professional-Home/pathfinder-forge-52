@@ -96,7 +96,7 @@ function AdminDashboardPage() {
         <DashboardCard title="Total Courses" value={courseStats.total.toString()} icon={BookOpen} trend={`${courseStats.published} published`} />
         <DashboardCard title="Published Courses" value={courseStats.published.toString()} icon={FileText} accent="researcher" />
         <DashboardCard title="Draft Courses" value={courseStats.draft.toString()} icon={FileText} accent="startup" />
-        <DashboardCard title="Featured Courses" value={courseStats.featured.toString()} icon={Star} accent="student" />
+        <DashboardCard title="Featured Courses" value={courseStats.featured.toString()} icon={Star} accent="startup" />
         <DashboardCard title="Total Students" value={(userCount + googleCount).toLocaleString()} icon={GraduationCap} trend="+12% vs last month" />
         <DashboardCard title="Total Mentors" value={mentorsCount.toString()} icon={Users} accent="startup" />
         <DashboardCard title="Upcoming Sessions" value={DASHBOARD_STATS.upcomingSessions} icon={Calendar} accent="researcher" />

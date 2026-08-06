@@ -1,5 +1,6 @@
 import { SEED_COURSES } from "./data";
 import type { CourseFormData, CourseRecord, CourseSortOption } from "./types";
+import { supabase } from "@/utils/supabase";
 
 const STORAGE_KEY = "micrylis-course-records";
 
@@ -74,35 +75,129 @@ export function getCourseBySlug(slug: string): CourseRecord | undefined {
   return getAllCourses().find((c) => c.slug === slug);
 }
 
+export async function fetchCoursesFromSupabase(): Promise<CourseRecord[]> {
+  try {
+    const { data: dbCourses, error } = await supabase.from("courses").select("*");
+    if (error || !dbCourses || dbCourses.length === 0) {
+      return getAllCourses();
+    }
+
+    const dbMapped: CourseRecord[] = dbCourses.map((db) => {
+      const seed = SEED_COURSES.find(
+        (s) => s.slug.toLowerCase() === (db.slug || "").toLowerCase() || s.id === String(db.id)
+      );
+      return {
+        id: String(db.id || db.slug),
+        slug: db.slug || seed?.slug || "course-slug",
+        name: db.title || db.name || seed?.name || "Untitled Course",
+        shortDescription: db.short_description || db.shortDescription || seed?.shortDescription || "",
+        fullDescription: db.full_description || db.fullDescription || seed?.fullDescription || "",
+        thumbnail: db.thumbnail || seed?.thumbnail || "",
+        coverImage: db.cover_image || db.coverImage || seed?.coverImage || "",
+        duration: db.duration || seed?.duration || "30 Days",
+        mode: db.mode || seed?.mode || "Online",
+        programFee: db.program_fee || db.programFee || seed?.programFee || "₹1999",
+        category: db.category || seed?.category || "Biotechnology",
+        difficulty: db.difficulty || seed?.difficulty || "intermediate",
+        certificate: db.certificate || seed?.certificate || "Certificate of Completion",
+        learningOutcomes: db.learning_outcomes || seed?.learningOutcomes || [],
+        curriculum: db.curriculum || seed?.curriculum || "",
+        requirements: db.requirements || seed?.requirements || "",
+        whoShouldJoin: db.who_should_join || seed?.whoShouldJoin || "",
+        faqs: db.faqs || seed?.faqs || "",
+        seoTitle: db.seo_title || seed?.seoTitle || db.title || "",
+        seoDescription: db.seo_description || seed?.seoDescription || db.short_description || "",
+        featured: db.featured ?? seed?.featured ?? true,
+        status: db.status || seed?.status || "published",
+        lastUpdated: db.updated_at ? String(db.updated_at).slice(0, 10) : new Date().toISOString().slice(0, 10),
+        applyUrl: db.apply_url || db.applyUrl || seed?.applyUrl || "",
+        content: seed?.content || SEED_COURSES[0].content,
+      };
+    });
+
+    const dbSlugs = new Set(dbMapped.map((c) => c.slug.toLowerCase()));
+    const finalCourses = [...dbMapped];
+
+    for (const seed of SEED_COURSES) {
+      if (!dbSlugs.has(seed.slug.toLowerCase())) {
+        finalCourses.push(seed);
+      }
+    }
+
+    writeStorage(finalCourses);
+    return finalCourses;
+  } catch (err) {
+    console.error("Error fetching courses from Supabase:", err);
+    return getAllCourses();
+  }
+}
+
+async function syncCourseToSupabase(course: CourseRecord) {
+  try {
+    await supabase.from("courses").upsert(
+      {
+        slug: course.slug,
+        title: course.name,
+        short_description: course.shortDescription,
+        full_description: course.fullDescription,
+        thumbnail: course.thumbnail,
+        cover_image: course.coverImage,
+        duration: course.duration,
+        mode: course.mode,
+        program_fee: course.programFee,
+        category: course.category,
+        difficulty: course.difficulty,
+        certificate: course.certificate,
+        status: course.status,
+        featured: course.featured,
+        apply_url: course.applyUrl,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "slug" }
+    );
+  } catch (e) {
+    console.warn("[Store] Supabase sync note:", e);
+  }
+}
+
 export function saveCourse(data: CourseFormData, id?: string): CourseRecord {
   const courses = getAllCourses();
   const now = new Date().toISOString().slice(0, 10);
 
+  let targetCourse: CourseRecord;
+
   if (id) {
     const index = courses.findIndex((c) => c.id === id);
     if (index >= 0) {
-      const updated: CourseRecord = { ...data, id, lastUpdated: now };
-      courses[index] = updated;
+      targetCourse = { ...data, id, lastUpdated: now };
+      courses[index] = targetCourse;
       writeStorage(courses);
-      return updated;
+      syncCourseToSupabase(targetCourse);
+      return targetCourse;
     }
   }
 
-  const newCourse: CourseRecord = {
+  targetCourse = {
     ...data,
     id: `course-${Date.now()}`,
     lastUpdated: now,
   };
-  courses.unshift(newCourse);
+  courses.unshift(targetCourse);
   writeStorage(courses);
-  return newCourse;
+  syncCourseToSupabase(targetCourse);
+  return targetCourse;
 }
 
 export function deleteCourse(id: string): boolean {
   const courses = getAllCourses();
+  const target = courses.find((c) => c.id === id);
   const filtered = courses.filter((c) => c.id !== id);
   if (filtered.length === courses.length) return false;
   writeStorage(filtered);
+
+  if (target) {
+    supabase.from("courses").delete().or(`slug.eq.${target.slug},id.eq.${id}`).then();
+  }
   return true;
 }
 
@@ -123,6 +218,7 @@ export function duplicateCourse(id: string): CourseRecord | null {
   const courses = getAllCourses();
   courses.unshift(copy);
   writeStorage(courses);
+  syncCourseToSupabase(copy);
   return copy;
 }
 
@@ -137,7 +233,39 @@ export function toggleCourseStatus(id: string): CourseRecord | null {
     lastUpdated: new Date().toISOString().slice(0, 10),
   };
   writeStorage(courses);
+  syncCourseToSupabase(courses[index]);
   return courses[index];
+}
+
+export async function deleteCourseAsync(id: string): Promise<boolean> {
+  const courses = getAllCourses();
+  const target = courses.find((c) => c.id === id);
+
+  deleteCourse(id);
+
+  if (target) {
+    try {
+      await supabase.from("courses").delete().or(`slug.eq.${target.slug},id.eq.${id}`);
+    } catch (e) {
+      console.error("Supabase delete failed:", e);
+    }
+  }
+  return true;
+}
+
+export async function toggleCourseStatusAsync(id: string): Promise<CourseRecord | null> {
+  const updated = toggleCourseStatus(id);
+  if (updated) {
+    try {
+      await supabase
+        .from("courses")
+        .update({ status: updated.status, updated_at: new Date().toISOString() })
+        .or(`slug.eq.${updated.slug},id.eq.${id}`);
+    } catch (e) {
+      console.error("Supabase status toggle failed:", e);
+    }
+  }
+  return updated;
 }
 
 export function filterAndSortCourses(

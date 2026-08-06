@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { CourseFormData, CourseDifficulty, CourseMode, CourseStatus } from "@/lib/courses/types";
+import { CloudinaryUpload } from "@/components/admin/CloudinaryUpload";
 
 interface CourseFormProps {
   data: CourseFormData;
@@ -112,8 +113,13 @@ export function CourseForm({ data, onChange }: CourseFormProps) {
               onChange={(e) => update("thumbnail", e.target.value)}
               placeholder="https://..."
             />
+            <CloudinaryUpload
+              label="Upload Thumbnail via Cloudinary"
+              value={data.thumbnail}
+              onUploadSuccess={(url) => update("thumbnail", url)}
+            />
             {data.thumbnail && (
-              <img src={data.thumbnail} alt="Thumbnail preview" className="mt-2 h-20 w-32 rounded-md object-cover" />
+              <img src={data.thumbnail} alt="Thumbnail preview" className="mt-2 h-20 w-32 rounded-md object-cover border border-border" />
             )}
           </div>
           <div className="space-y-2">
@@ -124,8 +130,13 @@ export function CourseForm({ data, onChange }: CourseFormProps) {
               onChange={(e) => update("coverImage", e.target.value)}
               placeholder="https://..."
             />
+            <CloudinaryUpload
+              label="Upload Cover Image via Cloudinary"
+              value={data.coverImage}
+              onUploadSuccess={(url) => update("coverImage", url)}
+            />
             {data.coverImage && (
-              <img src={data.coverImage} alt="Cover preview" className="mt-2 h-20 w-full rounded-md object-cover" />
+              <img src={data.coverImage} alt="Cover preview" className="mt-2 h-20 w-full rounded-md object-cover border border-border" />
             )}
           </div>
         </div>

@@ -7,7 +7,8 @@ const IIT_BADGE =
 export const BIOPLASTIC_COURSE: CourseRecord = {
   id: "course-bioplastic-innovation",
   slug: "bioplastic-innovation",
-  name: "BioPlastic Innovation",
+  name: "Bioplastic Innovation Research Project",
+  applyUrl: "https://forms.gle/JiUaRVJYRuFtgtBc6",
   shortDescription:
     "A 30-day intensive online research internship mastering biodegradable materials from first principles to commercialization.",
   fullDescription:
@@ -226,7 +227,8 @@ export const BIOPLASTIC_COURSE: CourseRecord = {
 export const AI_DRUG_DISCOVERY_COURSE: CourseRecord = {
   id: "course-ai-drug-discovery",
   slug: "ai-in-drug-discovery",
-  name: "AI in Drug Discovery",
+  name: "AI in Drug Discovery Research Internship Program",
+  applyUrl: "https://forms.gle/83HAsS9PwXmLXiox6",
   shortDescription:
     "A 30-day online research internship introducing AI-powered drug discovery through bioinformatics, ML, and computational biology.",
   fullDescription:

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { Eye } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Eye, Loader2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { CourseForm } from "@/components/admin/courses/CourseForm";
 import { Button } from "@/components/ui/button";
@@ -9,42 +9,70 @@ import {
   getCourseById,
   initializeCourseStore,
   saveCourse,
+  fetchCoursesFromSupabase,
 } from "@/lib/courses/store";
-import type { CourseFormData } from "@/lib/courses/types";
+import type { CourseFormData, CourseRecord } from "@/lib/courses/types";
 
 export const Route = createFileRoute("/admin/courses/$courseId/edit")({
   component: EditCoursePage,
-  loader: ({ params }) => {
-    initializeCourseStore();
-    const course = getCourseById(params.courseId);
-    if (!course) throw notFound();
-    return { course };
-  },
 });
 
 function EditCoursePage() {
-  const { course } = Route.useLoaderData();
+  const { courseId } = Route.useParams();
   const navigate = useNavigate();
-  const [form, setForm] = useState<CourseFormData>(courseToFormData(course));
+  const [course, setCourse] = useState<CourseRecord | null>(null);
+  const [form, setForm] = useState<CourseFormData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setForm(courseToFormData(course));
-  }, [course]);
+    initializeCourseStore();
+    const existing = getCourseById(courseId);
+    if (existing) {
+      setCourse(existing);
+      setForm(courseToFormData(existing));
+      setLoading(false);
+    }
 
-  function handleSave() {
+    // Also fetch fresh from Supabase
+    fetchCoursesFromSupabase().then((all) => {
+      const fresh = all.find((c) => c.id === courseId || c.slug === courseId);
+      if (fresh) {
+        setCourse(fresh);
+        setForm(courseToFormData(fresh));
+      }
+      setLoading(false);
+    });
+  }, [courseId]);
+
+  async function handleSave() {
+    if (!form || !course) return;
     if (!form.name.trim() || !form.slug.trim()) return;
     setSaving(true);
-    saveCourse(form, course.id);
-    setSaving(false);
-    navigate({ to: "/admin/courses" });
+    try {
+      await saveCourse(form, course.id);
+      navigate({ to: "/admin/courses" });
+    } catch (err) {
+      console.error("Failed to save course changes:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading || !form || !course) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin mb-2 text-student" />
+        <p className="text-sm">Loading course data from Supabase...</p>
+      </div>
+    );
   }
 
   return (
     <>
       <AdminPageHeader
         title={`Edit: ${course.name}`}
-        description="Update course details and publishing settings."
+        description="Update course details, Cloudinary images, and publishing settings."
         breadcrumbs={[
           { label: "Admin", to: "/admin/dashboard" },
           { label: "Courses", to: "/admin/courses" },
@@ -70,7 +98,7 @@ function EditCoursePage() {
             disabled={saving || !form.name.trim()}
             className="bg-foreground text-background hover:bg-foreground/90"
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? "Saving to Supabase..." : "Save Changes"}
           </Button>
         </div>
       </div>

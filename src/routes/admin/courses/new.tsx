@@ -16,19 +16,24 @@ function AddCoursePage() {
   const [form, setForm] = useState<CourseFormData>(createEmptyCourseForm());
   const [saving, setSaving] = useState(false);
 
-  function handleSave() {
+  async function handleSave() {
     if (!form.name.trim() || !form.slug.trim()) return;
     setSaving(true);
-    const saved = saveCourse(form);
-    setSaving(false);
-    navigate({ to: "/admin/courses/$courseId/edit", params: { courseId: saved.id } });
+    try {
+      await saveCourse(form);
+      navigate({ to: "/admin/courses" });
+    } catch (err) {
+      console.error("Failed to save course:", err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <>
       <AdminPageHeader
         title="Add Course"
-        description="Create a new course for the platform."
+        description="Create a new course for the platform (saved directly to Supabase)."
         breadcrumbs={[
           { label: "Admin", to: "/admin/dashboard" },
           { label: "Courses", to: "/admin/courses" },
@@ -47,7 +52,7 @@ function AddCoursePage() {
             disabled={saving || !form.name.trim()}
             className="bg-foreground text-background hover:bg-foreground/90"
           >
-            {saving ? "Creating..." : "Create Course"}
+            {saving ? "Saving to Supabase..." : "Create Course"}
           </Button>
         </div>
       </div>

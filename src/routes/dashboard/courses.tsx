@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Play, BookOpen } from "lucide-react";
-import { type Domain, DOMAINS, isDomain } from "@/lib/domain";
+import { Play, Lock, MessageCircle, BookOpen } from "lucide-react";
 import { mergeDashboardCourses, type DashboardCourse } from "@/lib/courses/dashboard-courses";
 import { supabase } from "../../utils/supabase";
 import { useQuery } from "@tanstack/react-query";
+import { generateWhatsAppLink } from "@/utils/whatsapp";
 
 interface Course extends DashboardCourse {}
 
@@ -35,13 +35,14 @@ function CoursesPage() {
           .eq("student_email", userEmail);
           
         if (enrollments && !enrollError) {
-          enrolledIds = enrollments.map(e => e.course_id);
+          enrolledIds = enrollments.map(e => String(e.course_id));
         }
       }
 
       return {
         courses: mergeDashboardCourses((data || []) as Course[]),
-        enrolledIds
+        enrolledIds,
+        userEmail
       };
     },
     staleTime: 1000 * 60 * 15,
@@ -49,6 +50,7 @@ function CoursesPage() {
 
   const courses = coursesData?.courses || [];
   const enrolledIds = coursesData?.enrolledIds || [];
+  const userEmail = coursesData?.userEmail || "";
 
   if (!isValidDomain) {
     return (
@@ -88,54 +90,77 @@ function CoursesPage() {
         <section>
           <div className="mb-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">Available Courses</div>
           <div className="grid gap-4 md:grid-cols-2">
-            {courses.map(course => (
-              <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
-                {course.thumbnail && (
-                  <div className="aspect-[2/1] overflow-hidden">
-                    <img
-                      src={course.thumbnail}
-                      alt={course.title}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col justify-between p-6">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <div className="inline-flex rounded bg-surface px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {course.category}
-                    </div>
-                  </div>
-                  <h3 className="mt-4 font-display text-2xl">{course.title}</h3>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {course.duration ? `${course.duration}` : "Self-paced"}
-                  </div>
-                  {course.description && (
-                    <p className="mt-4 text-sm text-muted-foreground line-clamp-2">
-                      {course.description}
-                    </p>
-                  )}
-                </div>
+            {courses.map(course => {
+              const isEnrolled = enrolledIds.includes(String(course.id));
+              const whatsappLink = isEnrolled
+                ? generateWhatsAppLink(undefined, course.title, userEmail)
+                : "";
 
-                <div className="mt-8 border-t border-border pt-4">
-                  {enrolledIds.includes(String(course.id)) ? (
-                    <div className="inline-flex items-center gap-2 rounded-md bg-muted px-4 py-2 text-sm text-muted-foreground cursor-default">
-                      <BookOpen className="h-3.5 w-3.5" /> Enrolled
+              return (
+                <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
+                  {course.thumbnail && (
+                    <div className="aspect-[2/1] overflow-hidden">
+                      <img
+                        src={course.thumbnail}
+                        alt={course.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
                     </div>
-                  ) : (
-                    <Link
-                      to="/dashboard/enroll/$courseId"
-                      params={{ courseId: String(course.id) }}
-                      className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 transition"
-                    >
-                      <Play className="h-3.5 w-3.5" /> Start learning
-                    </Link>
                   )}
+                  <div className="flex flex-1 flex-col justify-between p-6">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="inline-flex rounded bg-surface px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {course.category}
+                        </div>
+                      </div>
+                      <h3 className="mt-4 font-display text-2xl">{course.title}</h3>
+                      <div className="mt-1 text-sm text-muted-foreground">
+                        {course.duration ? `${course.duration}` : "Self-paced"}
+                      </div>
+                      {course.description && (
+                        <p className="mt-4 text-sm text-muted-foreground line-clamp-2">
+                          {course.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mt-8 border-t border-border pt-4 flex items-center justify-between gap-3">
+                      {isEnrolled ? (
+                        <>
+                          {/* Locked Enrolled Button */}
+                          <div className="inline-flex items-center gap-1.5 rounded-md bg-muted/80 px-3.5 py-2 text-xs font-semibold text-muted-foreground cursor-not-allowed border border-border/80">
+                            <Lock className="h-3.5 w-3.5 text-emerald-500" />
+                            <span>Enrolled</span>
+                          </div>
+
+                          {/* Direct WhatsApp Support Button */}
+                          <a
+                            href={whatsappLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-md bg-[#25D366] hover:bg-[#20bd5a] px-3.5 py-2 text-xs font-semibold text-white transition shadow-sm"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5 fill-white" />
+                            <span>WhatsApp Support</span>
+                          </a>
+                        </>
+                      ) : (
+                        <a
+                          href={course.applyUrl || (String(course.title).toLowerCase().includes("drug") ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 transition font-medium"
+                        >
+                          <Play className="h-3.5 w-3.5" /> Apply Now
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ) : (
