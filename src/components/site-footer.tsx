@@ -2,16 +2,14 @@ import { Link } from "@tanstack/react-router";
 import { Instagram, Linkedin, Mail, Phone } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 
-const PLATFORM_LINKS = [
-  { name: "For you", href: "/#top" },
-  { name: "How it works", href: "/#lanes" },
-  { name: "Platform", href: "/#how" },
-  { name: "Products", href: "/#preview" },
-  { name: "Projects", href: "/projects" },
+const NAV_LINKS = [
+  { name: "Home", to: "/" as const },
+  { name: "About Us", to: "/about" as const },
+  { name: "Projects", to: "/projects" as const },
+  { name: "Blog", to: "/blog" as const },
 ] as const;
 
 const COMPANY_LINKS = [
-  { name: "About Us", to: "/about" as const },
   { name: "Privacy Policy", to: "/privacy-policy" as const },
   { name: "Return Policy", to: "/return-policy" as const },
   { name: "Refund Policy", to: "/refund-policy" as const },
@@ -49,8 +47,8 @@ export function SiteFooter() {
                 <a
                   key={name}
                   href={href}
-                  target={href.startsWith("mailto:") ? undefined : "_blank"}
-                  rel={href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={name}
                   title={name}
                   className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition hover:border-[#2dd4bf]/50 hover:bg-[#2dd4bf]/15 hover:text-[#5eead4]"
@@ -64,26 +62,17 @@ export function SiteFooter() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-8 md:gap-6">
             <div>
               <h3 className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-white/90">
-                Platform
+                Navigate
               </h3>
               <ul className="space-y-3">
-                {PLATFORM_LINKS.map((link) => (
+                {NAV_LINKS.map((link) => (
                   <li key={link.name}>
-                    {link.href.startsWith("/projects") ? (
-                      <Link
-                        to="/projects"
-                        className="text-sm text-white/60 transition-colors hover:text-white"
-                      >
-                        {link.name}
-                      </Link>
-                    ) : (
-                      <a
-                        href={link.href}
-                        className="text-sm text-white/60 transition-colors hover:text-white"
-                      >
-                        {link.name}
-                      </a>
-                    )}
+                    <Link
+                      to={link.to}
+                      className="text-sm text-white/60 transition-colors hover:text-white"
+                    >
+                      {link.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -91,7 +80,7 @@ export function SiteFooter() {
 
             <div>
               <h3 className="mb-4 text-[13px] font-semibold uppercase tracking-[0.14em] text-white/90">
-                Company
+                Legal
               </h3>
               <ul className="space-y-3">
                 {COMPANY_LINKS.map((link) => (

@@ -5,50 +5,10 @@ import type { Session } from "@supabase/supabase-js";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
 import {
-  HOME_SECTIONS,
   PUBLIC_EXPLORE_LINKS,
   PUBLIC_NAV_LINKS,
-  SCROLL_SPY_OFFSET,
-  type HomeSectionId,
 } from "@/lib/nav-config";
 import { X } from "lucide-react";
-
-const COMPANY_LINKS = [
-  { name: "About & Contact", to: "/about" as const },
-  { name: "Privacy Policy", to: "/privacy-policy" as const },
-  { name: "Return Policy", to: "/return-policy" as const },
-  { name: "Refund Policy", to: "/refund-policy" as const },
-] as const;
-
-function isHashSelector(href: string): href is `#${string}` {
-  return href.startsWith("#");
-}
-
-function scrollToSection(hash: string) {
-  if (!isHashSelector(hash)) return;
-  const el = document.querySelector(hash);
-  if (el) {
-    el.scrollIntoView({ behavior: "smooth" });
-    return;
-  }
-  window.location.href = `/${hash}`;
-}
-
-function detectActiveSection(): HomeSectionId {
-  const anchor = SCROLL_SPY_OFFSET;
-  let active: HomeSectionId = "top";
-
-  for (const id of HOME_SECTIONS) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    const top = el.getBoundingClientRect().top;
-    if (top <= anchor) {
-      active = id;
-    }
-  }
-
-  return active;
-}
 
 function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
   return (
@@ -75,11 +35,8 @@ export function SiteHeader() {
   const location = useLocation();
   const pathname = location.pathname;
   const isHome = pathname === "/";
-  const isProjectsRoute =
-    pathname === "/projects" || pathname.startsWith("/projects/");
 
   const [isScrolled, setIsScrolled] = useState(false);
-  const [activeSection, setActiveSection] = useState<HomeSectionId>("top");
   const [menuOpen, setMenuOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
 
@@ -96,47 +53,13 @@ export function SiteHeader() {
   }, []);
 
   useEffect(() => {
-    if (!isHome) return;
-
-    const sectionEls = HOME_SECTIONS.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
-    if (sectionEls.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      () => {
-        setActiveSection(detectActiveSection());
-      },
-      {
-        root: null,
-        rootMargin: `-${SCROLL_SPY_OFFSET}px 0px -55% 0px`,
-        threshold: [0, 0.15, 0.35, 0.5, 0.75, 1],
-      },
-    );
-
-    sectionEls.forEach((el) => observer.observe(el));
-
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 28);
-      setActiveSection(detectActiveSection());
     };
-
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [isHome]);
-
-  useEffect(() => {
-    const handleScrollOnly = () => {
-      setIsScrolled(window.scrollY > 28);
-    };
-    if (isHome) return;
-    handleScrollOnly();
-    window.addEventListener("scroll", handleScrollOnly, { passive: true });
-    return () => window.removeEventListener("scroll", handleScrollOnly);
-  }, [isHome]);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -155,25 +78,11 @@ export function SiteHeader() {
     return () => window.removeEventListener("resize", handleResize);
   }, [menuOpen]);
 
-  const onHashNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    setMenuOpen(false);
-    if (isHome) {
-      scrollToSection(href);
-      if (isHashSelector(href)) {
-        setActiveSection(href.slice(1) as HomeSectionId);
-      }
-    } else {
-      window.location.href = `/${href}`;
-    }
-  };
-
   const onLogoClick = useCallback(
     (e: React.MouseEvent) => {
       if (isHome) {
         e.preventDefault();
         window.scrollTo({ top: 0, behavior: "smooth" });
-        setActiveSection("top");
         setMenuOpen(false);
       }
     },
@@ -182,38 +91,24 @@ export function SiteHeader() {
 
   const pill = isScrolled;
 
+  const isLinkActive = (matchPath: string) => {
+    if (matchPath === "/") return pathname === "/";
+    return pathname === matchPath || pathname.startsWith(matchPath + "/");
+  };
+
   const renderNavItem = (link: (typeof PUBLIC_NAV_LINKS)[number]) => {
-    if ("isRoute" in link && link.isRoute) {
-      const active = isProjectsRoute;
-      return (
-        <Link
-          key={link.name}
-          to={link.href}
-          className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${
-            active ? "text-foreground" : "hover:text-foreground"
-          }`}
-        >
-          <span className="relative z-10">{link.name}</span>
-          <NavPill active={active} />
-        </Link>
-      );
-    }
-
-    const sectionId = "sectionId" in link ? link.sectionId : "top";
-    const isActive = isHome && !isProjectsRoute && activeSection === sectionId;
-
+    const active = isLinkActive(link.matchPath);
     return (
-      <a
+      <Link
         key={link.name}
-        href={link.href}
-        onClick={(e) => onHashNavClick(e, link.href)}
+        to={link.href}
         className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${
-          isActive ? "text-foreground" : "hover:text-foreground"
+          active ? "text-foreground" : "hover:text-foreground"
         }`}
       >
         <span className="relative z-10">{link.name}</span>
-        <NavPill active={isActive} />
-      </a>
+        <NavPill active={active} />
+      </Link>
     );
   };
 
@@ -360,52 +255,16 @@ export function SiteHeader() {
               </div>
 
               <div className="flex flex-1 flex-col overflow-y-auto px-6 py-8">
-                <span className="mb-4 text-xs tracking-wide text-muted-foreground">Explore</span>
+                <span className="mb-4 text-xs tracking-wide text-muted-foreground">Navigate</span>
                 <div className="mb-8 flex flex-col gap-4 text-[17px] font-medium text-foreground">
-                  {PUBLIC_EXPLORE_LINKS.map((link) =>
-                    "isRoute" in link && link.isRoute ? (
-                      <Link
-                        key={link.name}
-                        to={link.href}
-                        onClick={() => setMenuOpen(false)}
-                        className={`transition-colors ${
-                          isProjectsRoute ? "text-foreground" : "hover:text-muted-foreground"
-                        }`}
-                      >
-                        {link.name}
-                      </Link>
-                    ) : (
-                      <a
-                        key={link.name}
-                        href={link.href}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setMenuOpen(false);
-                          if (isHome) {
-                            scrollToSection(link.href.replace("/", ""));
-                            if ("sectionId" in link && link.sectionId) {
-                              setActiveSection(link.sectionId);
-                            }
-                          } else {
-                            window.location.href = link.href;
-                          }
-                        }}
-                        className="transition-colors hover:text-muted-foreground"
-                      >
-                        {link.name}
-                      </a>
-                    ),
-                  )}
-                </div>
-
-                <span className="mb-4 text-xs tracking-wide text-muted-foreground">Company</span>
-                <div className="flex flex-col gap-3 text-sm font-medium text-muted-foreground">
-                  {COMPANY_LINKS.map((link) => (
+                  {PUBLIC_EXPLORE_LINKS.map((link) => (
                     <Link
                       key={link.name}
-                      to={link.to}
+                      to={link.href}
                       onClick={() => setMenuOpen(false)}
-                      className="transition-colors hover:text-foreground"
+                      className={`transition-colors ${
+                        isLinkActive(link.matchPath) ? "text-foreground" : "hover:text-muted-foreground"
+                      }`}
                     >
                       {link.name}
                     </Link>
