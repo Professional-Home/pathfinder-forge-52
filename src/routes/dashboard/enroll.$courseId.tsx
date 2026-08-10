@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../utils/supabase";
-import { SEED_COURSES } from "@/lib/courses/data";
+import { getCourseById } from "@/lib/courses/store";
 
 export const Route = createFileRoute("/dashboard/enroll/$courseId")({
   component: CourseEnrollmentPage,
@@ -18,16 +18,11 @@ function CourseEnrollmentPage() {
       const { data } = await supabase
         .from("courses")
         .select("*")
-        .eq("id", courseId)
+        .or(`id.eq.${courseId},slug.eq.${courseId}`)
         .maybeSingle();
 
       if (data) return data;
-
-      // Fallback to seed courses
-      const seed = SEED_COURSES.find(
-        (c) => c.id === courseId || c.slug === courseId
-      );
-      return seed || null;
+      return getCourseById(courseId) || null;
     },
   });
 

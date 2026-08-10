@@ -1,12 +1,15 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { CourseDetailTemplate } from "@/components/courses/CourseDetailTemplate";
-import { getAllCourses, getCourseBySlug, initializeCourseStore } from "@/lib/courses/store";
+import { fetchCoursesFromSupabase, getCourseBySlug } from "@/lib/courses/store";
 
 export const Route = createFileRoute("/projects/$slug")({
   component: ProjectDetailPage,
-  loader: ({ params }) => {
-    initializeCourseStore();
-    const project = getCourseBySlug(params.slug);
+  loader: async ({ params }) => {
+    let project = getCourseBySlug(params.slug);
+    if (!project) {
+      const all = await fetchCoursesFromSupabase();
+      project = all.find((c) => c.slug === params.slug);
+    }
     if (!project || project.status !== "published") {
       throw notFound();
     }

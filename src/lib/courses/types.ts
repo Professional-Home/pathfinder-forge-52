@@ -93,7 +93,7 @@ export interface CourseRecord {
   status: CourseStatus;
   lastUpdated: string;
   applyUrl?: string;
-  content: CoursePageContent;
+  content?: CoursePageContent;
 }
 
 export type CourseFormData = Omit<CourseRecord, "id" | "lastUpdated">;

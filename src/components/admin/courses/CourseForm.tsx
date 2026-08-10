@@ -117,6 +117,7 @@ export function CourseForm({ data, onChange }: CourseFormProps) {
               label="Upload Thumbnail via Cloudinary"
               value={data.thumbnail}
               onUploadSuccess={(url) => update("thumbnail", url)}
+              onRemove={() => update("thumbnail", "")}
             />
             {data.thumbnail && (
               <img src={data.thumbnail} alt="Thumbnail preview" className="mt-2 h-20 w-32 rounded-md object-cover border border-border" />
@@ -134,6 +135,7 @@ export function CourseForm({ data, onChange }: CourseFormProps) {
               label="Upload Cover Image via Cloudinary"
               value={data.coverImage}
               onUploadSuccess={(url) => update("coverImage", url)}
+              onRemove={() => update("coverImage", "")}
             />
             {data.coverImage && (
               <img src={data.coverImage} alt="Cover preview" className="mt-2 h-20 w-full rounded-md object-cover border border-border" />

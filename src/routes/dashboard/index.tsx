@@ -251,7 +251,7 @@ function DashboardCourses() {
       const userEmail = user?.email;
 
       const { data, error } = await supabase.from("courses").select("*").limit(5);
-      if (error) throw error;
+      if (error) console.warn("[Dashboard] Supabase courses load note:", error);
 
       let enrolledIds: string[] = [];
       if (userEmail) {

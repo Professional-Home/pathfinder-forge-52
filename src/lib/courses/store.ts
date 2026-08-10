@@ -1,38 +1,10 @@
-import { SEED_COURSES } from "./data";
 import type { CourseFormData, CourseRecord, CourseSortOption } from "./types";
 import { supabase } from "@/utils/supabase";
 
 const STORAGE_KEY = "micrylis-course-records";
 
 function syncSeedMedia(courses: CourseRecord[]): CourseRecord[] {
-  let changed = false;
-  const synced = courses.map((course) => {
-    const seed = SEED_COURSES.find((s) => s.id === course.id);
-    if (!seed) return course;
-
-    const needsThumbnail = course.thumbnail !== seed.thumbnail;
-    const needsCover = course.coverImage !== seed.coverImage;
-    const needsHeroCover = course.content.hero.coverImage !== seed.content.hero.coverImage;
-
-    if (!needsThumbnail && !needsCover && !needsHeroCover) return course;
-
-    changed = true;
-    return {
-      ...course,
-      thumbnail: seed.thumbnail,
-      coverImage: seed.coverImage,
-      content: {
-        ...course.content,
-        hero: {
-          ...course.content.hero,
-          coverImage: seed.content.hero.coverImage,
-        },
-      },
-    };
-  });
-
-  if (changed) writeStorage(synced);
-  return synced;
+  return courses;
 }
 
 function isBrowser() {
@@ -57,13 +29,11 @@ function writeStorage(courses: CourseRecord[]) {
 
 export function initializeCourseStore(): CourseRecord[] {
   const existing = readStorage();
-  if (existing && existing.length > 0) return syncSeedMedia(existing);
-  writeStorage(SEED_COURSES);
-  return SEED_COURSES;
+  return existing || [];
 }
 
 export function getAllCourses(): CourseRecord[] {
-  const courses = readStorage() ?? SEED_COURSES;
+  const courses = readStorage() ?? [];
   return syncSeedMedia(courses);
 }
 
@@ -78,54 +48,39 @@ export function getCourseBySlug(slug: string): CourseRecord | undefined {
 export async function fetchCoursesFromSupabase(): Promise<CourseRecord[]> {
   try {
     const { data: dbCourses, error } = await supabase.from("courses").select("*");
-    if (error || !dbCourses || dbCourses.length === 0) {
+    if (error || !dbCourses) {
       return getAllCourses();
     }
 
-    const dbMapped: CourseRecord[] = dbCourses.map((db) => {
-      const seed = SEED_COURSES.find(
-        (s) => s.slug.toLowerCase() === (db.slug || "").toLowerCase() || s.id === String(db.id)
-      );
-      return {
-        id: String(db.id || db.slug),
-        slug: db.slug || seed?.slug || "course-slug",
-        name: db.title || db.name || seed?.name || "Untitled Course",
-        shortDescription: db.short_description || db.shortDescription || seed?.shortDescription || "",
-        fullDescription: db.full_description || db.fullDescription || seed?.fullDescription || "",
-        thumbnail: db.thumbnail || seed?.thumbnail || "",
-        coverImage: db.cover_image || db.coverImage || seed?.coverImage || "",
-        duration: db.duration || seed?.duration || "30 Days",
-        mode: db.mode || seed?.mode || "Online",
-        programFee: db.program_fee || db.programFee || seed?.programFee || "₹1999",
-        category: db.category || seed?.category || "Biotechnology",
-        difficulty: db.difficulty || seed?.difficulty || "intermediate",
-        certificate: db.certificate || seed?.certificate || "Certificate of Completion",
-        learningOutcomes: db.learning_outcomes || seed?.learningOutcomes || [],
-        curriculum: db.curriculum || seed?.curriculum || "",
-        requirements: db.requirements || seed?.requirements || "",
-        whoShouldJoin: db.who_should_join || seed?.whoShouldJoin || "",
-        faqs: db.faqs || seed?.faqs || "",
-        seoTitle: db.seo_title || seed?.seoTitle || db.title || "",
-        seoDescription: db.seo_description || seed?.seoDescription || db.short_description || "",
-        featured: db.featured ?? seed?.featured ?? true,
-        status: db.status || seed?.status || "published",
-        lastUpdated: db.updated_at ? String(db.updated_at).slice(0, 10) : new Date().toISOString().slice(0, 10),
-        applyUrl: db.apply_url || db.applyUrl || seed?.applyUrl || "",
-        content: seed?.content || SEED_COURSES[0].content,
-      };
-    });
+    const dbMapped: CourseRecord[] = dbCourses.map((db) => ({
+      id: String(db.id || db.slug),
+      slug: db.slug || "course-slug",
+      name: db.title || db.name || "Untitled Course",
+      shortDescription: db.short_description || db.shortDescription || "",
+      fullDescription: db.full_description || db.fullDescription || "",
+      thumbnail: db.thumbnail || "",
+      coverImage: db.cover_image || db.coverImage || "",
+      duration: db.duration || "30 Days",
+      mode: db.mode || "Online",
+      programFee: db.program_fee || db.programFee || "₹1999",
+      category: db.category || "Biotechnology",
+      difficulty: db.difficulty || "intermediate",
+      certificate: db.certificate || "Certificate of Completion",
+      learningOutcomes: db.learning_outcomes || [],
+      curriculum: db.curriculum || "",
+      requirements: db.requirements || "",
+      whoShouldJoin: db.who_should_join || "",
+      faqs: db.faqs || "",
+      seoTitle: db.seo_title || db.title || "",
+      seoDescription: db.seo_description || db.short_description || "",
+      featured: db.featured ?? true,
+      status: db.status || "published",
+      lastUpdated: db.updated_at ? String(db.updated_at).slice(0, 10) : new Date().toISOString().slice(0, 10),
+      applyUrl: db.apply_url || db.applyUrl || "",
+    }));
 
-    const dbSlugs = new Set(dbMapped.map((c) => c.slug.toLowerCase()));
-    const finalCourses = [...dbMapped];
-
-    for (const seed of SEED_COURSES) {
-      if (!dbSlugs.has(seed.slug.toLowerCase())) {
-        finalCourses.push(seed);
-      }
-    }
-
-    writeStorage(finalCourses);
-    return finalCourses;
+    writeStorage(dbMapped);
+    return dbMapped;
   } catch (err) {
     console.error("Error fetching courses from Supabase:", err);
     return getAllCourses();
@@ -134,7 +89,7 @@ export async function fetchCoursesFromSupabase(): Promise<CourseRecord[]> {
 
 async function syncCourseToSupabase(course: CourseRecord) {
   try {
-    await supabase.from("courses").upsert(
+    const { error } = await supabase.from("courses").upsert(
       {
         slug: course.slug,
         title: course.name,
@@ -155,12 +110,15 @@ async function syncCourseToSupabase(course: CourseRecord) {
       },
       { onConflict: "slug" }
     );
+    if (error) {
+      console.error("[Supabase Store] Failed to sync course:", error.message || error);
+    }
   } catch (e) {
     console.warn("[Store] Supabase sync note:", e);
   }
 }
 
-export function saveCourse(data: CourseFormData, id?: string): CourseRecord {
+export async function saveCourse(data: CourseFormData, id?: string): Promise<CourseRecord> {
   const courses = getAllCourses();
   const now = new Date().toISOString().slice(0, 10);
 
@@ -172,7 +130,7 @@ export function saveCourse(data: CourseFormData, id?: string): CourseRecord {
       targetCourse = { ...data, id, lastUpdated: now };
       courses[index] = targetCourse;
       writeStorage(courses);
-      syncCourseToSupabase(targetCourse);
+      await syncCourseToSupabase(targetCourse);
       return targetCourse;
     }
   }
@@ -184,7 +142,7 @@ export function saveCourse(data: CourseFormData, id?: string): CourseRecord {
   };
   courses.unshift(targetCourse);
   writeStorage(courses);
-  syncCourseToSupabase(targetCourse);
+  await syncCourseToSupabase(targetCourse);
   return targetCourse;
 }
 
@@ -332,7 +290,12 @@ export function filterAndSortCourses(
 
 export function resetCourseStore() {
   if (!isBrowser()) return;
-  writeStorage(SEED_COURSES);
+  writeStorage([]);
+}
+
+export function clearLocalCourseStore() {
+  if (!isBrowser()) return;
+  localStorage.removeItem(STORAGE_KEY);
 }
 
 export function courseToFormData(course: CourseRecord): CourseFormData {
@@ -361,8 +324,7 @@ export function createEmptyCourseForm(): CourseFormData {
     faqs: "",
     seoTitle: "",
     seoDescription: "",
-    featured: false,
-    status: "draft",
-    content: SEED_COURSES[0].content,
+    featured: true,
+    status: "published",
   };
 }

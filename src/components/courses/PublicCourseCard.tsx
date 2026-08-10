@@ -9,7 +9,7 @@ interface PublicCourseCardProps {
 }
 
 export function PublicCourseCard({ course, index = 0 }: PublicCourseCardProps) {
-  const theme = course.content.theme ?? "researcher";
+  const theme = course.content?.theme ?? "researcher";
   const accentMap = {
     student: "group-hover:border-student/35 group-hover:shadow-[0_12px_40px_-12px_rgba(59,130,246,0.25)]",
     startup: "group-hover:border-startup/35 group-hover:shadow-[0_12px_40px_-12px_rgba(245,158,11,0.2)]",

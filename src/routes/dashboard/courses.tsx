@@ -25,7 +25,7 @@ function CoursesPage() {
         .from("courses")
         .select("*");
 
-      if (error) throw error;
+      if (error) console.warn("[Courses Page] Supabase courses load note:", error);
       
       let enrolledIds: string[] = [];
       if (userEmail) {

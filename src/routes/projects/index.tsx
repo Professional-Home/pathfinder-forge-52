@@ -4,7 +4,8 @@ import { FlaskConical, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PublicCourseCard } from "@/components/courses/PublicCourseCard";
-import { getAllCourses, initializeCourseStore } from "@/lib/courses/store";
+import { useQuery } from "@tanstack/react-query";
+import { fetchCoursesFromSupabase } from "@/lib/courses/store";
 import { getPublishedCourses } from "@/lib/courses/data";
 
 export const Route = createFileRoute("/projects/")({
@@ -22,8 +23,13 @@ export const Route = createFileRoute("/projects/")({
 });
 
 function ProjectsListingPage() {
-  initializeCourseStore();
-  const projects = getPublishedCourses(getAllCourses());
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ["public-projects-list"],
+    queryFn: async () => {
+      const courses = await fetchCoursesFromSupabase();
+      return getPublishedCourses(courses);
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -69,7 +75,13 @@ function ProjectsListingPage() {
             <h2 className="font-display text-2xl sm:text-3xl">Featured projects</h2>
           </div>
 
-          {projects.length > 0 ? (
+          {isLoading ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 lg:gap-6">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-72 rounded-2xl border border-border bg-surface-elevated animate-pulse" />
+              ))}
+            </div>
+          ) : projects.length > 0 ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 lg:gap-6">
               {projects.map((project, index) => (
                 <PublicCourseCard key={project.id} course={project} index={index} />

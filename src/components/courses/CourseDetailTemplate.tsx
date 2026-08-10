@@ -164,7 +164,91 @@ function CourseHero({ course, content }: { course: CourseRecord; content: Course
 }
 
 export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
-  const content = course.content;
+  const content: CoursePageContent = course.content || {
+    theme: "student",
+    hero: {
+      title: course.name,
+      subtitle: course.shortDescription || course.name,
+      badge: "Micrylis Biotech Research Internship",
+      description: course.fullDescription || course.shortDescription || "",
+      duration: course.duration || "30 Days",
+      mode: course.mode || "Online",
+      programFee: course.programFee || "₹1999",
+      coverImage: course.coverImage || course.thumbnail || "",
+    },
+    aboutProgram: {
+      paragraphs: [
+        course.fullDescription || course.shortDescription || "Welcome to this research project program.",
+      ],
+      highlights: [
+        "Interactive Online Research Internship",
+        "Guided Mentorship & Research Workflow",
+        "Certificate of Completion",
+      ],
+      targetAudience: ["Students", "Researchers", "Innovators"],
+    },
+    whyJoin: [
+      {
+        title: "Hands-on Experience",
+        description: "Gain practical skills and build a portfolio for higher studies & careers.",
+      },
+      {
+        title: "Expert Mentorship",
+        description: "Work under guided mentorship to develop research capabilities.",
+      },
+      {
+        title: "Flexible Learning",
+        description: "Learn from anywhere with interactive research assignments.",
+      },
+      {
+        title: "Certificate of Completion",
+        description: "Receive a recognized certificate to showcase your learning.",
+      },
+    ],
+    programHighlights: [
+      `${course.duration || "30-Day"} Structured Internship`,
+      "Certificate of Completion",
+      "Live Sessions & Guidance",
+    ],
+    learningCategories: [
+      {
+        title: "Core Curriculum",
+        items: course.learningOutcomes?.length
+          ? course.learningOutcomes
+          : ["Research Methodology", "Scientific Literature Analysis", "Capstone Project"],
+      },
+    ],
+    researchTimeline: [
+      { title: "Project Introduction" },
+      { title: "Literature Review" },
+      { title: "Data & Research Workflow" },
+      { title: "Final Capstone Presentation" },
+    ],
+    capstone: {
+      title: "Capstone Project",
+      paragraphs: ["Every participant completes a guided hands-on research project."],
+      highlights: ["Research", "Analysis", "Presentation"],
+    },
+    projectOutcomes: course.learningOutcomes?.length
+      ? course.learningOutcomes
+      : ["Research Portfolio", "Practical Knowledge", "Certificate"],
+    whoShouldJoin: {
+      students: [course.category || "Biotechnology", "Life Sciences"],
+      others: ["Researchers", "Innovators"],
+    },
+    programDetails: {
+      duration: course.duration || "30 Days",
+      mode: course.mode || "Online",
+      programFee: course.programFee || "₹1999",
+      certificate: course.certificate || "Certificate of Completion",
+    },
+    finalCta: {
+      headline: `Apply now for ${course.name}`,
+      bullets: ["Develop industry-ready skills", "Create a research portfolio"],
+      primaryLabel: "Apply Now",
+      secondaryLabel: "Contact Us",
+    },
+  };
   const theme = themeColors[content.theme ?? "researcher"];
 
   return (

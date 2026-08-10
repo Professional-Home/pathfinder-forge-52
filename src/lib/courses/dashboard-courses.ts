@@ -1,4 +1,4 @@
-import { SEED_COURSES } from "./data";
+import { getAllCourses } from "./store";
 
 export interface DashboardCourse {
   id: string;
@@ -9,39 +9,46 @@ export interface DashboardCourse {
   thumbnail?: string;
   applyUrl?: string;
   apply_url?: string;
+  status?: string;
 }
 
-/** Published seed courses mapped for the user dashboard (until Supabase is synced). */
+/** Published store courses mapped for the user dashboard. */
 export function getSeedDashboardCourses(): DashboardCourse[] {
-  return SEED_COURSES.filter((c) => c.status === "published").map((c) => ({
-    id: c.id,
-    title: c.name,
-    description: c.shortDescription,
-    category: c.category,
-    duration: c.duration,
-    thumbnail: c.thumbnail,
-    applyUrl: c.applyUrl,
-  }));
+  return getAllCourses()
+    .filter((c) => c.status === "published" || !c.status)
+    .map((c) => ({
+      id: c.id,
+      title: c.name,
+      description: c.shortDescription,
+      category: c.category,
+      duration: c.duration,
+      thumbnail: c.thumbnail,
+      applyUrl: c.applyUrl,
+      status: c.status,
+    }));
 }
 
-/** Merge Supabase courses with local seed courses (dedupe by title). */
+/** Merge Supabase courses with local store courses (dedupe by title or slug). */
 export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[] {
-  const normalizedSupabase: DashboardCourse[] = supabaseCourses.map((c) => ({
-    id: String(c.id),
-    title: c.title || c.name || "Untitled Course",
-    description: c.description || c.shortDescription || "",
-    category: c.category || "General",
-    duration: c.duration || "Self-paced",
-    thumbnail: c.thumbnail || c.coverImage || "",
-    applyUrl: c.applyUrl || c.apply_url || "",
-  }));
+  const normalizedSupabase: DashboardCourse[] = supabaseCourses
+    .filter((c) => c.status === "published" || !c.status)
+    .map((c) => ({
+      id: String(c.id || c.slug),
+      title: c.title || c.name || "Untitled Course",
+      description: c.short_description || c.description || c.shortDescription || "",
+      category: c.category || "General",
+      duration: c.duration || "Self-paced",
+      thumbnail: c.thumbnail || c.cover_image || c.coverImage || "",
+      applyUrl: c.apply_url || c.applyUrl || "",
+      status: c.status || "published",
+    }));
 
   const merged = [...normalizedSupabase];
-  const existingTitles = new Set(normalizedSupabase.map((c) => c.title.trim().toLowerCase()));
+  const existingTitles = new Set(normalizedSupabase.map((c) => (c.title || "").trim().toLowerCase()));
 
-  for (const seed of getSeedDashboardCourses()) {
-    if (!existingTitles.has(seed.title.trim().toLowerCase())) {
-      merged.push(seed);
+  for (const storeCourse of getSeedDashboardCourses()) {
+    if (!existingTitles.has((storeCourse.title || "").trim().toLowerCase())) {
+      merged.push(storeCourse);
     }
   }
 
