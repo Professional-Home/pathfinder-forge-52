@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { Instagram, Linkedin, Mail, Phone } from "lucide-react";
 import { Wordmark } from "@/components/brand";
@@ -21,9 +22,9 @@ const SOCIAL_LINKS = [
   { name: "LinkedIn", href: "https://www.linkedin.com/in/micrylis-biotech-a4a4063aa/", icon: Linkedin },
 ] as const;
 
-export function SiteFooter() {
+function SiteFooterComponent() {
   return (
-    <footer className="relative overflow-hidden bg-[#0b0b0c] text-white">
+    <footer className="relative overflow-hidden bg-[#0b0b0c] text-white [content-visibility:auto]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#2dd4bf]/40 to-transparent"
@@ -142,3 +143,5 @@ export function SiteFooter() {
     </footer>
   );
 }
+
+export const SiteFooter = memo(SiteFooterComponent);

@@ -54,3 +54,11 @@ CREATE POLICY "Allow admin update courses" ON public.courses
 DROP POLICY IF EXISTS "Allow admin delete courses" ON public.courses;
 CREATE POLICY "Allow admin delete courses" ON public.courses 
     FOR DELETE USING (true);
+
+-- 5. Performance indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_courses_status ON public.courses (status);
+CREATE INDEX IF NOT EXISTS idx_courses_category ON public.courses (category);
+CREATE INDEX IF NOT EXISTS idx_courses_featured ON public.courses (featured);
+CREATE INDEX IF NOT EXISTS idx_courses_status_created ON public.courses (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_courses_status_updated ON public.courses (status, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_courses_category_status ON public.courses (category, status);

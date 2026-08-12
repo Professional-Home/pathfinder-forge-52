@@ -376,6 +376,8 @@ function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle,
             <img
               src={imageSrc}
               alt={title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
             />

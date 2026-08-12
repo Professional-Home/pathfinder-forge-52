@@ -30,6 +30,7 @@ import {
 } from "@/lib/courses/store";
 import { getCourseStats } from "@/lib/courses/data";
 import type { CourseRecord, CourseSortOption } from "@/lib/courses/types";
+import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 export const Route = createFileRoute("/admin/courses/")({
   component: AdminCoursesPage,
@@ -223,8 +224,12 @@ function AdminCoursesPage() {
                         <div className="flex items-center gap-3 min-w-[200px]">
                           {course.thumbnail ? (
                             <img
-                              src={course.thumbnail}
+                              src={getOptimizedImageUrl(course.thumbnail, { width: 112, height: 80 })}
                               alt={course.name}
+                              width={56}
+                              height={40}
+                              loading="lazy"
+                              decoding="async"
                               className="h-10 w-14 shrink-0 rounded-md object-cover border border-border"
                             />
                           ) : (

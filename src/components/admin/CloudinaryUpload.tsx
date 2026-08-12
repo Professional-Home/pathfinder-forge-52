@@ -165,6 +165,8 @@ export function CloudinaryUpload({
           <img
             src={currentUrl}
             alt="Uploaded preview"
+            loading="lazy"
+            decoding="async"
             className="h-10 w-14 shrink-0 rounded object-cover border border-border"
           />
           <Input

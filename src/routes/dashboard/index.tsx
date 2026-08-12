@@ -8,6 +8,7 @@ import { supabase } from "@/utils/supabase";
 import { mergeDashboardCourses } from "@/lib/courses/dashboard-courses";
 import { Link } from "@tanstack/react-router";
 import { generateWhatsAppLink } from "@/utils/whatsapp";
+import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 export const Route = createFileRoute("/dashboard/")({
   component: DashboardOverview,
@@ -21,7 +22,8 @@ function DashboardOverview() {
       if (!user) return null;
       const { data } = await supabase.from("profile").select("*").eq("id", user.id).single();
       return data || { name: user.email?.split("@")[0] || "User", email: user.email };
-    }
+    },
+    staleTime: 1000 * 60 * 15,
   });
 
   // Fetch quick stats from Supabase
@@ -42,7 +44,8 @@ function DashboardOverview() {
         bookedCount: bookings.count ?? 0,
         certificateCount: 0,
       };
-    }
+    },
+    staleTime: 1000 * 60 * 15,
   });
 
   // Fetch recent activity
@@ -59,7 +62,7 @@ function DashboardOverview() {
       try {
         const res = await supabase
           .from("enrollments_users")
-          .select("*")
+          .select("course_id, enrolled_at")
           .eq("student_email", userEmail)
           .limit(3);
         enrollmentsData = res.data || [];
@@ -68,7 +71,7 @@ function DashboardOverview() {
       try {
         const res = await supabase
           .from("mentor_bookings")
-          .select("*")
+          .select("mentor_id, booked_at")
           .eq("student_email", userEmail)
           .limit(3);
         bookingsData = res.data || [];
@@ -97,7 +100,8 @@ function DashboardOverview() {
       // Sort by most recent
       items.sort((a, b) => (a.time > b.time ? -1 : 1));
       return items.slice(0, 5);
-    }
+    },
+    staleTime: 1000 * 60 * 15,
   });
 
   const user = { 
@@ -250,7 +254,10 @@ function DashboardCourses() {
       const { data: { user } } = await supabase.auth.getUser();
       const userEmail = user?.email;
 
-      const { data, error } = await supabase.from("courses").select("*").limit(5);
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, slug, title, short_description, thumbnail, category, duration, apply_url, status")
+        .limit(5);
       if (error) console.warn("[Dashboard] Supabase courses load note:", error);
 
       let enrolledIds: string[] = [];
@@ -266,7 +273,8 @@ function DashboardCourses() {
       }
 
       return { courses: mergeDashboardCourses(data || []), enrolledIds, userEmail };
-    }
+    },
+    staleTime: 1000 * 60 * 15,
   });
 
   const courses = coursesData?.courses || [];
@@ -294,14 +302,24 @@ function DashboardCourses() {
           ? generateWhatsAppLink(undefined, course.title, userEmail)
           : "";
 
+        const defaultImage = (course.title || course.id || "")?.toLowerCase().includes("drug")
+          ? "/Photos/ai-drug-discovery-card.jpg"
+          : "/Photos/bioplastic-card.jpg";
+
+        const rawThumbnail = course.thumbnail || defaultImage;
+        const thumbnailUrl = getOptimizedImageUrl(rawThumbnail, { width: 400, height: 200 });
+
         return (
           <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
             {course.thumbnail && (
               <div className="aspect-[2/1] overflow-hidden">
                 <img
-                  src={course.thumbnail}
+                  src={thumbnailUrl}
                   alt={course.title}
+                  width={400}
+                  height={200}
                   loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               </div>

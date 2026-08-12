@@ -1,46 +1,62 @@
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Clock, Globe, IndianRupee } from "lucide-react";
-import type { CourseRecord } from "@/lib/courses/types";
+import type { CourseListingItem } from "@/lib/courses/store";
+import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 interface PublicCourseCardProps {
-  course: CourseRecord;
+  course: CourseListingItem;
   index?: number;
 }
 
-export function PublicCourseCard({ course, index = 0 }: PublicCourseCardProps) {
-  const theme = course.content?.theme ?? "researcher";
+function PublicCourseCardComponent({
+  course,
+  index = 0,
+}: PublicCourseCardProps) {
+  const theme = "researcher" as const;
   const accentMap = {
-    student: "group-hover:border-student/35 group-hover:shadow-[0_12px_40px_-12px_rgba(59,130,246,0.25)]",
-    startup: "group-hover:border-startup/35 group-hover:shadow-[0_12px_40px_-12px_rgba(245,158,11,0.2)]",
-    researcher:
-      "group-hover:border-researcher/35 group-hover:shadow-[0_12px_40px_-12px_rgba(16,185,129,0.2)]",
+    student: "group-hover:border-student/40 hover:shadow-md",
+    startup: "group-hover:border-startup/40 hover:shadow-md",
+    researcher: "group-hover:border-researcher/40 hover:shadow-md",
   };
+
+  const defaultImage = course.slug?.includes("drug") || course.name?.toLowerCase().includes("drug")
+    ? "/Photos/ai-drug-discovery-card.jpg"
+    : "/Photos/bioplastic-card.jpg";
+
+  const rawThumbnail = course.thumbnail || defaultImage;
+
+  const thumbnailUrl = getOptimizedImageUrl(rawThumbnail, {
+    width: 600,
+    height: 300,
+  });
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.45, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{ y: -4 }}
-      className={`group flex h-full flex-col overflow-hidden rounded-xl border border-border/80 bg-background/80 shadow-sm backdrop-blur-sm transition-shadow duration-300 ${accentMap[theme]}`}
+      viewport={{ once: true, margin: "-20px" }}
+      transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.3) }}
+      className={`group flex h-full flex-col overflow-hidden rounded-xl border border-border/80 bg-surface-elevated/90 shadow-sm transition-all duration-300 hover:-translate-y-1 will-change-transform ${accentMap[theme]}`}
     >
       <div className="relative aspect-[2/1] overflow-hidden sm:aspect-[5/2]">
         <img
-          src={course.thumbnail}
+          src={thumbnailUrl}
           alt={course.name}
+          width={600}
+          height={300}
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         {course.featured && (
-          <span className="absolute left-2.5 top-2.5 rounded-full border border-white/20 bg-white/90 px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-foreground backdrop-blur-sm">
+          <span className="absolute left-2.5 top-2.5 rounded-full border border-white/20 bg-black/70 px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-white shadow-sm">
             Featured
           </span>
         )}
-        <span className="absolute bottom-2.5 left-2.5 rounded-md bg-background/90 px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground backdrop-blur-sm">
+        <span className="absolute bottom-2.5 left-2.5 rounded-md border border-border/50 bg-background/95 px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground shadow-sm">
           {course.category}
         </span>
       </div>
@@ -54,15 +70,15 @@ export function PublicCourseCard({ course, index = 0 }: PublicCourseCardProps) {
         </p>
 
         <div className="mt-3 flex flex-wrap gap-2.5 text-[11px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-surface-elevated/80 px-2 py-0.5">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/80 px-2 py-0.5">
             <Clock className="h-3 w-3" />
             {course.duration}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-surface-elevated/80 px-2 py-0.5">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/80 px-2 py-0.5">
             <Globe className="h-3 w-3" />
             {course.mode}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-surface-elevated/80 px-2 py-0.5 font-medium text-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/80 px-2 py-0.5 font-medium text-foreground">
             <IndianRupee className="h-3 w-3" />
             {course.programFee.replace("₹", "")}
           </span>
@@ -90,3 +106,5 @@ export function PublicCourseCard({ course, index = 0 }: PublicCourseCardProps) {
     </motion.article>
   );
 }
+
+export const PublicCourseCard = memo(PublicCourseCardComponent);

@@ -1,6 +1,6 @@
+import { memo, useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
@@ -10,7 +10,7 @@ import {
 } from "@/lib/nav-config";
 import { X } from "lucide-react";
 
-function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
+const GridMenuIcon = memo(function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
   return (
     <span className="grid grid-cols-3 gap-[2.5px]" aria-hidden>
       {Array.from({ length: 9 }).map((_, i) => (
@@ -18,9 +18,9 @@ function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
       ))}
     </span>
   );
-}
+});
 
-function NavPill({ active }: { active: boolean }) {
+const NavPill = memo(function NavPill({ active }: { active: boolean }) {
   if (!active) return null;
   return (
     <motion.span
@@ -29,9 +29,9 @@ function NavPill({ active }: { active: boolean }) {
       transition={{ type: "spring", stiffness: 380, damping: 32 }}
     />
   );
-}
+});
 
-export function SiteHeader() {
+function SiteHeaderComponent() {
   const location = useLocation();
   const pathname = location.pathname;
   const isHome = pathname === "/";
@@ -91,10 +91,13 @@ export function SiteHeader() {
 
   const pill = isScrolled;
 
-  const isLinkActive = (matchPath: string) => {
-    if (matchPath === "/") return pathname === "/";
-    return pathname === matchPath || pathname.startsWith(matchPath + "/");
-  };
+  const isLinkActive = useCallback(
+    (matchPath: string) => {
+      if (matchPath === "/") return pathname === "/";
+      return pathname === matchPath || pathname.startsWith(matchPath + "/");
+    },
+    [pathname],
+  );
 
   const renderNavItem = (link: (typeof PUBLIC_NAV_LINKS)[number]) => {
     const active = isLinkActive(link.matchPath);
@@ -102,9 +105,8 @@ export function SiteHeader() {
       <Link
         key={link.name}
         to={link.href}
-        className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${
-          active ? "text-foreground" : "hover:text-foreground"
-        }`}
+        className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${active ? "text-foreground" : "hover:text-foreground"
+          }`}
       >
         <span className="relative z-10">{link.name}</span>
         <NavPill active={active} />
@@ -115,9 +117,8 @@ export function SiteHeader() {
   return (
     <>
       <div
-        className={`pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-3 sm:px-4 ${
-          pill ? "pt-2 sm:pt-2.5" : "pt-3 sm:pt-4 md:pt-5"
-        }`}
+        className={`pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-3 sm:px-4 ${pill ? "pt-2 sm:pt-2.5" : "pt-3 sm:pt-4 md:pt-5"
+          }`}
       >
         <motion.header
           initial={{ opacity: 0, y: -10 }}
@@ -132,11 +133,10 @@ export function SiteHeader() {
           <motion.div
             layout
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className={`grid items-center gap-3 transition-[background-color,box-shadow,backdrop-filter,border-radius,border-color,min-height,padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-              pill
+            className={`grid items-center gap-3 transition-[background-color,box-shadow,backdrop-filter,border-radius,border-color,min-height,padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${pill
                 ? "min-h-[48px] grid-cols-[auto_minmax(0,1fr)_auto] rounded-full border border-border/50 bg-background/85 px-4 py-1.5 shadow-[0_8px_28px_-14px_rgba(0,0,0,0.28)] backdrop-blur-md sm:min-h-[50px] sm:px-5"
                 : "min-h-[52px] grid-cols-[auto_1fr_auto] rounded-none border border-transparent bg-transparent px-3 py-1.5 shadow-none backdrop-blur-none sm:min-h-[56px] sm:px-5 md:px-6"
-            }`}
+              }`}
           >
             <Wordmark compact={pill} className="justify-self-start" onClick={onLogoClick} />
 
@@ -159,6 +159,8 @@ export function SiteHeader() {
                         <img
                           src={session.user.user_metadata.avatar_url}
                           alt="Profile"
+                          loading="lazy"
+                          decoding="async"
                           className="h-full w-full object-cover"
                         />
                       ) : session.user?.user_metadata?.full_name ? (
@@ -262,9 +264,8 @@ export function SiteHeader() {
                       key={link.name}
                       to={link.href}
                       onClick={() => setMenuOpen(false)}
-                      className={`transition-colors ${
-                        isLinkActive(link.matchPath) ? "text-foreground" : "hover:text-muted-foreground"
-                      }`}
+                      className={`transition-colors ${isLinkActive(link.matchPath) ? "text-foreground" : "hover:text-muted-foreground"
+                        }`}
                     >
                       {link.name}
                     </Link>
@@ -288,3 +289,5 @@ export function SiteHeader() {
     </>
   );
 }
+
+export const SiteHeader = memo(SiteHeaderComponent);

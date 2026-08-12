@@ -219,7 +219,7 @@ function TopBar({ user, currentDomain }: { user: any; currentDomain: Domain }) {
         </button>
         <div className="h-8 w-8 rounded-full bg-foreground/90 grid place-items-center font-display text-sm text-background overflow-hidden border border-border">
           {session?.user?.user_metadata?.avatar_url ? (
-            <img src={session.user.user_metadata.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+            <img src={session.user.user_metadata.avatar_url} alt="Profile" loading="lazy" decoding="async" className="h-full w-full object-cover" />
           ) : session?.user?.user_metadata?.full_name ? (
             session.user.user_metadata.full_name.charAt(0).toUpperCase()
           ) : session?.user?.email ? (

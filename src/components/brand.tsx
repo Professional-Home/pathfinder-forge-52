@@ -27,6 +27,7 @@ export function Wordmark({
         src="/logo-mark.png"
         alt=""
         aria-hidden
+        decoding="async"
         className={`w-auto object-contain transition-[height] duration-300 ${
           compact ? "h-8 sm:h-9" : "h-9 sm:h-10"
         }`}

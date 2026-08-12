@@ -29,6 +29,7 @@ import { getAdminUser } from "@/lib/adminAuth";
 import { supabase } from "@/utils/supabase";
 import { getAllCourses, initializeCourseStore } from "@/lib/courses/store";
 import { getCourseStats } from "@/lib/courses/data";
+import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 export const Route = createFileRoute("/admin/dashboard")({
   component: AdminDashboardPage,
@@ -69,7 +70,7 @@ function AdminDashboardPage() {
         supabase.rpc('get_google_user_count'),
         supabase.from("mentors").select("*", { count: 'exact', head: true }),
         supabase.from("enrollments").select("*, courses(title)").order("enrollment_date", { ascending: false }).limit(4),
-        supabase.from("courses").select("*").order("created_at", { ascending: false }).limit(3),
+        supabase.from("courses").select("id, title, category, duration, thumbnail").order("created_at", { ascending: false }).limit(3),
         supabase.rpc("get_all_users"),
       ]);
 
@@ -151,7 +152,15 @@ function AdminDashboardPage() {
         <AdminCard title="Latest courses">
           {latestCourses.map((c) => (
             <div key={c.id} className="flex items-center gap-3 border-b border-border/60 py-3 last:border-0">
-              <img src={c.thumbnail} alt={c.title} className="h-10 w-14 rounded-md object-cover" />
+              <img
+                src={getOptimizedImageUrl(c.thumbnail, { width: 112, height: 80 })}
+                alt={c.title}
+                width={56}
+                height={40}
+                loading="lazy"
+                decoding="async"
+                className="h-10 w-14 rounded-md object-cover"
+              />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{c.title}</div>
                 <div className="text-xs text-muted-foreground">{c.category} · {c.duration}</div>

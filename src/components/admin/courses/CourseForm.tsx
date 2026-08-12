@@ -120,7 +120,7 @@ export function CourseForm({ data, onChange }: CourseFormProps) {
               onRemove={() => update("thumbnail", "")}
             />
             {data.thumbnail && (
-              <img src={data.thumbnail} alt="Thumbnail preview" className="mt-2 h-20 w-32 rounded-md object-cover border border-border" />
+              <img src={data.thumbnail} alt="Thumbnail preview" loading="lazy" decoding="async" className="mt-2 h-20 w-32 rounded-md object-cover border border-border" />
             )}
           </div>
           <div className="space-y-2">
@@ -138,7 +138,7 @@ export function CourseForm({ data, onChange }: CourseFormProps) {
               onRemove={() => update("coverImage", "")}
             />
             {data.coverImage && (
-              <img src={data.coverImage} alt="Cover preview" className="mt-2 h-20 w-full rounded-md object-cover border border-border" />
+              <img src={data.coverImage} alt="Cover preview" loading="lazy" decoding="async" className="mt-2 h-20 w-full rounded-md object-cover border border-border" />
             )}
           </div>
         </div>

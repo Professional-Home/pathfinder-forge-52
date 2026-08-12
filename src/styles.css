@@ -1,4 +1,4 @@
-@import "tailwindcss" source(none);
+@import "tailwindcss";
 @source "../src";
 @import "tw-animate-css";
 
@@ -82,15 +82,18 @@
   --ring: oklch(0.55 0.15 255);
 
   /* Domain accents — restrained, editorial */
-  --student: oklch(0.55 0.18 258);            /* cobalt */
+  --student: oklch(0.55 0.18 258);
+  /* cobalt */
   --student-soft: oklch(0.95 0.035 258);
   --student-foreground: oklch(0.98 0.005 258);
 
-  --startup: oklch(0.68 0.17 55);             /* amber */
+  --startup: oklch(0.68 0.17 55);
+  /* amber */
   --startup-soft: oklch(0.96 0.045 75);
   --startup-foreground: oklch(0.2 0.05 55);
 
-  --researcher: oklch(0.52 0.11 165);         /* forest */
+  --researcher: oklch(0.52 0.11 165);
+  /* forest */
   --researcher-soft: oklch(0.95 0.035 165);
   --researcher-foreground: oklch(0.98 0.005 165);
 
@@ -153,7 +156,12 @@
     text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
     letter-spacing: -0.025em;
   }
@@ -166,6 +174,7 @@
 
 @utility grain {
   position: relative;
+
   &::after {
     content: "";
     position: absolute;

@@ -4,6 +4,7 @@ import { mergeDashboardCourses, type DashboardCourse } from "@/lib/courses/dashb
 import { supabase } from "../../utils/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { generateWhatsAppLink } from "@/utils/whatsapp";
+import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 interface Course extends DashboardCourse {}
 
@@ -23,7 +24,7 @@ function CoursesPage() {
 
       const { data, error } = await supabase
         .from("courses")
-        .select("*");
+        .select("id, slug, title, short_description, thumbnail, category, duration, apply_url, status");
 
       if (error) console.warn("[Courses Page] Supabase courses load note:", error);
       
@@ -40,7 +41,7 @@ function CoursesPage() {
       }
 
       return {
-        courses: mergeDashboardCourses((data || []) as Course[]),
+        courses: mergeDashboardCourses((data || []) as unknown as Course[]),
         enrolledIds,
         userEmail
       };
@@ -96,14 +97,19 @@ function CoursesPage() {
                 ? generateWhatsAppLink(undefined, course.title, userEmail)
                 : "";
 
+              const thumbnailUrl = getOptimizedImageUrl(course.thumbnail || "", { width: 600, height: 300 });
+
               return (
                 <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
                   {course.thumbnail && (
                     <div className="aspect-[2/1] overflow-hidden">
                       <img
-                        src={course.thumbnail}
+                        src={thumbnailUrl}
                         alt={course.title}
+                        width={600}
+                        height={300}
                         loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover"
                       />
                     </div>

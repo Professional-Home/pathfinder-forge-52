@@ -12,6 +12,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import type { CoursePageContent, CourseRecord } from "@/lib/courses/types";
+import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 const themeColors = {
   student: {
@@ -151,9 +152,11 @@ function CourseHero({ course, content }: { course: CourseRecord; content: Course
           className="mt-10 overflow-hidden rounded-2xl border border-border/80 shadow-2xl ring-1 ring-border/40 sm:mt-12"
         >
           <img
-            src={content.hero.coverImage}
+            src={getOptimizedImageUrl(content.hero.coverImage, { width: 1200, height: 600 })}
             alt={content.hero.title}
-            loading="eager"
+            width={1200}
+            height={600}
+            loading="lazy"
             decoding="async"
             className="aspect-[21/9] w-full object-cover transition-transform duration-700 hover:scale-[1.02]"
           />

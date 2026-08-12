@@ -17,19 +17,21 @@ function CourseEnrollmentPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("courses")
-        .select("*")
+        .select("id, title, apply_url")
         .or(`id.eq.${courseId},slug.eq.${courseId}`)
         .maybeSingle();
 
       if (data) return data;
       return getCourseById(courseId) || null;
     },
+    staleTime: 1000 * 60 * 15,
   });
 
-  const courseTitle = course?.title || course?.name || course?.course_name || "Research Project";
+  const c = course as any;
+  const courseTitle = c?.title || c?.name || c?.course_name || "Research Project";
   const applyUrl =
-    course?.apply_url ||
-    course?.applyUrl ||
+    c?.apply_url ||
+    c?.applyUrl ||
     (String(courseTitle).toLowerCase().includes("drug")
       ? "https://forms.gle/83HAsS9PwXmLXiox6"
       : "https://forms.gle/JiUaRVJYRuFtgtBc6");
