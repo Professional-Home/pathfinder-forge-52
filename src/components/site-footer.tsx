@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "@tanstack/react-router";
-import { Instagram, Linkedin, Mail, Phone } from "lucide-react";
+import { Instagram, Linkedin, Mail, Phone, Youtube } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 
 const NAV_LINKS = [
@@ -20,6 +20,7 @@ const COMPANY_LINKS = [
 const SOCIAL_LINKS = [
   { name: "Instagram", href: "https://www.instagram.com/micrylis?igsh=cjR4ZGR1am1ubmI0", icon: Instagram },
   { name: "LinkedIn", href: "https://www.linkedin.com/in/micrylis-biotech-a4a4063aa/", icon: Linkedin },
+  { name: "YouTube", href: "https://www.youtube.com/@MicrylisBiotech", icon: Youtube },
 ] as const;
 
 function SiteFooterComponent() {

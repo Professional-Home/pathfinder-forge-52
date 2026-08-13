@@ -66,9 +66,9 @@ function AdminDashboardPage() {
   useEffect(() => {
     async function fetchDashboardData() {
       const [userRes, googleRes, mentorRes, enrollmentsRes, latestCoursesRes, newUsersRes] = await Promise.all([
-        supabase.from("users").select("*", { count: 'exact', head: true }),
+        supabase.from("users").select("id", { count: 'exact' }),
         supabase.rpc('get_google_user_count'),
-        supabase.from("mentors").select("*", { count: 'exact', head: true }),
+        supabase.from("mentors").select("id", { count: 'exact' }),
         supabase.from("enrollments").select("*, courses(title)").order("enrollment_date", { ascending: false }).limit(4),
         supabase.from("courses").select("id, title, category, duration, thumbnail").order("created_at", { ascending: false }).limit(3),
         supabase.rpc("get_all_users"),

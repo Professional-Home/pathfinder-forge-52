@@ -66,7 +66,7 @@ function DashboardOverview() {
           .eq("student_email", userEmail)
           .limit(3);
         enrollmentsData = res.data || [];
-      } catch (e) {}
+      } catch (e) { }
 
       try {
         const res = await supabase
@@ -75,7 +75,7 @@ function DashboardOverview() {
           .eq("student_email", userEmail)
           .limit(3);
         bookingsData = res.data || [];
-      } catch (e) {}
+      } catch (e) { }
 
       const items: { type: string; label: string; time: string; icon: string }[] = [];
 
@@ -104,10 +104,10 @@ function DashboardOverview() {
     staleTime: 1000 * 60 * 15,
   });
 
-  const user = { 
-    ...mockUser, 
+  const user = {
+    ...mockUser,
     name: profile?.name || mockUser.name,
-    lane: "student" as Domain 
+    lane: "student" as Domain
   };
 
   const quickStats = [
@@ -136,9 +136,9 @@ function DashboardOverview() {
 
   return (
     <>
-      <Greeting 
-        domain={user.lane as Domain} 
-        title={`Welcome back, ${user.name}.`} 
+      <Greeting
+        domain={user.lane as Domain}
+        title={`Welcome back, ${user.name}.`}
         sub="Here's an overview of your learning journey."
       />
 
@@ -178,9 +178,8 @@ function DashboardOverview() {
                     <div className="absolute left-[17px] top-[40px] bottom-0 w-px bg-border" />
                   )}
                   {/* Icon */}
-                  <div className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-border ${
-                    item.icon === "course" ? "bg-student/10" : "bg-startup/10"
-                  }`}>
+                  <div className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-border ${item.icon === "course" ? "bg-student/10" : "bg-startup/10"
+                    }`}>
                     {item.icon === "course" ? (
                       <BookOpen className="h-3.5 w-3.5 text-student" />
                     ) : (
@@ -233,7 +232,7 @@ function PlatformStat({ label, table }: { label: string; table: string }) {
   const { data: count } = useQuery({
     queryKey: ["platform-count", table],
     queryFn: async () => {
-      const { count, error } = await supabase.from(table).select("id", { count: "exact", head: true });
+      const { count, error } = await supabase.from(table).select("id", { count: "exact" });
       if (error) return 0;
       return count ?? 0;
     },
@@ -266,7 +265,7 @@ function DashboardCourses() {
           .from("enrollments_users")
           .select("course_id")
           .eq("student_email", userEmail);
-          
+
         if (enrollments && !enrollError) {
           enrolledIds = enrollments.map(e => String(e.course_id));
         }
@@ -384,7 +383,7 @@ function DashboardMentors() {
           .from("mentor_bookings")
           .select("mentor_id")
           .eq("student_email", userEmail);
-          
+
         if (bookings && !bookingError) {
           bookedIds = bookings.map(b => String(b.mentor_id));
         }
@@ -426,7 +425,7 @@ function DashboardMentors() {
               <div className="text-sm text-muted-foreground mt-0.5">{m.experience}</div>
             </div>
           </div>
-          
+
           <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
             <div className="font-mono text-sm">Free</div>
             {bookedIds.includes(String(m.id)) ? (
