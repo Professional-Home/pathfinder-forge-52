@@ -233,7 +233,6 @@ function mapDbToFull(db: any): CourseRecord {
     fullDescription: db.full_description || db.fullDescription || "",
     thumbnail: db.thumbnail || db.cover_image || db.coverImage || defaultImage,
     coverImage: db.cover_image || db.coverImage || db.thumbnail || defaultHero,
-    coverImage: db.cover_image || db.coverImage || "",
     duration: db.duration || "30 Days",
     mode: db.mode || "Online",
     programFee: db.program_fee || db.programFee || "₹1999",

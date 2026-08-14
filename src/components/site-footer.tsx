@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Instagram, Linkedin, Mail, Phone, Youtube } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 
@@ -20,8 +20,33 @@ const COMPANY_LINKS = [
 const SOCIAL_LINKS = [
   { name: "Instagram", href: "https://www.instagram.com/micrylis?igsh=cjR4ZGR1am1ubmI0", icon: Instagram },
   { name: "LinkedIn", href: "https://www.linkedin.com/in/micrylis-biotech-a4a4063aa/", icon: Linkedin },
-  { name: "YouTube", href: "https://www.youtube.com/@MicrylisBiotech", icon: Youtube },
+  { name: "YouTube", href: "https://www.youtube.com/@micrylisbiotech", icon: Youtube },
 ] as const;
+
+function FooterNavLink({ to, children }: { to: string; children: React.ReactNode }) {
+  const location = useLocation();
+  const isCurrent = location.pathname === to;
+
+  function handleClick() {
+    if (isCurrent) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+  }
+
+  return (
+    <Link
+      to={to}
+      onClick={handleClick}
+      className="text-sm text-white/60 transition-colors hover:text-white"
+    >
+      {children}
+    </Link>
+  );
+}
 
 function SiteFooterComponent() {
   return (
@@ -69,12 +94,9 @@ function SiteFooterComponent() {
               <ul className="space-y-3">
                 {NAV_LINKS.map((link) => (
                   <li key={link.name}>
-                    <Link
-                      to={link.to}
-                      className="text-sm text-white/60 transition-colors hover:text-white"
-                    >
+                    <FooterNavLink to={link.to}>
                       {link.name}
-                    </Link>
+                    </FooterNavLink>
                   </li>
                 ))}
               </ul>
@@ -87,12 +109,9 @@ function SiteFooterComponent() {
               <ul className="space-y-3">
                 {COMPANY_LINKS.map((link) => (
                   <li key={link.name}>
-                    <Link
-                      to={link.to}
-                      className="text-sm text-white/60 transition-colors hover:text-white"
-                    >
+                    <FooterNavLink to={link.to}>
                       {link.name}
-                    </Link>
+                    </FooterNavLink>
                   </li>
                 ))}
               </ul>
