@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Instagram, Linkedin, Mail, Phone, Youtube } from "lucide-react";
+import { Instagram, Linkedin, Mail, MapPin, Phone, Youtube } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 
 const NAV_LINKS = [
@@ -147,6 +147,15 @@ function SiteFooterComponent() {
                     </span>
                     <span className="font-medium text-white/90">+91 88490 05635</span>
                   </a>
+                </li>
+
+                <li>
+                  <div className="group flex items-center gap-3 text-white/60 transition-colors hover:text-white">
+                    <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/80 group-hover:bg-[#2dd4bf]/15 group-hover:text-[#5eead4]">
+                      <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
+                    </span>
+                    <span className="font-medium text-white/90">Gujarat, India</span>
+                  </div>
                 </li>
               </ul>
             </div>
