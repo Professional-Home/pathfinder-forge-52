@@ -117,12 +117,16 @@ function CourseHero({ course, content }: { course: CourseRecord; content: Course
           <h1 className="max-w-3xl font-display text-3xl leading-tight tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
             {content.hero.title}
           </h1>
-          <p className={`mt-3 max-w-2xl text-lg font-medium sm:text-xl ${theme.accent}`}>
-            {content.hero.subtitle}
-          </p>
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            {content.hero.description}
-          </p>
+          {content.hero.subtitle && (
+            <p className={`mt-3 max-w-2xl text-lg font-medium sm:text-xl ${theme.accent}`}>
+              {content.hero.subtitle}
+            </p>
+          )}
+          {content.hero.description && (
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+              {content.hero.description}
+            </p>
+          )}
 
           <div className="mt-8 flex flex-wrap gap-4">
             {[
@@ -686,9 +690,9 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
     theme: "student",
     hero: {
       title: course.name,
-      subtitle: course.shortDescription || course.name,
+      subtitle: "",
       badge: "Micrylis Biotech Research Project",
-      description: course.fullDescription || course.shortDescription || "",
+      description: "",
       duration: course.duration || "30 Days",
       mode: course.mode || "Online",
       programFee: course.programFee || "₹1999",
