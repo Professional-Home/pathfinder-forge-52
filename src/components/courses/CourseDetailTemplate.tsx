@@ -436,18 +436,15 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
 
           <Reveal delay={0.3}>
             <h3 className="mt-8 font-display text-xl text-foreground">Skills You Will Develop</h3>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-1.5">
               {[
-                "Research methodology",
-                "Material science fundamentals",
-                "Scientific writing and documentation",
-                "Data analysis and interpretation",
-                "Sustainability assessment",
-                "Technical presentation skills",
-                "Understanding of bioplastic innovation pipeline",
-              ].map((s) => (
-                <span key={s} className={`rounded-full border border-border px-3 py-1.5 text-xs font-medium ${theme.soft} ${theme.accent}`}>
-                  {s}
+                "Bioplastics", "Polymer Science", "Biomaterials", "Sustainability", "Scientific Research",
+                "Literature Review", "Experimental Design", "Patent Analysis", "Technology Scouting",
+                "Material Selection", "Industry Analysis", "Innovation Strategy", "Commercialization",
+                "Scientific Communication",
+              ].map((s, i, arr) => (
+                <span key={s} className="text-sm font-medium text-foreground">
+                  {s}{i < arr.length - 1 && <span className="mx-1 text-muted-foreground">•</span>}
                 </span>
               ))}
             </div>
@@ -455,11 +452,19 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
 
           <Reveal delay={0.35}>
             <h3 className="mt-8 font-display text-xl text-foreground">Who Is This For?</h3>
-            <ul className="mt-4 space-y-2">
+            <p className="mt-3 text-sm font-medium text-foreground">Designed for:</p>
+            <ul className="mt-3 space-y-2">
               {[
-                "Students from biotechnology, biochemistry, material science, environmental science, chemical engineering, or related fields",
-                "Anyone curious about sustainable materials, bioplastics, and green innovation",
-                "No prior experience in bioplastic research is required — just curiosity and willingness to learn",
+                "Biotechnology students",
+                "Biochemistry students",
+                "Microbiology students",
+                "Material Science students",
+                "Chemical Engineering students",
+                "Environmental Science students",
+                "Biomedical Engineering students",
+                "Life Science students",
+                "Sustainability & Green Technology enthusiasts",
+                "Students interested in research and biomaterial innovation",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm">
                   <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
@@ -467,6 +472,7 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
                 </li>
               ))}
             </ul>
+            <p className="mt-4 text-sm">No advanced prior expertise in polymer science or bioplastics is required. The project is structured to progressively introduce the scientific concepts, research methodology, and innovation framework.</p>
           </Reveal>
 
           <Reveal delay={0.4}>
