@@ -74,97 +74,156 @@ function Landing() {
    Process Flow Steps
    ───────────────────────────────────────────── */
 const PROCESS_STEPS = [
-  { label: "Research", color: "bg-student" },
-  { label: "Prototype", color: "bg-startup" },
-  { label: "Validation", color: "bg-researcher" },
-  { label: "POC", color: "bg-student" },
-  { label: "MVP", color: "bg-startup" },
-  { label: "Venture", color: "bg-researcher" },
+  { label: "Research", color: "bg-student", ring: "ring-student/20", glow: "from-student/15", textActive: "text-student" },
+  { label: "Prototype", color: "bg-startup", ring: "ring-startup/20", glow: "from-startup/15", textActive: "text-startup" },
+  { label: "Validation", color: "bg-researcher", ring: "ring-researcher/20", glow: "from-researcher/15", textActive: "text-researcher" },
+  { label: "POC", color: "bg-student", ring: "ring-student/20", glow: "from-student/15", textActive: "text-student" },
+  { label: "MVP", color: "bg-startup", ring: "ring-startup/20", glow: "from-startup/15", textActive: "text-startup" },
+  { label: "Venture", color: "bg-researcher", ring: "ring-researcher/20", glow: "from-researcher/15", textActive: "text-researcher" },
 ] as const;
 
 function ProcessFlow() {
-  const [hoveredStep, setHoveredStep] = useState<number | null>(null);
+  const [activeStep, setActiveStep] = useState<number | null>(null);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className="mt-10 sm:mt-14"
     >
-      {/* Desktop / Tablet: horizontal flow */}
-      <div className="hidden sm:flex items-center justify-center gap-0">
-        {PROCESS_STEPS.map((step, i) => (
-          <div key={step.label} className="flex items-center">
-            <motion.div
-              onHoverStart={() => setHoveredStep(i)}
-              onHoverEnd={() => setHoveredStep(null)}
-              whileHover={{ scale: 1.08, y: -4 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="relative flex flex-col items-center cursor-default"
-            >
-              {/* Step dot */}
-              <motion.div
-                animate={{
-                  scale: hoveredStep === i ? 1.4 : 1,
-                  boxShadow: hoveredStep === i
-                    ? "0 0 20px rgba(0,0,0,0.12)"
-                    : "0 0 0px rgba(0,0,0,0)",
-                }}
-                transition={{ duration: 0.3 }}
-                className={`h-3 w-3 rounded-full ${step.color} transition-colors`}
-              />
-
-              {/* Step label */}
-              <motion.span
-                animate={{
-                  color: hoveredStep === i ? "var(--color-foreground)" : "var(--color-muted-foreground)",
-                }}
-                className="mt-3 text-xs font-medium tracking-wide sm:text-sm"
-              >
-                {step.label}
-              </motion.span>
-
-              {/* Active indicator line */}
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: hoveredStep === i ? 1 : 0 }}
-                transition={{ duration: 0.25 }}
-                className={`mt-1.5 h-[2px] w-full ${step.color} origin-center rounded-full`}
-              />
-            </motion.div>
-
-            {/* Arrow connector */}
-            {i < PROCESS_STEPS.length - 1 && (
-              <motion.div
-                animate={{
-                  opacity: hoveredStep === i || hoveredStep === i + 1 ? 1 : 0.35,
-                }}
-                transition={{ duration: 0.3 }}
-                className="mx-2 flex items-center text-muted-foreground md:mx-3 lg:mx-4"
-              >
-                <div className="h-px w-6 bg-border-strong md:w-8 lg:w-10" />
-                <ChevronRight className="h-3 w-3 -ml-1 text-border-strong" />
-              </motion.div>
-            )}
+      {/* Desktop / Tablet: premium horizontal flow inside a glass card */}
+      <div className="hidden sm:block">
+        <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-surface-elevated/60 backdrop-blur-sm px-6 py-7 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] sm:px-8 sm:py-8 md:px-10">
+          {/* Subtle background shimmer */}
+          <div className="pointer-events-none absolute inset-0 -z-10">
+            <div className="absolute -top-1/2 left-1/2 h-full w-3/4 -translate-x-1/2 rounded-full bg-gradient-to-b from-student/5 via-transparent to-transparent blur-3xl" />
           </div>
-        ))}
+
+          {/* Section label */}
+          <div className="mb-6 text-center">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Our Process</span>
+          </div>
+
+          {/* Track + Steps */}
+          <div className="relative flex items-start justify-between">
+            {/* Connecting track line — sits behind the dots */}
+            <div className="absolute top-[14px] left-[calc(8.33%)] right-[calc(8.33%)] h-px bg-border-strong/60 z-0" />
+
+            {/* Animated progress overlay on the track */}
+            <motion.div
+              className="absolute top-[14px] left-[calc(8.33%)] h-[2px] rounded-full bg-gradient-to-r from-student via-startup to-researcher z-[1]"
+              initial={{ width: "0%" }}
+              whileInView={{ width: activeStep !== null ? `${(activeStep / (PROCESS_STEPS.length - 1)) * 83.34}%` : "83.34%" }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
+            />
+
+            {PROCESS_STEPS.map((step, i) => {
+              const isActive = activeStep === i;
+              const isCompleted = activeStep !== null && i < activeStep;
+
+              return (
+                <motion.div
+                  key={step.label}
+                  className="relative z-10 flex flex-col items-center cursor-pointer"
+                  style={{ flex: "1 1 0%" }}
+                  onHoverStart={() => setActiveStep(i)}
+                  onHoverEnd={() => setActiveStep(null)}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {/* Glow behind active dot */}
+                  <motion.div
+                    animate={{
+                      opacity: isActive ? 1 : 0,
+                      scale: isActive ? 1 : 0.5,
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className={`absolute top-0 h-7 w-7 rounded-full bg-gradient-radial ${step.glow} to-transparent blur-md -translate-y-0.5`}
+                  />
+
+                  {/* Step dot */}
+                  <motion.div
+                    animate={{
+                      scale: isActive ? 1.5 : 1,
+                    }}
+                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                    className="relative"
+                  >
+                    <div className={`h-3.5 w-3.5 rounded-full ${step.color} shadow-sm ring-2 ${isActive ? step.ring : "ring-transparent"} transition-all duration-300`} />
+                    {/* Pulse ring on active */}
+                    {isActive && (
+                      <motion.div
+                        initial={{ scale: 1, opacity: 0.6 }}
+                        animate={{ scale: 2.5, opacity: 0 }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
+                        className={`absolute inset-0 rounded-full ${step.color}`}
+                      />
+                    )}
+                  </motion.div>
+
+                  {/* Step number */}
+                  <motion.span
+                    animate={{
+                      opacity: isActive ? 1 : 0,
+                      y: isActive ? 0 : -4,
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="mt-2 font-mono text-[9px] text-muted-foreground/50 tracking-wider"
+                  >
+                    0{i + 1}
+                  </motion.span>
+
+                  {/* Step label */}
+                  <motion.span
+                    animate={{
+                      color: isActive ? "var(--color-foreground)" : "var(--color-muted-foreground)",
+                      fontWeight: isActive ? 600 : 500,
+                    }}
+                    transition={{ duration: 0.25 }}
+                    className={`${isActive ? "mt-0.5" : "mt-4"} text-xs tracking-wide sm:text-sm transition-all duration-200`}
+                  >
+                    {step.label}
+                  </motion.span>
+
+                  {/* Bottom accent bar */}
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: isActive ? 1 : 0 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    className={`mt-2 h-[2px] w-8 ${step.color} origin-center rounded-full`}
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Mobile: vertical compact flow */}
-      <div className="flex sm:hidden flex-wrap items-center justify-center gap-x-2 gap-y-2">
-        {PROCESS_STEPS.map((step, i) => (
-          <div key={step.label} className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <div className={`h-2 w-2 rounded-full ${step.color}`} />
-              <span className="text-xs font-medium text-muted-foreground">{step.label}</span>
-            </div>
-            {i < PROCESS_STEPS.length - 1 && (
-              <span className="text-muted-foreground/40 text-xs">→</span>
-            )}
+      {/* Mobile: elegant compact flow */}
+      <div className="flex sm:hidden">
+        <div className="w-full overflow-hidden rounded-xl border border-border/70 bg-surface-elevated/60 p-4">
+          <div className="mb-3 text-center">
+            <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/50">Our Process</span>
           </div>
-        ))}
+          <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-3">
+            {PROCESS_STEPS.map((step, i) => (
+              <div key={step.label} className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 rounded-full bg-background/80 px-2.5 py-1 border border-border/40">
+                  <div className={`h-1.5 w-1.5 rounded-full ${step.color}`} />
+                  <span className="text-[11px] font-medium text-muted-foreground">{step.label}</span>
+                </div>
+                {i < PROCESS_STEPS.length - 1 && (
+                  <ChevronRight className="h-3 w-3 text-border-strong/60 shrink-0" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </motion.div>
   );
@@ -193,14 +252,21 @@ function Hero() {
 
   return (
     <section id="top" className="relative overflow-hidden border-b border-border/60 scroll-mt-24">
+      {/* Enhanced background effects */}
       <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.35]">
-        <div className="absolute -top-40 left-1/2 h-[420px] w-[min(900px,140vw)] -translate-x-1/2 rounded-full bg-gradient-to-br from-student/25 via-startup/15 to-researcher/25 blur-3xl" />
+        <div className="absolute -top-40 left-1/2 h-[480px] w-[min(1000px,150vw)] -translate-x-1/2 rounded-full bg-gradient-to-br from-student/30 via-startup/15 to-researcher/30 blur-3xl" />
         <motion.div
           animate={{ x: [-15, 15, -15], y: [-10, 10, -10] }}
           transition={{ duration: 15, ease: "easeInOut", repeat: Infinity }}
           className="absolute top-32 left-1/2 h-[320px] w-[min(700px,120vw)] -translate-x-1/2 rounded-full bg-gradient-to-tr from-student/10 via-startup/10 to-transparent blur-[100px]"
         />
+        <motion.div
+          animate={{ x: [10, -10, 10], y: [5, -15, 5] }}
+          transition={{ duration: 20, ease: "easeInOut", repeat: Infinity }}
+          className="absolute bottom-0 right-1/4 h-[200px] w-[300px] rounded-full bg-gradient-to-tl from-researcher/12 to-transparent blur-[80px]"
+        />
       </div>
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -208,20 +274,22 @@ function Hero() {
         className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-28 sm:gap-14 sm:px-6 sm:pb-24 sm:pt-32 md:gap-16 md:pb-32 md:pt-36"
       >
         <div className="max-w-3xl">
+          {/* Badge */}
           <motion.div
             variants={itemVariants}
-            whileHover={{ scale: 1.03, y: -2 }}
-            className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-surface-elevated px-3 py-1.5 text-[11px] text-muted-foreground transition-shadow hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.15)] sm:mb-6 sm:text-xs"
+            whileHover={{ scale: 1.04, y: -2 }}
+            className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-surface-elevated/80 backdrop-blur-sm px-3.5 py-1.5 text-[11px] text-muted-foreground transition-all duration-300 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.15)] hover:border-border-strong sm:mb-6 sm:text-xs"
           >
             <motion.div
-              animate={{ scale: [1, 1.15, 1] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              animate={{ scale: [1, 1.2, 1], rotate: [0, 8, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             >
               <Sparkles className="h-3 w-3 shrink-0" />
             </motion.div>
             <span className="truncate">15 questions. Then a path built around you.</span>
           </motion.div>
 
+          {/* Main heading */}
           <h1 className="font-display text-[2.35rem] leading-[1.05] sm:text-3xl md:text-5xl lg:text-6xl">
             <div className="overflow-hidden pb-1">
               <motion.div variants={itemVariants}>
@@ -235,41 +303,55 @@ function Hero() {
             </div>
           </h1>
 
-          {/* ── Task 2: Updated hero content ── */}
-          <motion.div variants={itemVariants} className="mt-5 sm:mt-8">
-            <p className="font-display text-lg font-medium text-foreground sm:text-xl md:text-2xl">
+          {/* Decorative separator */}
+          <motion.div variants={itemVariants} className="mt-6 flex items-center gap-3 sm:mt-8">
+            <div className="h-px w-8 bg-gradient-to-r from-student/60 to-startup/40 sm:w-12" />
+            <div className="h-1 w-1 rounded-full bg-startup/60" />
+          </motion.div>
+
+          {/* ── Updated hero content ── */}
+          <motion.div variants={itemVariants} className="mt-5 sm:mt-6">
+            <p className="font-display text-lg font-semibold text-foreground sm:text-xl md:text-2xl leading-snug">
               Turn Scientific Ideas Into Real World Solutions.
             </p>
-            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground sm:text-base md:text-lg">
+            <p className="mt-4 max-w-xl text-[15px] leading-[1.75] text-muted-foreground sm:text-base md:text-lg">
               Micrylis Biotech is a research and venture-building platform where students, researchers, and innovators work on real problems, build proof-of-concepts, and develop them toward products, startups, and impact.
             </p>
           </motion.div>
 
+          {/* CTA Buttons */}
           <motion.div variants={itemVariants} className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
             <Link to="/projects" className="w-full sm:w-auto">
               <motion.div
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.04, y: -1 }}
                 whileTap={{ scale: 0.97 }}
-                className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-transparent bg-black px-5 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:border-black hover:bg-white hover:text-black hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.2)] focus-visible:border-black focus-visible:bg-white focus-visible:text-black active:border-black active:bg-white active:text-black sm:w-auto sm:py-3"
+                className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-transparent bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-all duration-300 hover:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.25)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto sm:py-3"
               >
                 Explore Projects
-                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                <motion.span
+                  className="inline-flex"
+                  initial={false}
+                  animate={{ x: 0 }}
+                  whileHover={{ x: 3 }}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </motion.span>
               </motion.div>
             </Link>
             <Link to="/signup" className="w-full sm:w-auto">
               <motion.div
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.12)] sm:w-auto sm:py-3"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
               >
                 Join the Research Community
               </motion.div>
             </Link>
             <Link to="/courses" className="w-full sm:w-auto">
               <motion.div
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.03, y: -1 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.12)] sm:w-auto sm:py-3"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
               >
                 Build With Micrylis
               </motion.div>
@@ -280,6 +362,7 @@ function Hero() {
           <ProcessFlow />
         </div>
 
+        {/* Stats bar */}
         <motion.div variants={itemVariants} className="col-span-full mt-4 w-full overflow-hidden rounded-2xl border border-border bg-border shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_20px_60px_-30px_rgba(0,0,0,0.15)] sm:mt-8">
           <div className="grid grid-cols-2 gap-px md:grid-cols-5">
             {[
@@ -291,9 +374,9 @@ function Hero() {
             ].map((item) => (
               <motion.div
                 key={item.top}
-                whileHover={{ backgroundColor: "var(--color-background)" }}
-                transition={{ duration: 0.25 }}
-                className="flex flex-col items-center justify-center bg-surface-elevated px-3 py-5 text-center transition-colors sm:px-4 sm:py-6 md:px-2 lg:px-4 last:col-span-2 md:last:col-span-1 cursor-default"
+                whileHover={{ backgroundColor: "var(--color-background)", scale: 1.02 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="flex flex-col items-center justify-center bg-surface-elevated px-3 py-5 text-center sm:px-4 sm:py-6 md:px-2 lg:px-4 last:col-span-2 md:last:col-span-1 cursor-default"
               >
                 <div className="font-display text-xl font-semibold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
                   <AnimatedStat value={item.top} />
