@@ -303,20 +303,90 @@ function Hero() {
             </div>
           </h1>
 
-          {/* Decorative separator */}
-          <motion.div variants={itemVariants} className="mt-6 flex items-center gap-3 sm:mt-8">
-            <div className="h-px w-8 bg-gradient-to-r from-student/60 to-startup/40 sm:w-12" />
-            <div className="h-1 w-1 rounded-full bg-startup/60" />
-          </motion.div>
+          {/* ── Tagline with staggered word reveal + gradient highlight ── */}
+          <motion.div
+            variants={itemVariants}
+            className="mt-8 sm:mt-10"
+          >
+            <div className="font-display text-lg font-semibold leading-snug sm:text-xl md:text-2xl lg:text-[1.75rem]">
+              {/* First line — plain text with stagger */}
+              <span className="overflow-hidden inline-block">
+                <motion.span
+                  initial={{ y: "100%", opacity: 0 }}
+                  whileInView={{ y: 0, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="inline-block text-foreground"
+                >
+                  Turn Scientific Ideas Into
+                </motion.span>
+              </span>{" "}
+              {/* Second line — gradient text with shimmer */}
+              <span className="overflow-hidden inline-block">
+                <motion.span
+                  initial={{ y: "100%", opacity: 0 }}
+                  whileInView={{ y: 0, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  className="inline-block relative"
+                >
+                  <span
+                    className="bg-gradient-to-r from-student via-startup to-researcher bg-clip-text text-transparent"
+                    style={{ WebkitBackgroundClip: "text" }}
+                  >
+                    Real World Solutions.
+                  </span>
+                  {/* Shimmer overlay */}
+                  <motion.span
+                    initial={{ left: "-100%" }}
+                    whileInView={{ left: "200%" }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1.5, delay: 1.2, ease: "easeInOut" }}
+                    className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none skew-x-[-20deg]"
+                    style={{ WebkitBackgroundClip: "text" }}
+                  />
+                </motion.span>
+              </span>
+            </div>
 
-          {/* ── Updated hero content ── */}
-          <motion.div variants={itemVariants} className="mt-5 sm:mt-6">
-            <p className="font-display text-lg font-semibold text-foreground sm:text-xl md:text-2xl leading-snug">
-              Turn Scientific Ideas Into Real World Solutions.
-            </p>
-            <p className="mt-4 max-w-xl text-[15px] leading-[1.75] text-muted-foreground sm:text-base md:text-lg">
+            {/* Animated accent dots */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 1.0 }}
+              className="mt-4 flex items-center gap-1.5"
+            >
+              {[
+                { color: "bg-student", delay: 0 },
+                { color: "bg-startup", delay: 0.15 },
+                { color: "bg-researcher", delay: 0.3 },
+              ].map((dot, i) => (
+                <motion.div
+                  key={i}
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }}
+                  transition={{
+                    duration: 2,
+                    delay: dot.delay,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className={`h-1.5 w-1.5 rounded-full ${dot.color}`}
+                />
+              ))}
+              <div className="ml-1 h-px w-10 bg-gradient-to-r from-border-strong to-transparent" />
+            </motion.div>
+
+            {/* Description */}
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-5 max-w-xl text-[15px] leading-[1.75] text-muted-foreground sm:text-base md:text-lg"
+            >
               Micrylis Biotech is a research and venture-building platform where students, researchers, and innovators work on real problems, build proof-of-concepts, and develop them toward products, startups, and impact.
-            </p>
+            </motion.p>
           </motion.div>
 
           {/* CTA Buttons */}
