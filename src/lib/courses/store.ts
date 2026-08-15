@@ -161,7 +161,7 @@ export async function fetchCoursesListing(options?: {
       slug: c.slug,
       name: c.name,
       shortDescription: c.shortDescription,
-      thumbnail: c.thumbnail || c.coverImage || defaultImage,
+      thumbnail: defaultImage,
       category: c.category,
       duration: c.duration,
       mode: c.mode,

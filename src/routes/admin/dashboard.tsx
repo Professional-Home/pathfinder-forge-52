@@ -150,10 +150,14 @@ function AdminDashboardPage() {
         </AdminCard>
 
         <AdminCard title="Latest courses">
-          {latestCourses.map((c) => (
+          {latestCourses.map((c) => {
+            const adminImage = (c.slug || c.title || "").toLowerCase().includes("drug")
+              ? "/Photos/ai-drug-discovery-card.jpeg"
+              : "/Photos/bioplastic-card.jpeg";
+            return (
             <div key={c.id} className="flex items-center gap-3 border-b border-border/60 py-3 last:border-0">
               <img
-                src={getOptimizedImageUrl(c.thumbnail, { width: 112, height: 80 })}
+                src={getOptimizedImageUrl(adminImage, { width: 112, height: 80 })}
                 alt={c.title}
                 width={56}
                 height={40}
@@ -166,7 +170,8 @@ function AdminDashboardPage() {
                 <div className="text-xs text-muted-foreground">{c.category} · {c.duration}</div>
               </div>
             </div>
-          ))}
+            );
+          })}
           <AdminLinkRow label="Manage courses" to="/admin/courses" />
         </AdminCard>
 
