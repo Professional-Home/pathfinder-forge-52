@@ -586,7 +586,7 @@ function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle,
         <motion.div
           whileHover={{ y: -8, scale: 1.01 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-elevated bg-muted/10 shadow-sm transition-shadow duration-500 hover:shadow-xl sm:rounded-[28px]"
+          className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-elevated bg-muted/10 shadow-sm transition-shadow duration-500 hover:shadow-xl sm:rounded-[28px]"
         >
           {imageSrc && !imageError ? (
             <img
@@ -594,7 +594,7 @@ function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle,
               alt={title}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-contain transition-transform duration-700 hover:scale-[1.03]"
+              className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.03]"
               onError={() => setImageError(true)}
             />
           ) : (
