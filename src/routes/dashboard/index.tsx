@@ -305,7 +305,7 @@ function DashboardCourses() {
           ? "/Photos/ai-drug-discovery-card.jpeg"
           : "/Photos/bioplastic-card.jpeg";
 
-        const rawThumbnail = course.thumbnail || defaultImage;
+        const rawThumbnail = defaultImage;
         const thumbnailUrl = getOptimizedImageUrl(rawThumbnail, { width: 400, height: 200 });
 
         return (
