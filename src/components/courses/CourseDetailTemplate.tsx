@@ -277,18 +277,14 @@ function AboutProgramAI({ theme }: { theme: typeof themeColors.student }) {
 
           <Reveal delay={0.3}>
             <h3 className="mt-8 font-display text-xl text-foreground">What You Will Develop</h3>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-1.5">
               {[
-                "Research methodology",
-                "AI and computational thinking",
-                "Scientific writing and documentation",
-                "Data analysis and interpretation",
-                "Critical evaluation of scientific evidence",
-                "Technical presentation skills",
-                "Understanding of the drug discovery pipeline",
-              ].map((s) => (
-                <span key={s} className={`rounded-full border border-border px-3 py-1.5 text-xs font-medium ${theme.soft} ${theme.accent}`}>
-                  {s}
+                "Scientific Research", "Bioinformatics", "AI/ML", "Cheminformatics", "Molecular Docking",
+                "Database Mining", "Computational Thinking", "Data Interpretation", "Literature Analysis",
+                "Scientific Writing", "Research Communication",
+              ].map((s, i, arr) => (
+                <span key={s} className="text-sm font-medium text-foreground">
+                  {s}{i < arr.length - 1 && <span className="mx-1 text-muted-foreground">•</span>}
                 </span>
               ))}
             </div>
@@ -296,11 +292,18 @@ function AboutProgramAI({ theme }: { theme: typeof themeColors.student }) {
 
           <Reveal delay={0.35}>
             <h3 className="mt-8 font-display text-xl text-foreground">Who Can Join?</h3>
-            <ul className="mt-4 space-y-2">
+            <p className="mt-3 text-sm font-medium text-foreground">Designed for:</p>
+            <ul className="mt-3 space-y-2">
               {[
-                "Students from biotechnology, bioinformatics, pharmacy, life sciences, computer science, or related fields",
-                "Anyone curious about AI, drug discovery, and computational research",
-                "No prior experience in AI or drug discovery is required — just curiosity and willingness to learn",
+                "Biotechnology students",
+                "Bioinformatics students",
+                "Life Science students",
+                "Biomedical Science students",
+                "Pharmacy students",
+                "Computer Science students interested in computational biology",
+                "Molecular Biology students",
+                "Researchers and research enthusiasts",
+                "Beginners interested in AI-driven drug discovery",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm">
                   <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
@@ -308,6 +311,7 @@ function AboutProgramAI({ theme }: { theme: typeof themeColors.student }) {
                 </li>
               ))}
             </ul>
+            <p className="mt-4 text-sm">No advanced prior expertise in AI or computational drug discovery is required. The project progressively introduces the concepts, tools, and research workflow.</p>
           </Reveal>
 
           <Reveal delay={0.4}>
