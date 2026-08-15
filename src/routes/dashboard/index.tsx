@@ -302,10 +302,10 @@ function DashboardCourses() {
           : "";
 
         const defaultImage = (course.title || course.id || "")?.toLowerCase().includes("drug")
-          ? "/Photos/ai-drug-discovery-card.jpg"
-          : "/Photos/bioplastic-card.jpg";
+          ? "/Photos/ai-drug-discovery-card.jpeg"
+          : "/Photos/bioplastic-card.jpeg";
 
-        const rawThumbnail = course.thumbnail || defaultImage;
+        const rawThumbnail = defaultImage;
         const thumbnailUrl = getOptimizedImageUrl(rawThumbnail, { width: 400, height: 200 });
 
         return (

@@ -1,4 +1,4 @@
-# Frontend Implementation Summary — BioPlastic Content Update & Hero Cleanup
+# Frontend Implementation Summary — BioPlastic Content Update, Hero Cleanup & Refund Policy
 
 ## Branch
 
@@ -12,60 +12,41 @@ Based on: `feature/ai-drug-discovery-content`
 
 ## What Was Changed
 
-### BioPlastic Innovation — About Program Content (Tasks 1-11)
+### BioPlastic Innovation — About Program Content
 
-**ONLY BioPlastic Innovation content was updated in this branch (plus hero cleanup for both courses).**
+**All BioPlastic Innovation content sections updated with exact user-provided text.**
 
-#### Tasks 1-2 — Introduction
-- **Removed**: Old intro ("This is a 30-day guided research project where you will explore the science, design, and innovation behind bioplastics..." and "You will work on a structured research problem...")
-- **Added**: New intro about science/engineering/sustainability/commercialization of biodegradable plastics
+- Introduction: New science/engineering/sustainability/commercialization description
+- What You Will Explore: 10 detailed research areas
+- Research Journey: 10-step structured workflow
+- 30-Day Project Structure: Updated all 4 weeks
+- Project Deliverables: 7 numbered deliverables in card layout
+- Skills You Will Develop: 14 skills in dot-separated inline format
+- Who Is This For: 10 specific student categories with closing paragraph
+- The Project Outcome: Participant-focused description
+- From Material Science: Quoted motto
+- Project Positioning: Full program description
 
-#### Task 3 — What You Will Explore
-- **Removed**: 5 old points
-- **Added**: 10 detailed research areas (Bioplastics & Biomaterials, Polymer Science, Biodegradation Mechanisms, Material Characterization, Scientific Literature Research, Patent Landscape Analysis, Sustainable Product Design, Industry Case Studies, Life-Cycle & Sustainability Thinking, Commercialization Strategy)
+### Hero Section Cleanup (Both Courses)
 
-#### Task 4 — Research Journey
-- **Removed**: "Material Understanding → Formulation Design → Prototype Development → Testing & Validation → Research Documentation"
-- **Added**: "Problem Identification → Literature Review → Material & Technology Mapping → Hypothesis Formation → Experimental Workflow Design → Patent Analysis → Industry Benchmarking → Sustainability Assessment → Commercialization Strategy → Final Research Output"
+- Removed unwanted introductory paragraphs between course title and Duration
+- Hero conditionally renders subtitle/description only when non-empty
+- Title, Duration, Mode, Program Fee preserved
 
-#### Task 5 — 30-Day Project Structure
-- Updated all 4 weeks with new titles and descriptions
+### Footer Changes
 
-#### Task 6 — Project Deliverables
-- **Removed**: 5 bullet points
-- **Added**: 7 numbered deliverables in card layout
+- **Removed**: Return Policy link from footer
+- **Preserved**: Privacy Policy, Refund Policy, Disclaimer
 
-#### Task 7 — Skills You Will Develop
-- **Removed**: 7 pill-shaped skill tags
-- **Added**: 14 skills in dot-separated inline format
+### Refund Policy Page
 
-#### Task 8 — Who Is This For?
-- **Removed**: 3 generic audience bullets
-- **Added**: "Designed for:" label + 10 specific student categories + closing paragraph
-
-#### Task 9 — The Project Outcome
-- Updated to participant-focused outcome description
-
-#### Task 10 — From Material Science to Real-World Innovation
-- Replaced with quoted motto: «Research the material. Understand the science. Identify the gap. Design the solution.»
-
-#### Task 11 — Project Positioning
-- Updated with full program description
-- Final line preserved: "Research. Innovate. Validate. Build."
-
-### Hero Section Cleanup (Tasks 12-13)
-
-- **Removed**: Unwanted introductory paragraphs between course title and Duration for BOTH courses
-- **Changed**: Hero `subtitle` and `description` cleared in fallback content
-- **Changed**: Hero conditionally renders subtitle/description only when non-empty
-- **Preserved**: Course title, Duration, Mode, Program Fee
-
-### Homepage Process & Content Cleanup (Latest — Frontend Only)
-
-- **Updated Our Process** to exactly:
-  `Research → Idea → Validation → POC → Prototype → MVP → Venture`
-- **Removed**: "Build With Micrylis" button from homepage hero CTAs
-- **Removed**: "15 questions. Then a path built around you." badge text from homepage hero
+- **Removed**: Old refund policy content (mentorship sessions, course subscriptions, etc.)
+- **Added**: Complete new refund policy for Micrylis Biotech Student Research Project
+- **Content**: Exact user-provided legal content preserved without modification
+- **Section numbering**: 1, 1.1, 1.2, 2, 3, 4, 6, 7, 8 (intentionally no Section 5)
+- **Fees**: ₹1,499 domestic / $49.99 international
+- **Contact**: micrylisbiotech@gmail.com / +91 88490 05635
+- **UI**: Uses existing LegalLayout and LegalSection components
 
 ---
 
@@ -74,27 +55,26 @@ Based on: `feature/ai-drug-discovery-content`
 | File | Change Type |
 |------|-------------|
 | `src/components/courses/CourseDetailTemplate.tsx` | BioPlastic content + hero cleanup |
-| `src/routes/index.tsx` | Homepage process update, removed obsolete hero content |
-| `CHATGPT_FRONTEND_SUMMARY.md` | Updated with this task's changes |
+| `src/components/site-footer.tsx` | Removed Return Policy link |
+| `src/routes/refund-policy.tsx` | Complete refund policy replacement |
+| `CHATGPT_FRONTEND_SUMMARY.md` | Updated with all changes |
 
 ## Components Modified
 
 - `AboutProgramBioPlastic` — All content updated
 - `CourseHero` — Conditional rendering of subtitle/description
 - `CourseDetailTemplate` — Hero fallback content cleared
-- `ProcessFlow` (homepage) — Updated to 7-step process flow
-- Homepage hero — Removed badge text and "Build With Micrylis" CTA
+- `SiteFooter` — Removed Return Policy from COMPANY_LINKS
+- `RefundPolicy` — Complete page content replacement
 
 ## Testing Results
 
 - ✅ TypeScript (`npx tsc --noEmit`) — Exit code 0
 - ✅ Production build (`npm run build`) — Successful
-- ⚠️ ESLint (`npm run lint`) — Exit code 1 (pre-existing CRLF/prettier issues project-wide; not introduced by this change)
 - ✅ BioPlastic content validated
-- ✅ AI Drug Discovery content sections unchanged
-- ✅ Hero cleanup verified for both courses
-- ✅ Homepage process shows exact 7-step flow
-- ✅ Removed homepage badge text and "Build With Micrylis" button
+- ✅ Hero cleanup verified
+- ✅ Return Policy removed from footer
+- ✅ Refund Policy page renders correctly
 
 ## Backend Requirements
 
@@ -109,6 +89,9 @@ Based on: `feature/ai-drug-discovery-content`
 | 3 | `f993aad` | `feat(bioplastic): update skills and eligibility sections` |
 | 4 | `31e42ea` | `feat(bioplastic): update project outcome and positioning` |
 | 5 | `1e5d131` | `fix(courses): remove unwanted introductory paragraphs from hero section` |
+| 6 | `8126949` | `docs: update CHATGPT_FRONTEND_SUMMARY for bioplastic content update` |
+| 7 | `3582db8` | `fix(footer): remove return policy link` |
+| 8 | `747e2dd` | `feat(legal): replace refund policy with updated content` |
 
 ## Remaining Issues
 

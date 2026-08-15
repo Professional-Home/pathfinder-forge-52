@@ -68,15 +68,15 @@ export interface CourseListingItem {
 
 function mapDbToListing(db: any): CourseListingItem {
   const defaultImage = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-card.jpg"
-    : "/Photos/bioplastic-card.jpg";
+    ? "/Photos/ai-drug-discovery-card.jpeg"
+    : "/Photos/bioplastic-card.jpeg";
 
   return {
     id: String(db.id || db.slug),
     slug: db.slug || "course-slug",
     name: db.title || db.name || "Untitled Course",
     shortDescription: db.short_description || db.shortDescription || "",
-    thumbnail: db.thumbnail || db.cover_image || db.coverImage || defaultImage,
+    thumbnail: defaultImage,
     category: db.category || "Biotechnology",
     duration: db.duration || "30 Days",
     mode: db.mode || "Online",
@@ -153,8 +153,8 @@ export async function fetchCoursesListing(options?: {
 
   const mappedLocal: CourseListingItem[] = localCourses.map((c) => {
     const defaultImage = (c.slug || c.name || "")?.toLowerCase().includes("drug")
-      ? "/Photos/ai-drug-discovery-card.jpg"
-      : "/Photos/bioplastic-card.jpg";
+      ? "/Photos/ai-drug-discovery-card.jpeg"
+      : "/Photos/bioplastic-card.jpeg";
 
     return {
       id: c.id,
@@ -218,12 +218,12 @@ export async function fetchCourseById(id: string): Promise<CourseRecord | null> 
 
 function mapDbToFull(db: any): CourseRecord {
   const defaultImage = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-card.jpg"
-    : "/Photos/bioplastic-card.jpg";
+    ? "/Photos/ai-drug-discovery-card.jpeg"
+    : "/Photos/bioplastic-card.jpeg";
 
   const defaultHero = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-hero.jpg"
-    : "/Photos/bioplastic-hero.jpg";
+    ? "/Photos/ai-drug-discovery-hero.jpeg"
+    : "/Photos/bioplastic-hero.jpeg";
 
   return {
     id: String(db.id || db.slug),
@@ -231,8 +231,8 @@ function mapDbToFull(db: any): CourseRecord {
     name: db.title || db.name || "Untitled Course",
     shortDescription: db.short_description || db.shortDescription || "",
     fullDescription: db.full_description || db.fullDescription || "",
-    thumbnail: db.thumbnail || db.cover_image || db.coverImage || defaultImage,
-    coverImage: db.cover_image || db.coverImage || db.thumbnail || defaultHero,
+    thumbnail: defaultImage,
+    coverImage: defaultHero,
     duration: db.duration || "30 Days",
     mode: db.mode || "Online",
     programFee: db.program_fee || db.programFee || "₹1999",

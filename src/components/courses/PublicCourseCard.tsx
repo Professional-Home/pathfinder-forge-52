@@ -22,8 +22,8 @@ function PublicCourseCardComponent({
   };
 
   const defaultImage = course.slug?.includes("drug") || course.name?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-card.jpg"
-    : "/Photos/bioplastic-card.jpg";
+    ? "/Photos/ai-drug-discovery-card.jpeg"
+    : "/Photos/bioplastic-card.jpeg";
 
   const rawThumbnail = course.thumbnail || defaultImage;
 
@@ -40,7 +40,7 @@ function PublicCourseCardComponent({
       transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.3) }}
       className={`group flex h-full flex-col overflow-hidden rounded-xl border border-border/80 bg-surface-elevated/90 shadow-sm transition-all duration-300 hover:-translate-y-1 will-change-transform ${accentMap[theme]}`}
     >
-      <div className="relative aspect-[2/1] overflow-hidden sm:aspect-[5/2]">
+      <div className="relative aspect-[4/3] overflow-hidden sm:aspect-[3/2]">
         <img
           src={thumbnailUrl}
           alt={course.name}

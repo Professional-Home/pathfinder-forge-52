@@ -12,7 +12,6 @@ const NAV_LINKS = [
 
 const COMPANY_LINKS = [
   { name: "Privacy Policy", to: "/privacy-policy" as const },
-  { name: "Return Policy", to: "/return-policy" as const },
   { name: "Refund Policy", to: "/refund-policy" as const },
   { name: "Disclaimer", to: "/disclaimer" as const },
 ] as const;
