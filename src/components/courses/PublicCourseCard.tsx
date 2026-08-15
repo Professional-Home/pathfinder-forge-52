@@ -22,8 +22,8 @@ function PublicCourseCardComponent({
   };
 
   const defaultImage = course.slug?.includes("drug") || course.name?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-card.jpg"
-    : "/Photos/bioplastic-card.jpg";
+    ? "/Photos/ai-drug-discovery-card.jpeg"
+    : "/Photos/bioplastic-card.jpeg";
 
   const rawThumbnail = course.thumbnail || defaultImage;
 
