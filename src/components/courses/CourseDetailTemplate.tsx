@@ -316,23 +316,26 @@ function AboutProgramAI({ theme }: { theme: typeof themeColors.student }) {
 
           <Reveal delay={0.4}>
             <h3 className="mt-8 font-display text-xl text-foreground">The Project Outcome</h3>
-            <p className="mt-3">By the end of this project, you will have completed a structured research project in AI-driven drug discovery. You will understand how computational tools and AI are applied in pharmaceutical research, and you will have a documented portfolio of your work.</p>
+            <p className="mt-3">By the end of the 30-day project, participants should move beyond simply understanding AI in drug discovery.</p>
+            <p className="mt-3">They should gain experience in formulating a research question, finding and evaluating scientific evidence, working with biological and molecular data, applying computational approaches, interpreting results, documenting methodology, and communicating scientific findings.</p>
           </Reveal>
 
           <Reveal delay={0.45}>
             <h3 className="mt-8 font-display text-xl text-foreground">From Question to Research</h3>
-            <p className="mt-3">This project is designed to help you think like a researcher. You will learn to ask the right questions, find evidence, use modern tools, analyze data, and communicate your findings — skills that are essential for academic research, industry, and innovation.</p>
+            <div className="mt-4 rounded-xl border border-border bg-surface-elevated/60 p-5 text-center">
+              <p className="text-sm font-medium italic text-foreground">«Think scientifically. Work computationally. Analyze critically. Communicate like a researcher.»</p>
+            </div>
           </Reveal>
 
           <Reveal delay={0.5}>
             <h3 className="mt-8 font-display text-xl text-foreground">Project Positioning</h3>
-            <p className="mt-3">This is not a course. It is a guided research experience. You are not just learning about drug discovery — you are doing drug discovery research using AI and computational tools.</p>
+            <p className="mt-3">AI in Drug Discovery is a 30-day guided research project at the intersection of Artificial Intelligence, Bioinformatics, Cheminformatics, and Computational Biology — designed to help participants experience how computational approaches are applied to real-world drug discovery research.</p>
           </Reveal>
 
           <Reveal delay={0.55}>
             <div className="mt-8 rounded-xl border border-border bg-gradient-to-br from-background to-surface-elevated p-6 text-center">
               <p className="font-display text-lg font-semibold text-foreground">
-                Research. Analyze. Discover. Document.
+                Explore. Analyze. Research. Build.
               </p>
             </div>
           </Reveal>
