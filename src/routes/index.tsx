@@ -594,7 +594,7 @@ function FeatureCard({ imagePosition, title, description, icon: Icon, chipTitle,
               alt={title}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.03]"
+              className="w-full h-full object-contain transition-transform duration-700 hover:scale-[1.03]"
               onError={() => setImageError(true)}
             />
           ) : (
