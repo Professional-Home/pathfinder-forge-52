@@ -398,10 +398,10 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
             <h3 className="mt-8 font-display text-xl text-foreground">30-Day Project Structure</h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                { week: "Week 1", title: "Foundation", desc: "Understand polymer science, bioplastic types, raw material sourcing, and research fundamentals." },
-                { week: "Week 2", title: "Formulation & Design", desc: "Design bioplastic formulations, explore processing methods, and plan experimental workflows." },
-                { week: "Week 3", title: "Testing & Analysis", desc: "Evaluate material properties, biodegradability, environmental impact, and functional performance." },
-                { week: "Week 4", title: "Documentation & Presentation", desc: "Document your research, prepare your final report and presentation, and compile your research portfolio." },
+                { week: "Week 1", title: "Foundations of Bioplastics & Sustainable Materials", desc: "Introduction to bioplastics, bio-based polymers, biodegradable polymers, polymer science, sustainability challenges, existing alternatives, and identification of meaningful research problems." },
+                { week: "Week 2", title: "Materials, Properties & Research Methodology", desc: "Explore polymer selection, material properties, degradation mechanisms, characterization approaches, experimental workflow design, scientific literature, and hypothesis development." },
+                { week: "Week 3", title: "Innovation, Patents & Industry", desc: "Analyze scientific publications, patent landscapes, competing technologies, industry applications, existing products, market gaps, and emerging opportunities in sustainable materials." },
+                { week: "Week 4", title: "From Research to Innovation", desc: "Develop the final research direction through evidence analysis, sustainability considerations, technical feasibility, commercialization strategy, and scientific communication." },
               ].map((w) => (
                 <div key={w.week} className="rounded-xl border border-border/70 bg-background/60 p-4 transition hover:border-border-strong hover:shadow-md">
                   <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{w.week}</span>
@@ -414,20 +414,24 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
 
           <Reveal delay={0.25}>
             <h3 className="mt-8 font-display text-xl text-foreground">Project Deliverables</h3>
-            <ul className="mt-4 space-y-2">
+            <p className="mt-3 text-sm">Participants will work toward developing:</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                "Research report documenting your bioplastic innovation project",
-                "Material analysis and experimental results",
-                "Formulation design and testing documentation",
-                "Final presentation of your research",
-                "Project portfolio documenting your work",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm">
-                  <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
-                  {item}
-                </li>
+                { num: "01", title: "Research Problem", desc: "Identify and define a meaningful challenge within bioplastics or sustainable biomaterials." },
+                { num: "02", title: "Scientific Literature Review", desc: "Systematically investigate existing research and identify knowledge gaps." },
+                { num: "03", title: "Material & Technology Analysis", desc: "Compare relevant materials, technologies, properties, limitations, and applications." },
+                { num: "04", title: "Research Methodology", desc: "Develop a scientifically structured workflow for investigating the selected problem." },
+                { num: "05", title: "Patent & Industry Analysis", desc: "Map existing innovations and identify potential technology or application opportunities." },
+                { num: "06", title: "Innovation & Commercialization Strategy", desc: "Evaluate technical feasibility, sustainability, potential applications, and pathways toward real-world implementation." },
+                { num: "07", title: "Final Research Project", desc: "Present the complete research journey, findings, analysis, proposed innovation, and future direction." },
+              ].map((d) => (
+                <div key={d.num} className="rounded-xl border border-border/70 bg-background/60 p-4 transition hover:border-border-strong hover:shadow-md">
+                  <span className={`font-mono text-xs font-bold ${theme.accent}`}>{d.num}</span>
+                  <h4 className="mt-1 font-display text-base text-foreground">{d.title}</h4>
+                  <p className="mt-1 text-sm text-muted-foreground">{d.desc}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </Reveal>
 
           <Reveal delay={0.3}>
