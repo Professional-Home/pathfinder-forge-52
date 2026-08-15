@@ -60,6 +60,13 @@ Based on: `feature/ai-drug-discovery-content`
 - **Changed**: Hero conditionally renders subtitle/description only when non-empty
 - **Preserved**: Course title, Duration, Mode, Program Fee
 
+### Homepage Process & Content Cleanup (Latest — Frontend Only)
+
+- **Updated Our Process** to exactly:
+  `Research → Idea → Validation → POC → Prototype → MVP → Venture`
+- **Removed**: "Build With Micrylis" button from homepage hero CTAs
+- **Removed**: "15 questions. Then a path built around you." badge text from homepage hero
+
 ---
 
 ## Files Modified
@@ -67,6 +74,7 @@ Based on: `feature/ai-drug-discovery-content`
 | File | Change Type |
 |------|-------------|
 | `src/components/courses/CourseDetailTemplate.tsx` | BioPlastic content + hero cleanup |
+| `src/routes/index.tsx` | Homepage process update, removed obsolete hero content |
 | `CHATGPT_FRONTEND_SUMMARY.md` | Updated with this task's changes |
 
 ## Components Modified
@@ -74,14 +82,19 @@ Based on: `feature/ai-drug-discovery-content`
 - `AboutProgramBioPlastic` — All content updated
 - `CourseHero` — Conditional rendering of subtitle/description
 - `CourseDetailTemplate` — Hero fallback content cleared
+- `ProcessFlow` (homepage) — Updated to 7-step process flow
+- Homepage hero — Removed badge text and "Build With Micrylis" CTA
 
 ## Testing Results
 
 - ✅ TypeScript (`npx tsc --noEmit`) — Exit code 0
 - ✅ Production build (`npm run build`) — Successful
+- ⚠️ ESLint (`npm run lint`) — Exit code 1 (pre-existing CRLF/prettier issues project-wide; not introduced by this change)
 - ✅ BioPlastic content validated
 - ✅ AI Drug Discovery content sections unchanged
 - ✅ Hero cleanup verified for both courses
+- ✅ Homepage process shows exact 7-step flow
+- ✅ Removed homepage badge text and "Build With Micrylis" button
 
 ## Backend Requirements
 

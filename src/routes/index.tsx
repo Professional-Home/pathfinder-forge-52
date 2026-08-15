@@ -75,11 +75,12 @@ function Landing() {
    ───────────────────────────────────────────── */
 const PROCESS_STEPS = [
   { label: "Research", color: "bg-student", ring: "ring-student/20", glow: "from-student/15", textActive: "text-student" },
-  { label: "Prototype", color: "bg-startup", ring: "ring-startup/20", glow: "from-startup/15", textActive: "text-startup" },
+  { label: "Idea", color: "bg-startup", ring: "ring-startup/20", glow: "from-startup/15", textActive: "text-startup" },
   { label: "Validation", color: "bg-researcher", ring: "ring-researcher/20", glow: "from-researcher/15", textActive: "text-researcher" },
   { label: "POC", color: "bg-student", ring: "ring-student/20", glow: "from-student/15", textActive: "text-student" },
-  { label: "MVP", color: "bg-startup", ring: "ring-startup/20", glow: "from-startup/15", textActive: "text-startup" },
-  { label: "Venture", color: "bg-researcher", ring: "ring-researcher/20", glow: "from-researcher/15", textActive: "text-researcher" },
+  { label: "Prototype", color: "bg-startup", ring: "ring-startup/20", glow: "from-startup/15", textActive: "text-startup" },
+  { label: "MVP", color: "bg-researcher", ring: "ring-researcher/20", glow: "from-researcher/15", textActive: "text-researcher" },
+  { label: "Venture", color: "bg-student", ring: "ring-student/20", glow: "from-student/15", textActive: "text-student" },
 ] as const;
 
 function ProcessFlow() {
@@ -249,21 +250,6 @@ function Hero() {
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-stretch lg:gap-14">
           {/* Left column — text content */}
           <div className="lg:col-span-7">
-            {/* Badge */}
-            <motion.div
-              variants={itemVariants}
-              whileHover={{ scale: 1.04, y: -2 }}
-              className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-surface-elevated/80 backdrop-blur-sm px-3.5 py-1.5 text-[11px] text-muted-foreground transition-all duration-300 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.15)] hover:border-border-strong sm:mb-6 sm:text-xs"
-            >
-              <motion.div
-                animate={{ scale: [1, 1.2, 1], rotate: [0, 8, 0] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Sparkles className="h-3 w-3 shrink-0" />
-              </motion.div>
-              <span className="truncate">15 questions. Then a path built around you.</span>
-            </motion.div>
-
             {/* Main heading */}
             <h1 className="font-display text-[2.35rem] leading-[1.05] sm:text-3xl md:text-5xl lg:text-6xl">
               <div className="overflow-hidden pb-1">
@@ -362,15 +348,6 @@ function Hero() {
                   className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
                 >
                   Join the Research Community
-                </motion.div>
-              </Link>
-              <Link to="/courses" className="w-full sm:w-auto">
-                <motion.div
-                  whileHover={{ scale: 1.03, y: -1 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
-                >
-                  Build With Micrylis
                 </motion.div>
               </Link>
             </motion.div>
