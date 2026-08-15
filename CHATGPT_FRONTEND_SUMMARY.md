@@ -1,73 +1,64 @@
-# Frontend Implementation Summary — AI Drug Discovery Content Update
+# Frontend Implementation Summary — BioPlastic Content Update & Hero Cleanup
 
 ## Branch
 
 ```
-feature/ai-drug-discovery-content
+feature/bioplastic-content-update
 ```
 
-Based on: `feature/program-content-overhaul`
+Based on: `feature/ai-drug-discovery-content`
 
 ---
 
 ## What Was Changed
 
-**ONLY AI in Drug Discovery content was updated.**
+### BioPlastic Innovation — About Program Content (Tasks 1-11)
 
-No changes to BioPlastic Innovation, Homepage, FAQ, Dashboard, Admin, or any other page.
+**ONLY BioPlastic Innovation content was updated in this branch (plus hero cleanup for both courses).**
 
----
+#### Tasks 1-2 — Introduction
+- **Removed**: Old intro ("This is a 30-day guided research project where you will explore the science, design, and innovation behind bioplastics..." and "You will work on a structured research problem...")
+- **Added**: New intro about science/engineering/sustainability/commercialization of biodegradable plastics
 
-### AI in Drug Discovery — About Program Content Updates
-
-#### Task 1 & 2 — Introduction
-- **Removed**: Old introductory sentence ("This is a 30-day guided research project where you will explore how artificial intelligence...")
-- **Added**: "Explore how Artificial Intelligence, Machine Learning, Bioinformatics, Cheminformatics, and Computational Biology are reshaping the modern drug discovery process."
-
-#### Task 3 — Second Introduction
-- **Removed**: Old paragraph starting with "You will work on a structured research problem"
-- **Added**: Two new paragraphs about the 30-day research project design and focus on research thinking
-
-#### Task 4 — What You Will Explore
+#### Task 3 — What You Will Explore
 - **Removed**: 5 old points
-- **Added**: 10 detailed research areas (AI in Drug Discovery, Target Identification & Validation, Bioinformatics, Cheminformatics, Machine Learning, Molecular Docking, Virtual Screening, Protein Structure Analysis, Scientific Literature Analysis, Computational Research Workflows)
+- **Added**: 10 detailed research areas (Bioplastics & Biomaterials, Polymer Science, Biodegradation Mechanisms, Material Characterization, Scientific Literature Research, Patent Landscape Analysis, Sustainable Product Design, Industry Case Studies, Life-Cycle & Sustainability Thinking, Commercialization Strategy)
 
-#### Task 5 — Research Journey
-- **Removed**: "Disease Understanding → Target Identification → Compound Screening → AI-Driven Analysis → Validation → Research Documentation"
-- **Added**: "Scientific Question → Literature Review → Data Collection → Computational Analysis → Model/Tool Application → Result Interpretation → Validation → Research Output"
+#### Task 4 — Research Journey
+- **Removed**: "Material Understanding → Formulation Design → Prototype Development → Testing & Validation → Research Documentation"
+- **Added**: "Problem Identification → Literature Review → Material & Technology Mapping → Hypothesis Formation → Experimental Workflow Design → Patent Analysis → Industry Benchmarking → Sustainability Assessment → Commercialization Strategy → Final Research Output"
 
-#### Task 6 — 30-Day Project Structure
-- **Updated all 4 weeks** with new titles and descriptions:
-  - Week 1: Drug Discovery & Research Foundations
-  - Week 2: Bioinformatics & Molecular Data
-  - Week 3: AI & Computational Drug Discovery
-  - Week 4: Research Execution & Scientific Communication
+#### Task 5 — 30-Day Project Structure
+- Updated all 4 weeks with new titles and descriptions
 
-#### Task 7 — Project Deliverables
-- **Removed**: 5 bullet-point deliverables
-- **Added**: 6 numbered deliverables in card layout (Research Question, Literature Review, Research Methodology, Data & Computational Analysis, Research Report, Final Research Presentation)
-- **Added**: "Participants will work toward developing:" header
+#### Task 6 — Project Deliverables
+- **Removed**: 5 bullet points
+- **Added**: 7 numbered deliverables in card layout
 
-#### Task 8 — What You Will Develop
+#### Task 7 — Skills You Will Develop
 - **Removed**: 7 pill-shaped skill tags
-- **Added**: 11 skills in dot-separated inline format (Scientific Research • Bioinformatics • AI/ML • Cheminformatics • Molecular Docking • Database Mining • Computational Thinking • Data Interpretation • Literature Analysis • Scientific Writing • Research Communication)
+- **Added**: 14 skills in dot-separated inline format
 
-#### Task 9 — Who Can Join?
+#### Task 8 — Who Is This For?
 - **Removed**: 3 generic audience bullets
-- **Added**: "Designed for:" label + 9 specific student categories + closing paragraph about prerequisites
+- **Added**: "Designed for:" label + 10 specific student categories + closing paragraph
 
-#### Task 10 — The Project Outcome
-- **Removed**: Old outcome paragraph
-- **Added**: Two paragraphs about moving beyond understanding to gaining research experience
+#### Task 9 — The Project Outcome
+- Updated to participant-focused outcome description
 
-#### Task 11 — From Question to Research
-- **Removed**: Old paragraph about thinking like a researcher
-- **Added**: Quoted motto: «Think scientifically. Work computationally. Analyze critically. Communicate like a researcher.»
+#### Task 10 — From Material Science to Real-World Innovation
+- Replaced with quoted motto: «Research the material. Understand the science. Identify the gap. Design the solution.»
 
-#### Task 12 — Project Positioning
-- **Removed**: Old positioning paragraph
-- **Added**: Full positioning statement about the 30-day guided research project
-- **Updated final line**: "Research. Analyze. Discover. Document." → "Explore. Analyze. Research. Build."
+#### Task 11 — Project Positioning
+- Updated with full program description
+- Final line preserved: "Research. Innovate. Validate. Build."
+
+### Hero Section Cleanup (Tasks 12-13)
+
+- **Removed**: Unwanted introductory paragraphs between course title and Duration for BOTH courses
+- **Changed**: Hero `subtitle` and `description` cleared in fallback content
+- **Changed**: Hero conditionally renders subtitle/description only when non-empty
+- **Preserved**: Course title, Duration, Mode, Program Fee
 
 ---
 
@@ -75,41 +66,36 @@ No changes to BioPlastic Innovation, Homepage, FAQ, Dashboard, Admin, or any oth
 
 | File | Change Type |
 |------|-------------|
-| `src/components/courses/CourseDetailTemplate.tsx` | `AboutProgramAI` component content updated |
+| `src/components/courses/CourseDetailTemplate.tsx` | BioPlastic content + hero cleanup |
 | `CHATGPT_FRONTEND_SUMMARY.md` | Updated with this task's changes |
 
 ## Components Modified
 
-- `AboutProgramAI` — All content within this component updated
-- **No other components were touched**
-
-## UI Changes
-
-- Project Deliverables: Changed from bullet list to numbered card grid (2 columns)
-- What You Will Develop: Changed from pill tags to dot-separated inline text
-- Who Can Join: Added "Designed for:" label and closing paragraph
-- From Question to Research: Changed from paragraph to centered quote card
+- `AboutProgramBioPlastic` — All content updated
+- `CourseHero` — Conditional rendering of subtitle/description
+- `CourseDetailTemplate` — Hero fallback content cleared
 
 ## Testing Results
 
 - ✅ TypeScript (`npx tsc --noEmit`) — Exit code 0
 - ✅ Production build (`npm run build`) — Successful
-- ✅ Content validation — All old AI Drug Discovery content removed
-- ✅ BioPlastic Innovation content verified unchanged
-- ✅ No broken routes
+- ✅ BioPlastic content validated
+- ✅ AI Drug Discovery content sections unchanged
+- ✅ Hero cleanup verified for both courses
 
 ## Backend Requirements
 
-**NONE.** This is a frontend-only change.
+**NONE.** Frontend-only changes.
 
 ## Commit History
 
 | # | Hash | Message |
 |---|------|---------|
-| 1 | `2f88d2c` | `feat(ai-drug-discovery): update research introduction and exploration content` |
-| 2 | `27dc1b2` | `feat(ai-drug-discovery): update research journey, project structure, and deliverables` |
-| 3 | `2bf27ff` | `feat(ai-drug-discovery): update skills and audience sections` |
-| 4 | `1ab27a0` | `feat(ai-drug-discovery): update outcome, positioning, and final tagline` |
+| 1 | `4c8ff85` | `feat(bioplastic): update research introduction, exploration, and journey` |
+| 2 | `ca01249` | `feat(bioplastic): update project structure and deliverables` |
+| 3 | `f993aad` | `feat(bioplastic): update skills and eligibility sections` |
+| 4 | `31e42ea` | `feat(bioplastic): update project outcome and positioning` |
+| 5 | `1e5d131` | `fix(courses): remove unwanted introductory paragraphs from hero section` |
 
 ## Remaining Issues
 
