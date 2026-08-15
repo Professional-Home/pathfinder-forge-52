@@ -222,21 +222,22 @@ function AdminCoursesPage() {
                     <TableRow key={course.id}>
                       <TableCell>
                         <div className="flex items-center gap-3 min-w-[200px]">
-                          {course.thumbnail ? (
-                            <img
-                              src={getOptimizedImageUrl(course.thumbnail, { width: 112, height: 80 })}
-                              alt={course.name}
-                              width={56}
-                              height={40}
-                              loading="lazy"
-                              decoding="async"
-                              className="h-10 w-14 shrink-0 rounded-md object-cover border border-border"
-                            />
-                          ) : (
-                            <div className="h-10 w-14 shrink-0 rounded-md bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
-                              No Image
-                            </div>
-                          )}
+                          {(() => {
+                            const adminDefaultImage = (course.slug || course.name || "").toLowerCase().includes("drug")
+                              ? "/Photos/ai-drug-discovery-card.jpeg"
+                              : "/Photos/bioplastic-card.jpeg";
+                            return (
+                              <img
+                                src={getOptimizedImageUrl(adminDefaultImage, { width: 112, height: 80 })}
+                                alt={course.name}
+                                width={56}
+                                height={40}
+                                loading="lazy"
+                                decoding="async"
+                                className="h-10 w-14 shrink-0 rounded-md object-cover border border-border"
+                              />
+                            );
+                          })()}
                           <div className="min-w-0">
                             <div className="truncate text-sm font-medium">{course.name}</div>
                             <div className="truncate text-xs text-muted-foreground max-w-[220px]">

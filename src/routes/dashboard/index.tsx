@@ -310,19 +310,17 @@ function DashboardCourses() {
 
         return (
           <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
-            {course.thumbnail && (
-              <div className="aspect-[2/1] overflow-hidden">
-                <img
-                  src={thumbnailUrl}
-                  alt={course.title}
-                  width={400}
-                  height={200}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            )}
+            <div className="aspect-[2/1] overflow-hidden">
+              <img
+                src={thumbnailUrl}
+                alt={course.title}
+                width={400}
+                height={200}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+            </div>
             <div className="flex flex-1 flex-col justify-between p-5">
               <div>
                 <div className="inline-flex rounded bg-surface px-2 py-1 text-[10px] uppercase tracking-widest text-muted-foreground">

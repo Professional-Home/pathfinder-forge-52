@@ -22,7 +22,9 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
       description: c.shortDescription,
       category: c.category,
       duration: c.duration,
-      thumbnail: c.thumbnail,
+      thumbnail: (c.slug || c.name || "").toLowerCase().includes("drug")
+        ? "/Photos/ai-drug-discovery-card.jpeg"
+        : "/Photos/bioplastic-card.jpeg",
       applyUrl: c.applyUrl,
       status: c.status,
     }));
@@ -32,16 +34,21 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
 export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[] {
   const normalizedSupabase: DashboardCourse[] = supabaseCourses
     .filter((c) => c.status === "published" || !c.status)
-    .map((c) => ({
-      id: String(c.id || c.slug),
-      title: c.title || c.name || "Untitled Course",
-      description: c.short_description || c.description || c.shortDescription || "",
-      category: c.category || "General",
-      duration: c.duration || "Self-paced",
-      thumbnail: c.thumbnail || c.cover_image || c.coverImage || "",
-      applyUrl: c.apply_url || c.applyUrl || "",
-      status: c.status || "published",
-    }));
+    .map((c) => {
+      const defaultImage = (c.slug || c.title || c.name || "").toLowerCase().includes("drug")
+        ? "/Photos/ai-drug-discovery-card.jpeg"
+        : "/Photos/bioplastic-card.jpeg";
+      return {
+        id: String(c.id || c.slug),
+        title: c.title || c.name || "Untitled Course",
+        description: c.short_description || c.description || c.shortDescription || "",
+        category: c.category || "General",
+        duration: c.duration || "Self-paced",
+        thumbnail: defaultImage,
+        applyUrl: c.apply_url || c.applyUrl || "",
+        status: c.status || "published",
+      };
+    });
 
   const merged = [...normalizedSupabase];
   const existingTitles = new Set(normalizedSupabase.map((c) => (c.title || "").trim().toLowerCase()));

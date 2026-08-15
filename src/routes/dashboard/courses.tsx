@@ -97,23 +97,24 @@ function CoursesPage() {
                 ? generateWhatsAppLink(undefined, course.title, userEmail)
                 : "";
 
-              const thumbnailUrl = getOptimizedImageUrl(course.thumbnail || "", { width: 600, height: 300 });
+              const defaultImage = (course.title || course.id || "").toLowerCase().includes("drug")
+                ? "/Photos/ai-drug-discovery-card.jpeg"
+                : "/Photos/bioplastic-card.jpeg";
+              const thumbnailUrl = getOptimizedImageUrl(defaultImage, { width: 600, height: 300 });
 
               return (
                 <div key={course.id} className="flex flex-col justify-between rounded-xl border border-border bg-background overflow-hidden hover:border-foreground/20 transition-colors">
-                  {course.thumbnail && (
-                    <div className="aspect-[2/1] overflow-hidden">
-                      <img
-                        src={thumbnailUrl}
-                        alt={course.title}
-                        width={600}
-                        height={300}
-                        loading="lazy"
-                        decoding="async"
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
+                  <div className="aspect-[2/1] overflow-hidden">
+                    <img
+                      src={thumbnailUrl}
+                      alt={course.title}
+                      width={600}
+                      height={300}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                   <div className="flex flex-1 flex-col justify-between p-6">
                     <div>
                       <div className="flex items-center justify-between">
