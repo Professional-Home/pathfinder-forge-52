@@ -199,19 +199,25 @@ function AboutProgramAI({ theme }: { theme: typeof themeColors.student }) {
         </Reveal>
         <div className="mt-10 max-w-3xl space-y-6 text-base leading-relaxed text-muted-foreground">
           <Reveal delay={0.05}>
-            <p>This is a 30-day guided research project where you will explore how artificial intelligence, bioinformatics, and computational tools are transforming the drug discovery process.</p>
-            <p className="mt-4">You will work on a structured research problem — from understanding the biology of a disease, identifying drug targets, and using AI and computational tools to screen, evaluate, and analyze potential drug candidates — and develop your findings into a documented research outcome.</p>
+            <p>Explore how Artificial Intelligence, Machine Learning, Bioinformatics, Cheminformatics, and Computational Biology are reshaping the modern drug discovery process.</p>
+            <p className="mt-4">This 30-day research project is designed to take participants from understanding a scientific problem to developing a structured computational research workflow. Participants work with scientific literature, biological databases, molecular datasets, computational tools, and research questions to investigate real challenges in drug discovery.</p>
+            <p className="mt-4">The focus is not simply on learning concepts. It is on research thinking, computational analysis, scientific interpretation, and developing a research-ready project outcome.</p>
           </Reveal>
 
           <Reveal delay={0.1}>
             <h3 className="mt-8 font-display text-xl text-foreground">What You Will Explore</h3>
             <ul className="mt-4 space-y-2">
               {[
-                "How AI and machine learning are used to identify potential drug candidates",
-                "How bioinformatics helps analyze biological data — proteins, genes, and molecular pathways",
-                "How computational chemistry and cheminformatics are applied in molecular screening and drug-likeness evaluation",
-                "How to use databases, tools, and AI models to support drug discovery research",
-                "How to structure, validate, and present a research project in computational drug discovery",
+                "AI in Drug Discovery — Understand where AI can accelerate different stages of pharmaceutical research.",
+                "Target Identification & Validation — Investigate biological targets and their relationship with disease mechanisms.",
+                "Bioinformatics — Explore biological databases, molecular information, sequence data, and computational analysis.",
+                "Cheminformatics — Understand molecular representations, compound databases, molecular descriptors, and chemical data.",
+                "Machine Learning — Explore how predictive models can be applied to molecular and biological datasets.",
+                "Molecular Docking — Understand computational approaches for investigating drug–target interactions.",
+                "Virtual Screening — Explore computational strategies for prioritizing potential drug candidates.",
+                "Protein Structure Analysis — Understand the role of protein structure in rational drug discovery.",
+                "Scientific Literature Analysis — Learn how to identify, evaluate, and extract insights from scientific publications.",
+                "Computational Research Workflows — Connect multiple tools and datasets into a structured research workflow.",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm">
                   <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
