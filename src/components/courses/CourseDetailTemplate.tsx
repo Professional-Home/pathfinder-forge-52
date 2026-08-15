@@ -231,7 +231,7 @@ function AboutProgramAI({ theme }: { theme: typeof themeColors.student }) {
             <h3 className="mt-8 font-display text-xl text-foreground">Research Journey</h3>
             <div className="mt-4 rounded-xl border border-border bg-surface-elevated/60 p-5">
               <p className="text-sm font-medium text-foreground">
-                Disease Understanding → Target Identification → Compound Screening → AI-Driven Analysis → Validation → Research Documentation
+                Scientific Question → Literature Review → Data Collection → Computational Analysis → Model/Tool Application → Result Interpretation → Validation → Research Output
               </p>
             </div>
           </Reveal>
@@ -240,10 +240,10 @@ function AboutProgramAI({ theme }: { theme: typeof themeColors.student }) {
             <h3 className="mt-8 font-display text-xl text-foreground">30-Day Project Structure</h3>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                { week: "Week 1", title: "Foundation", desc: "Understand the drug discovery pipeline, disease biology, target identification, and research fundamentals." },
-                { week: "Week 2", title: "Computational Research", desc: "Use bioinformatics tools, molecular databases, cheminformatics, and AI models to explore drug candidates." },
-                { week: "Week 3", title: "Analysis & Validation", desc: "Analyze results, validate findings using computational methods, and interpret data." },
-                { week: "Week 4", title: "Documentation & Presentation", desc: "Document your research, prepare your final report and presentation, and compile your research portfolio." },
+                { week: "Week 1", title: "Drug Discovery & Research Foundations", desc: "Understand the pharmaceutical discovery pipeline, applications of AI, target identification, biological databases, scientific literature, and research-question formulation." },
+                { week: "Week 2", title: "Bioinformatics & Molecular Data", desc: "Work with biological and molecular databases, protein structures, sequence information, compound datasets, and molecular representations." },
+                { week: "Week 3", title: "AI & Computational Drug Discovery", desc: "Explore machine learning, cheminformatics, molecular property prediction, molecular docking, virtual screening, and computational approaches to drug discovery." },
+                { week: "Week 4", title: "Research Execution & Scientific Communication", desc: "Apply the learned concepts to the selected research problem, analyze findings, interpret results, document methodology, and prepare the final research output." },
               ].map((w) => (
                 <div key={w.week} className="rounded-xl border border-border/70 bg-background/60 p-4 transition hover:border-border-strong hover:shadow-md">
                   <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{w.week}</span>
@@ -256,20 +256,23 @@ function AboutProgramAI({ theme }: { theme: typeof themeColors.student }) {
 
           <Reveal delay={0.25}>
             <h3 className="mt-8 font-display text-xl text-foreground">Project Deliverables</h3>
-            <ul className="mt-4 space-y-2">
+            <p className="mt-3 text-sm">Participants will work toward developing:</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                "Research report documenting your drug discovery project",
-                "Data analysis and computational results",
-                "AI-assisted findings and molecular screening outputs",
-                "Final presentation of your research",
-                "Project portfolio documenting your work",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-2 text-sm">
-                  <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
-                  {item}
-                </li>
+                { num: "01", title: "Research Question", desc: "A clearly defined and scientifically relevant problem." },
+                { num: "02", title: "Literature Review", desc: "A structured analysis of relevant scientific research." },
+                { num: "03", title: "Research Methodology", desc: "A documented computational approach for addressing the research question." },
+                { num: "04", title: "Data & Computational Analysis", desc: "Analysis of relevant biological, molecular, or chemical datasets." },
+                { num: "05", title: "Research Report", desc: "A structured report covering the background, methodology, results, interpretation, limitations, and conclusion." },
+                { num: "06", title: "Final Research Presentation", desc: "A scientific presentation communicating the complete research journey and findings." },
+              ].map((d) => (
+                <div key={d.num} className="rounded-xl border border-border/70 bg-background/60 p-4 transition hover:border-border-strong hover:shadow-md">
+                  <span className={`font-mono text-xs font-bold ${theme.accent}`}>{d.num}</span>
+                  <h4 className="mt-1 font-display text-base text-foreground">{d.title}</h4>
+                  <p className="mt-1 text-sm text-muted-foreground">{d.desc}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </Reveal>
 
           <Reveal delay={0.3}>
