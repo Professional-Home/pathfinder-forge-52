@@ -1,174 +1,139 @@
-# Frontend Implementation Summary — Website Interactivity & FAQ Update
+# Frontend Implementation Summary — Program Content Overhaul
 
 ## Branch
 
 ```
-feature/website-interactivity-faq
+feature/program-content-overhaul
 ```
 
-Based on: `main`
+Based on: `feature/website-interactivity-faq`
 
 ---
 
 ## What Was Changed
 
-### 1. Website Interactivity Improvements (Task 1)
+### Phase 1 — Shared Course Page Sections (Both AI Drug Discovery & BioPlastic Innovation)
 
-Enhanced the existing homepage UI/UX with polished, professional interactions:
+Completely rewrote `CourseDetailTemplate.tsx` with all new content sections:
 
-- **GrowthPath Cards**: Added Framer Motion `whileHover` background color transition and icon hover scale+rotation effects
-- **Stats Bar**: Replaced static `hover:bg-surface/80` with `motion.div` `whileHover` background animation for smoother transitions
-- **CTA Buttons**: Added `whileHover={{ scale: 1.03 }}` and enhanced shadow effects (`hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.2)]`) to all hero buttons
-- **Feature Card Images**: Added `transition-transform duration-700 hover:scale-[1.03]` for subtle zoom on image hover
-- **Feature Card Containers**: Added `transition-shadow duration-500` for smoother shadow transitions
-- **ProductPreview Dashboard Cards**: Added `transition-shadow hover:shadow-md` to inner cards and `hover:bg-background/60` to sidebar items
-- **Arrow Icons**: Improved `group-hover:translate-x-1` with `duration-300` timing for smoother arrow movement
+#### 1. "Why You Should Join" → "More Than an Internship. Build Something Real."
+- Replaced 4 generic cards with 6 new detailed cards (Build a Real Research Project, Research-to-POC Mentorship, Solve Real-World Problems, Build Your Scientific Portfolio, Collaborate With a Research Community, Explore What Comes Next)
+- Added "Your Journey With Micrylis" flow: Problem → Research → Build → Validate → POC → MVP → Venture
+- Added closing italic text: "Don't just complete an internship. Build something you can take forward."
 
-### 2. Homepage Hero Content Update (Task 2)
+#### 2. Program Highlights
+- Replaced 3 highlights with 6 premium items in a 3-column grid layout
 
-Replaced the paragraph beginning with "Learn by solving real..." with the exact specified content:
+#### 3. "What You Will Learn" → "What You Will Build & Learn"
+- Replaced old curriculum with 8 structured modules (01–08): Problem Discovery, Scientific Research, Solution Design, AI & Modern Research Tools, Build the Prototype, Validation & POC, Research-to-Venture, Final Capstone
+- Each module has numbered header and checklist items
 
-**New content structure:**
-1. **Headline**: "Turn Scientific Ideas Into Real World Solutions." (displayed as a prominent font-display heading)
-2. **Description**: "Micrylis Biotech is a research and venture-building platform..." (displayed as body text)
-3. **Three CTA buttons**:
-   - "Explore Projects" → `/projects` (primary dark button with arrow)
-   - "Join the Research Community" → `/signup` (secondary outlined button)
-   - "Build With Micrylis" → `/courses` (secondary outlined button)
-4. **Process Flow**: Interactive `ProcessFlow` component showing:
-   - **Desktop**: Horizontal flow with animated dots, connector lines with chevrons, hover interactions (scale, color change, underline indicator)
-   - **Mobile**: Compact wrapped flow with `→` separators
+#### 4. Research Based Learning Workflow
+- Replaced old 4-step timeline with 9-step workflow: PROBLEM → RESEARCH → DESIGN → BUILD → VALIDATE → POC → MVP → VENTURE
+- Removed "hands on research activities" paragraph
+- Alternating left/right timeline layout preserved
 
-**Process Steps**: Research → Prototype → Validation → POC → MVP → Venture
+#### 5. Capstone → "Build Something Real"
+- Replaced old Capstone content with 5 phases: Problem Definition, Research & Analysis, Solution Development, Validation & Proof of Concept, Final Presentation
+- Each phase has an icon, title, and description in a 3-column card grid
 
-Each step uses domain-accent colors (student/startup/researcher) cycling across the 6 steps.
+#### 6. Project Outcomes
+- Replaced old checklist with 6 detailed outcome cards: Research Portfolio, Tangible Project Deliverable, Research & Innovation Skills, Professional Project Documentation, POC-to-MVP Understanding, Certificate of Completion
+- Each card has an icon, title, and description
 
-### 3. FAQ Content Updates (Tasks 3–11)
+#### 7. "Who Should Join" → "Built for Curious Minds Who Want to Build"
+- Replaced old tag-based layout with 5 category cards: Biotechnology & Life Science Students, Bioinformatics & Computer Science Students, Researchers & Research Aspirants, Innovators & Problem Solvers, Interdisciplinary Learners
+- Each card has an icon, title, and description
 
-All FAQ content was replaced/added using the **exact** supplied wording. No content was modified, summarized, or invented.
-
-| # | Question | Action |
-|---|----------|--------|
-| 1 | Why Micrylis? | **Updated** answer — "Science Should Not End With a Certificate..." |
-| 2 | Why Do People Choose Micrylis? | **Renamed** from "Why Students Choose Us" + **Updated** answer with 8 ✓ benefits |
-| 3 | Who Can Join Micrylis? | **New** — disciplines list with • separators |
-| 4 | Is Micrylis Just an Internship Platform? | **New** — "No. We Are Building a Research-to-Innovation Ecosystem." |
-| 5 | What Will I Actually Build? | **New** — deliverables description |
-| 6 | What Happens After the Program? | **New** — pathway beyond the program |
-| 7 | What Makes Micrylis Different? | **New** — "We Focus on What You Can Build..." |
-| 8 | Our Philosophy | **New** — "From Learning to Building." with 7 steps |
-| 9 | Micrylis Biotech | **New** — "Building the Bridge Between Science and Real-World Impact." |
-
-### 4. FAQ Interaction Behavior (Task 12)
-
-**Desktop (hover):**
-- Mouse enter on any FAQ item → opens that answer with smooth animation
-- Mouse leave → closes answer after 150ms delay (prevents accidental close when moving between question/answer)
-- No click required on desktop
-
-**Mobile/Touch:**
-- Click/tap toggles the FAQ open/close (standard accordion behavior)
-- Touch device detection via `ontouchstart` check + `pointerdown` event listener
-
-**Initial state:** All FAQ items start **closed** (changed from `useState<number | null>(0)` to `useState<number | null>(null)`)
-
-### 5. FAQ UI/UX Improvements (Task 13)
-
-- **Icon animation**: Plus icon smoothly rotates 45° to form an X when open (replaces Plus/Minus swap)
-- **Animation curve**: Changed from `ease: "easeInOut"` to `ease: [0.16, 1, 0.3, 1]` for premium spring-like feel
-- **Animation duration**: 0.35s (up from 0.3s) for smoother feel
-- **AnimatePresence**: Added `initial={false}` to prevent exit animation on first render
-- **Focus states**: Added `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` for accessibility
-- **Typography**: Answer text uses `text-[15px] sm:text-base` for better readability
-- **Benefit items**: Each ✓ item now has title + description layout with checkmark icon
-- **Transition timing**: Added `duration-200` to hover color transitions for consistency
+#### 8. Program Details
+- Replaced 4 detail items with 8 items: Duration, Format, Commitment, Learning Model, Project Type, Final Deliverables, Eligibility, Prior Experience
+- 4-column responsive grid layout
 
 ---
 
-## Components Created/Modified
+### Phase 2 — AI in Drug Discovery Specific
 
-| File | Action |
-|------|--------|
-| `src/routes/index.tsx` | **Modified** — all changes in this single route file |
+#### About Program
+- Replaced generic About Program with full AI Drug Discovery content
+- Includes sections: What You Will Explore, Research Journey, 30-Day Project Structure (4 weeks), Project Deliverables, What You Will Develop (skill tags), Who Can Join?, The Project Outcome, From Question to Research, Project Positioning
+- Final line: "Research. Analyze. Discover. Document."
 
-### New internal components (within index.tsx):
-- `ProcessFlow` — Interactive horizontal/vertical process timeline
-- `FAQ_ITEMS` — Extracted FAQ data as a typed constant array
-
-### Modified internal components:
-- `Hero` — Updated content and button structure
-- `GrowthPath` — Refactored to data-driven with motion hover
-- `WhyMicrylis` — Complete rewrite with hover interaction, all 9 FAQ items
-- `ProductPreview` — Added hover shadow effects
+#### Introduction
+- Old introductory paragraphs removed (rendered from database `content` field which is `undefined`, so the fallback in CourseDetailTemplate is what renders)
+- Hero image preserved using existing `/Photos/ai-drug-discovery-hero.jpg`
 
 ---
 
-## Routes Affected
+### Phase 3 — BioPlastic Innovation Specific
 
-- `/` (homepage) — content and interaction changes only
+#### About Program
+- Replaced generic About Program with full BioPlastic Innovation content
+- Includes sections: What You Will Explore, Research Journey, 30-Day Project Structure (4 weeks), Project Deliverables, Skills You Will Develop (skill tags), Who Is This For?, The Project Outcome, From Material Science to Real-World Innovation, Project Positioning
+- Final line: "Research. Innovate. Validate. Build."
 
-No new routes created. No existing routes modified.
+#### Introduction
+- Old introductory paragraphs removed
+- Hero image preserved using existing `/Photos/bioplastic-hero.jpg`
 
 ---
 
-## Files Created
+### Phase 4 — Homepage
 
-| File | Purpose |
-|------|---------|
-| `CHATGPT_FRONTEND_SUMMARY.md` | This handover summary |
+#### GrowthPath Section
+- Replaced "Your Growth Path" heading with "From Problem to Impact"
+- Updated 3 cards with new content:
+  - STEP 1 — Discover: "Find a problem worth solving." + new description
+  - STEP 2 — Build: "Turn research into a solution." + new description
+  - STEP 3 — Advance: "Take your project beyond the program." + new description
+- Preserved existing 3-column grid layout, hover animations, and icon styling
+
+---
 
 ## Files Modified
 
-| File | Purpose |
-|------|---------|
-| `src/routes/index.tsx` | Homepage — hero content, process flow, FAQ, interactivity |
+| File | Change Type |
+|------|-------------|
+| `src/components/courses/CourseDetailTemplate.tsx` | Complete rewrite — all sections replaced with new content |
+| `src/routes/index.tsx` | GrowthPath section content updated |
 
----
+## Components Modified
 
-## Testing Performed
+- `CourseDetailTemplate` — Complete content overhaul
+- `AboutProgramAI` — New component for AI Drug Discovery about section
+- `AboutProgramBioPlastic` — New component for BioPlastic about section
+- `GrowthPath` — Content updated (structure preserved)
 
-| Check | Result |
-|-------|--------|
-| TypeScript (`npx tsc --noEmit`) | ✅ No errors |
-| Production build (`npm run build`) | ✅ Built successfully in 12.12s |
-| Unused imports cleaned | ✅ Removed `DOMAINS`, `Minus` |
-| FAQ initial state (all closed) | ✅ `useState<number \| null>(null)` |
-| FAQ hover interaction | ✅ Desktop hover open/close with 150ms delay |
-| FAQ touch interaction | ✅ Click toggle for touch devices |
-| Process flow responsive | ✅ Horizontal on sm+, wrapped on mobile |
-| Content accuracy | ✅ All FAQ content matches supplied text exactly |
+## Images
 
----
+No images changed. Existing project images preserved:
+- `/Photos/ai-drug-discovery-hero.jpg`
+- `/Photos/ai-drug-discovery-card.jpg`
+- `/Photos/bioplastic-hero.jpg`
+- `/Photos/bioplastic-card.jpg`
 
-## Build/Lint Results
+## Testing
 
-- **TypeScript**: ✅ Exit code 0, no errors
-- **Vite Build**: ✅ Exit code 0, built in 12.12s
-- **No breaking changes**: All existing routes, components, and functionality preserved
+- ✅ TypeScript compilation (`npx tsc --noEmit`) — Exit code 0
+- ✅ Production build (`npm run build`) — Successful
+- ✅ Content validation — All old content confirmed removed from public-facing pages
+- ✅ No horizontal overflow issues in responsive layouts
+- ✅ No broken routes
 
----
+## Backend Requirements
 
-## Backend Work Required
+**None.** This is a frontend-only change. All content is hardcoded in the CourseDetailTemplate component. The database `content` field on courses is optional and not populated — the component uses a fallback default for hero/CTA content and renders all sections from hardcoded constants.
 
-**None.** This is a frontend-only change. No Supabase, SQL, API, or backend modifications needed.
+## Architecture Notes
 
----
-
-## Remaining Issues
-
-None identified. All tasks (1–13) completed as specified.
-
----
+- Course-specific content (About Program) is detected via `course.slug` — `"ai-in-drug-discovery"` renders `AboutProgramAI`, all others render `AboutProgramBioPlastic`
+- All 8 shared sections use hardcoded constant arrays (`WHY_JOIN_CARDS`, `PROGRAM_HIGHLIGHTS`, `CURRICULUM_MODULES`, etc.) to ensure exact content wording
+- The types file (`types.ts`) was NOT modified — the existing `CoursePageContent` type is still used for the hero and CTA sections which remain data-driven
 
 ## Commit History
 
-```
-113f0c2 feat(ui): improve website interactivity and micro-interactions
-```
+1. `feat(courses): overhaul course pages with new program content` — CourseDetailTemplate rewrite
+2. `feat(homepage): replace GrowthPath with From Problem to Impact` — Homepage update
 
-Single commit because all changes are in one file (`src/routes/index.tsx`). The commit covers:
-- Task 1: Interactivity improvements
-- Task 2: Homepage hero content update + process flow
-- Tasks 3–11: All FAQ content updates
-- Task 12: FAQ hover interaction behavior
-- Task 13: FAQ UI/UX polish
+## Remaining Issues
+
+- None identified
