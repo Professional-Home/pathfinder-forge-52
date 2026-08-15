@@ -358,19 +358,24 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
         </Reveal>
         <div className="mt-10 max-w-3xl space-y-6 text-base leading-relaxed text-muted-foreground">
           <Reveal delay={0.05}>
-            <p>This is a 30-day guided research project where you will explore the science, design, and innovation behind bioplastics and sustainable biomaterials.</p>
-            <p className="mt-4">You will work on a structured research problem — from understanding material science fundamentals, identifying sustainable alternatives to conventional plastics, designing and testing bioplastic formulations, and evaluating their environmental and functional viability — and develop your findings into a documented research outcome.</p>
+            <p>A guided research project exploring the science, engineering, sustainability, and commercialization of biodegradable and bio-based plastics. Participants investigate emerging biomaterials, polymer systems, degradation mechanisms, scientific literature, patents, industry applications, and pathways for translating sustainable material concepts into real-world products.</p>
+            <p className="mt-4">This project combines scientific research, material innovation, experimental thinking, patent intelligence, industry case studies, and commercialization strategy to provide a complete view of how the next generation of sustainable plastics can be researched and developed.</p>
           </Reveal>
 
           <Reveal delay={0.1}>
             <h3 className="mt-8 font-display text-xl text-foreground">What You Will Explore</h3>
             <ul className="mt-4 space-y-2">
               {[
-                "How bioplastics are developed from natural polymers and renewable resources",
-                "How material science, green chemistry, and bioprocessing drive sustainable material innovation",
-                "How to design, formulate, and test biodegradable and compostable materials",
-                "How to assess environmental impact, lifecycle sustainability, and circular economy models",
-                "How to structure, validate, and present a research project in bioplastic innovation",
+                "Bioplastics & Biomaterials — Understand bio-based, biodegradable, compostable, and sustainable polymer systems.",
+                "Polymer Science — Explore polymer structure, properties, processing, performance, and material selection.",
+                "Biodegradation Mechanisms — Investigate how environmental and biological factors influence polymer degradation.",
+                "Material Characterization — Understand important properties such as mechanical strength, thermal behavior, barrier performance, and biodegradability.",
+                "Scientific Literature Research — Learn how to identify, evaluate, compare, and synthesize research findings.",
+                "Patent Landscape Analysis — Explore existing technologies, patent strategies, whitespace opportunities, and competitive landscapes.",
+                "Sustainable Product Design — Investigate how material selection can influence product performance and environmental impact.",
+                "Industry Case Studies — Analyze real-world applications, technologies, companies, and commercialization approaches.",
+                "Life-Cycle & Sustainability Thinking — Examine the relationship between material choice, manufacturing, use, end-of-life, and environmental impact.",
+                "Commercialization Strategy — Understand how a biomaterial concept can progress from research to prototype, market validation, and scalable application.",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2 text-sm">
                   <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
@@ -384,7 +389,7 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
             <h3 className="mt-8 font-display text-xl text-foreground">Research Journey</h3>
             <div className="mt-4 rounded-xl border border-border bg-surface-elevated/60 p-5">
               <p className="text-sm font-medium text-foreground">
-                Material Understanding → Formulation Design → Prototype Development → Testing & Validation → Research Documentation
+                Problem Identification → Literature Review → Material & Technology Mapping → Hypothesis Formation → Experimental Workflow Design → Patent Analysis → Industry Benchmarking → Sustainability Assessment → Commercialization Strategy → Final Research Output
               </p>
             </div>
           </Reveal>
