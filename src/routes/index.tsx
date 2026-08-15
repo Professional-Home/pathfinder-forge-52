@@ -91,9 +91,10 @@ function ProcessFlow() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full"
     >
       {/* Vertical flow inside a glass card */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-surface-elevated/60 backdrop-blur-sm px-5 py-6 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] sm:px-6 sm:py-7">
+      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-surface-elevated/60 backdrop-blur-sm px-5 py-6 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] sm:px-6 sm:py-7 flex flex-col items-center justify-center h-full">
         {/* Subtle background shimmer */}
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute -top-1/2 left-1/2 h-full w-3/4 -translate-x-1/2 rounded-full bg-gradient-to-b from-student/5 via-transparent to-transparent blur-3xl" />
@@ -104,8 +105,8 @@ function ProcessFlow() {
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Our Process</span>
         </div>
 
-        {/* Vertical steps */}
-        <div className="relative">
+        {/* Vertical steps — centered block */}
+        <div className="relative inline-block">
           {/* Vertical connecting line */}
           <div className="absolute left-[11px] top-[14px] bottom-[14px] w-px bg-border-strong/40 z-0" />
 
@@ -245,9 +246,9 @@ function Hero() {
         animate="visible"
         className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-28 sm:gap-14 sm:px-6 sm:pb-24 sm:pt-32 md:gap-16 md:pb-32 md:pt-36"
       >
-        <div className="grid gap-10 md:grid-cols-[1fr,auto] md:items-start md:gap-12 lg:gap-16">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-stretch lg:gap-14">
           {/* Left column — text content */}
-          <div>
+          <div className="lg:col-span-7">
             {/* Badge */}
             <motion.div
               variants={itemVariants}
@@ -375,15 +376,15 @@ function Hero() {
             </motion.div>
 
             {/* Mobile only: Process flow below buttons */}
-            <div className="md:hidden">
+            <div className="lg:hidden mt-8">
               <ProcessFlow />
             </div>
           </div>
 
-          {/* Right column — Process Flow (desktop only, top-aligned) */}
+          {/* Right column — Process Flow (desktop only, vertically centered) */}
           <motion.div
             variants={itemVariants}
-            className="hidden md:block md:w-[340px] lg:w-[400px] md:mt-12"
+            className="hidden lg:flex lg:col-span-5 lg:items-center"
           >
             <ProcessFlow />
           </motion.div>
