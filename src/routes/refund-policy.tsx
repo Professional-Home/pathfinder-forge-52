@@ -61,19 +61,19 @@ function RefundPolicy() {
         </ul>
       </LegalSection>
 
-      <LegalSection title="6. Appeals">
+      <LegalSection title="5. Appeals">
         <p>
           If a refund request is denied and the student believes there are extenuating circumstances, they may submit a written appeal to micrylisbiotech@gmail.com within 5 days of receiving the denial. Appeals will be reviewed by Karan Pachal, Founder of Micrylis Biotech and a final decision will be communicated within 2 business days. Decisions at the appeal stage are final.
         </p>
       </LegalSection>
 
-      <LegalSection title="7. Changes to This Policy">
+      <LegalSection title="6. Changes to This Policy">
         <p>
           Micrylis Biotech reserves the right to update or modify this Refund Policy at any time. Any changes will apply to new enrollments from the date of publication and will not retroactively affect students who enrolled under a prior version of this policy, unless required by law.
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Contact Us">
+      <LegalSection title="7. Contact Us">
         <p>For questions about this policy or to submit a refund request, please contact:</p>
         <div className="mt-2 space-y-1">
           <p className="font-medium text-foreground">Micrylis Biotech</p>
