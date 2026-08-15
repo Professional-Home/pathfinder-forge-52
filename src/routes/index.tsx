@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, Rocket, Check, Users, Map, Trophy, Milestone, LayoutDashboard, Plus, ChevronRight } from "lucide-react";
+import { ArrowRight, Sparkles, Rocket, Check, Users, Map, Trophy, Milestone, LayoutDashboard, Plus } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -91,137 +91,109 @@ function ProcessFlow() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="mt-10 sm:mt-14"
     >
-      {/* Desktop / Tablet: premium horizontal flow inside a glass card */}
-      <div className="hidden sm:block">
-        <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-surface-elevated/60 backdrop-blur-sm px-6 py-7 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] sm:px-8 sm:py-8 md:px-10">
-          {/* Subtle background shimmer */}
-          <div className="pointer-events-none absolute inset-0 -z-10">
-            <div className="absolute -top-1/2 left-1/2 h-full w-3/4 -translate-x-1/2 rounded-full bg-gradient-to-b from-student/5 via-transparent to-transparent blur-3xl" />
-          </div>
+      {/* Vertical flow inside a glass card */}
+      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-surface-elevated/60 backdrop-blur-sm px-5 py-6 shadow-[0_2px_20px_-6px_rgba(0,0,0,0.06)] sm:px-6 sm:py-7">
+        {/* Subtle background shimmer */}
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute -top-1/2 left-1/2 h-full w-3/4 -translate-x-1/2 rounded-full bg-gradient-to-b from-student/5 via-transparent to-transparent blur-3xl" />
+        </div>
 
-          {/* Section label */}
-          <div className="mb-6 text-center">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Our Process</span>
-          </div>
+        {/* Section label */}
+        <div className="mb-5 text-center">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Our Process</span>
+        </div>
 
-          {/* Track + Steps */}
-          <div className="relative flex items-start justify-between">
-            {/* Connecting track line — sits behind the dots */}
-            <div className="absolute top-[14px] left-[calc(8.33%)] right-[calc(8.33%)] h-px bg-border-strong/60 z-0" />
+        {/* Vertical steps */}
+        <div className="relative">
+          {/* Vertical connecting line */}
+          <div className="absolute left-[11px] top-[14px] bottom-[14px] w-px bg-border-strong/40 z-0" />
 
-            {/* Animated progress overlay on the track */}
-            <motion.div
-              className="absolute top-[14px] left-[calc(8.33%)] h-[2px] rounded-full bg-gradient-to-r from-student via-startup to-researcher z-[1]"
-              initial={{ width: "0%" }}
-              whileInView={{ width: activeStep !== null ? `${(activeStep / (PROCESS_STEPS.length - 1)) * 83.34}%` : "83.34%" }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
-            />
+          {/* Animated progress line */}
+          <motion.div
+            className="absolute left-[10.5px] top-[14px] w-[2px] rounded-full bg-gradient-to-b from-student via-startup to-researcher z-[1]"
+            initial={{ height: "0%" }}
+            whileInView={{ height: activeStep !== null ? `${(activeStep / (PROCESS_STEPS.length - 1)) * 100}%` : "100%" }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
+            style={{ maxHeight: "calc(100% - 28px)" }}
+          />
 
+          <div className="flex flex-col gap-0">
             {PROCESS_STEPS.map((step, i) => {
               const isActive = activeStep === i;
-              const isCompleted = activeStep !== null && i < activeStep;
+              const isLast = i === PROCESS_STEPS.length - 1;
 
               return (
                 <motion.div
                   key={step.label}
-                  className="relative z-10 flex flex-col items-center cursor-pointer"
-                  style={{ flex: "1 1 0%" }}
+                  className="relative z-10 flex items-center gap-4 cursor-pointer py-2.5"
                   onHoverStart={() => setActiveStep(i)}
                   onHoverEnd={() => setActiveStep(null)}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, x: -8 }}
+                  whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.3 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.4, delay: 0.3 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  {/* Glow behind active dot */}
-                  <motion.div
-                    animate={{
-                      opacity: isActive ? 1 : 0,
-                      scale: isActive ? 1 : 0.5,
-                    }}
-                    transition={{ duration: 0.3 }}
-                    className={`absolute top-0 h-7 w-7 rounded-full bg-gradient-radial ${step.glow} to-transparent blur-md -translate-y-0.5`}
-                  />
+                  {/* Dot container */}
+                  <div className="relative flex shrink-0 items-center justify-center w-[23px]">
+                    {/* Glow behind active dot */}
+                    <motion.div
+                      animate={{
+                        opacity: isActive ? 1 : 0,
+                        scale: isActive ? 1 : 0.5,
+                      }}
+                      transition={{ duration: 0.3 }}
+                      className={`absolute h-6 w-6 rounded-full bg-gradient-radial ${step.glow} to-transparent blur-md`}
+                    />
 
-                  {/* Step dot */}
-                  <motion.div
-                    animate={{
-                      scale: isActive ? 1.5 : 1,
-                    }}
-                    transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                    className="relative"
-                  >
-                    <div className={`h-3.5 w-3.5 rounded-full ${step.color} shadow-sm ring-2 ${isActive ? step.ring : "ring-transparent"} transition-all duration-300`} />
-                    {/* Pulse ring on active */}
-                    {isActive && (
-                      <motion.div
-                        initial={{ scale: 1, opacity: 0.6 }}
-                        animate={{ scale: 2.5, opacity: 0 }}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
-                        className={`absolute inset-0 rounded-full ${step.color}`}
-                      />
-                    )}
-                  </motion.div>
+                    {/* Step dot */}
+                    <motion.div
+                      animate={{ scale: isActive ? 1.4 : 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                      className="relative"
+                    >
+                      <div className={`h-3 w-3 rounded-full ${step.color} shadow-sm ring-2 ${isActive ? step.ring : "ring-transparent"} transition-all duration-300`} />
+                      {/* Pulse ring on active */}
+                      {isActive && (
+                        <motion.div
+                          initial={{ scale: 1, opacity: 0.5 }}
+                          animate={{ scale: 2.5, opacity: 0 }}
+                          transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
+                          className={`absolute inset-0 rounded-full ${step.color}`}
+                        />
+                      )}
+                    </motion.div>
+                  </div>
 
-                  {/* Step number */}
-                  <motion.span
-                    animate={{
-                      opacity: isActive ? 1 : 0,
-                      y: isActive ? 0 : -4,
-                    }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-2 font-mono text-[9px] text-muted-foreground/50 tracking-wider"
-                  >
-                    0{i + 1}
-                  </motion.span>
+                  {/* Label + step number */}
+                  <div className="flex items-center gap-2.5">
+                    <motion.span
+                      animate={{
+                        color: isActive ? "var(--color-foreground)" : "var(--color-muted-foreground)",
+                        fontWeight: isActive ? 600 : 500,
+                      }}
+                      transition={{ duration: 0.25 }}
+                      className="text-sm tracking-wide transition-all duration-200"
+                    >
+                      {step.label}
+                    </motion.span>
 
-                  {/* Step label */}
-                  <motion.span
-                    animate={{
-                      color: isActive ? "var(--color-foreground)" : "var(--color-muted-foreground)",
-                      fontWeight: isActive ? 600 : 500,
-                    }}
-                    transition={{ duration: 0.25 }}
-                    className={`${isActive ? "mt-0.5" : "mt-4"} text-xs tracking-wide sm:text-sm transition-all duration-200`}
-                  >
-                    {step.label}
-                  </motion.span>
-
-                  {/* Bottom accent bar */}
-                  <motion.div
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: isActive ? 1 : 0 }}
-                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className={`mt-2 h-[2px] w-8 ${step.color} origin-center rounded-full`}
-                  />
+                    {/* Step number on hover */}
+                    <motion.span
+                      animate={{
+                        opacity: isActive ? 1 : 0,
+                        x: isActive ? 0 : -6,
+                      }}
+                      transition={{ duration: 0.2 }}
+                      className="font-mono text-[9px] text-muted-foreground/40 tracking-wider"
+                    >
+                      0{i + 1}
+                    </motion.span>
+                  </div>
                 </motion.div>
               );
             })}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile: elegant compact flow */}
-      <div className="flex sm:hidden">
-        <div className="w-full overflow-hidden rounded-xl border border-border/70 bg-surface-elevated/60 p-4">
-          <div className="mb-3 text-center">
-            <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/50">Our Process</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-3">
-            {PROCESS_STEPS.map((step, i) => (
-              <div key={step.label} className="flex items-center gap-1">
-                <div className="flex items-center gap-1.5 rounded-full bg-background/80 px-2.5 py-1 border border-border/40">
-                  <div className={`h-1.5 w-1.5 rounded-full ${step.color}`} />
-                  <span className="text-[11px] font-medium text-muted-foreground">{step.label}</span>
-                </div>
-                {i < PROCESS_STEPS.length - 1 && (
-                  <ChevronRight className="h-3 w-3 text-border-strong/60 shrink-0" />
-                )}
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -273,163 +245,148 @@ function Hero() {
         animate="visible"
         className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-28 sm:gap-14 sm:px-6 sm:pb-24 sm:pt-32 md:gap-16 md:pb-32 md:pt-36"
       >
-        <div className="max-w-3xl">
-          {/* Badge */}
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ scale: 1.04, y: -2 }}
-            className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-surface-elevated/80 backdrop-blur-sm px-3.5 py-1.5 text-[11px] text-muted-foreground transition-all duration-300 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.15)] hover:border-border-strong sm:mb-6 sm:text-xs"
-          >
+        <div className="grid gap-10 md:grid-cols-[1fr,auto] md:items-start md:gap-12 lg:gap-16">
+          {/* Left column — text content */}
+          <div>
+            {/* Badge */}
             <motion.div
-              animate={{ scale: [1, 1.2, 1], rotate: [0, 8, 0] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              variants={itemVariants}
+              whileHover={{ scale: 1.04, y: -2 }}
+              className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-surface-elevated/80 backdrop-blur-sm px-3.5 py-1.5 text-[11px] text-muted-foreground transition-all duration-300 hover:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.15)] hover:border-border-strong sm:mb-6 sm:text-xs"
             >
-              <Sparkles className="h-3 w-3 shrink-0" />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 8, 0] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Sparkles className="h-3 w-3 shrink-0" />
+              </motion.div>
+              <span className="truncate">15 questions. Then a path built around you.</span>
             </motion.div>
-            <span className="truncate">15 questions. Then a path built around you.</span>
-          </motion.div>
 
-          {/* Main heading */}
-          <h1 className="font-display text-[2.35rem] leading-[1.05] sm:text-3xl md:text-5xl lg:text-6xl">
-            <div className="overflow-hidden pb-1">
-              <motion.div variants={itemVariants}>
-                Don&apos;t Just Learn Biology<br />
-              </motion.div>
-            </div>
-            <div className="overflow-hidden pb-2">
-              <motion.div variants={itemVariants}>
-                <span className="italic text-muted-foreground">Build the Future of It.</span>
-              </motion.div>
-            </div>
-          </h1>
+            {/* Main heading */}
+            <h1 className="font-display text-[2.35rem] leading-[1.05] sm:text-3xl md:text-5xl lg:text-6xl">
+              <div className="overflow-hidden pb-1">
+                <motion.div variants={itemVariants}>
+                  Don&apos;t Just Learn Biology<br />
+                </motion.div>
+              </div>
+              <div className="overflow-hidden pb-2">
+                <motion.div variants={itemVariants}>
+                  <span className="italic text-muted-foreground">Build the Future of It.</span>
+                </motion.div>
+              </div>
+            </h1>
 
-          {/* ── Tagline with staggered word reveal + gradient highlight ── */}
-          <motion.div
-            variants={itemVariants}
-            className="mt-8 sm:mt-10"
-          >
-            <div className="font-display text-lg font-semibold leading-snug sm:text-xl md:text-2xl lg:text-[1.75rem]">
-              {/* First line — plain text with stagger */}
-              <span className="overflow-hidden inline-block">
-                <motion.span
-                  initial={{ y: "100%", opacity: 0 }}
-                  whileInView={{ y: 0, opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="inline-block text-foreground"
-                >
-                  Turn Scientific Ideas Into
-                </motion.span>
-              </span>{" "}
-              {/* Second line — gradient text with shimmer */}
-              <span className="overflow-hidden inline-block">
-                <motion.span
-                  initial={{ y: "100%", opacity: 0 }}
-                  whileInView={{ y: 0, opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.7, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                  className="inline-block relative"
-                >
-                  <span
-                    className="bg-gradient-to-r from-student via-startup to-researcher bg-clip-text text-transparent"
-                    style={{ WebkitBackgroundClip: "text" }}
-                  >
-                    Real World Solutions.
-                  </span>
-                  {/* Shimmer overlay */}
+            {/* ── Tagline with staggered word reveal + gradient highlight ── */}
+            <motion.div
+              variants={itemVariants}
+              className="mt-8 sm:mt-10"
+            >
+              <div className="font-display text-lg font-semibold leading-snug sm:text-xl md:text-2xl lg:text-[1.75rem]">
+                {/* First line — plain text with stagger */}
+                <span className="overflow-hidden inline-block">
                   <motion.span
-                    initial={{ left: "-100%" }}
-                    whileInView={{ left: "200%" }}
+                    initial={{ y: "100%", opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 1.5, delay: 1.2, ease: "easeInOut" }}
-                    className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none skew-x-[-20deg]"
-                    style={{ WebkitBackgroundClip: "text" }}
-                  />
-                </motion.span>
-              </span>
-            </div>
+                    transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="inline-block text-foreground"
+                  >
+                    Turn Scientific Ideas Into
+                  </motion.span>
+                </span>{" "}
+                {/* Second line — gradient text with shimmer */}
+                <span className="overflow-hidden inline-block">
+                  <motion.span
+                    initial={{ y: "100%", opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                    className="inline-block relative"
+                  >
+                    <span
+                      className="bg-gradient-to-r from-student via-startup to-researcher bg-clip-text text-transparent"
+                      style={{ WebkitBackgroundClip: "text" }}
+                    >
+                      Real World Solutions.
+                    </span>
+                    {/* Shimmer overlay */}
+                    <motion.span
+                      initial={{ left: "-100%" }}
+                      whileInView={{ left: "200%" }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.5, delay: 1.2, ease: "easeInOut" }}
+                      className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none skew-x-[-20deg]"
+                      style={{ WebkitBackgroundClip: "text" }}
+                    />
+                  </motion.span>
+                </span>
+              </div>
 
-            {/* Animated accent dots */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 1.0 }}
-              className="mt-4 flex items-center gap-1.5"
-            >
-              {[
-                { color: "bg-student", delay: 0 },
-                { color: "bg-startup", delay: 0.15 },
-                { color: "bg-researcher", delay: 0.3 },
-              ].map((dot, i) => (
-                <motion.div
-                  key={i}
-                  animate={{ scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }}
-                  transition={{
-                    duration: 2,
-                    delay: dot.delay,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className={`h-1.5 w-1.5 rounded-full ${dot.color}`}
-                />
-              ))}
-              <div className="ml-1 h-px w-10 bg-gradient-to-r from-border-strong to-transparent" />
+              {/* Description */}
+              <motion.p
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-5 max-w-xl text-[15px] leading-[1.75] text-muted-foreground sm:text-base md:text-lg"
+              >
+                Micrylis Biotech is a research and venture-building platform where students, researchers, and innovators work on real problems, build proof-of-concepts, and develop them toward products, startups, and impact.
+              </motion.p>
             </motion.div>
 
-            {/* Description */}
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-5 max-w-xl text-[15px] leading-[1.75] text-muted-foreground sm:text-base md:text-lg"
-            >
-              Micrylis Biotech is a research and venture-building platform where students, researchers, and innovators work on real problems, build proof-of-concepts, and develop them toward products, startups, and impact.
-            </motion.p>
-          </motion.div>
-
-          {/* CTA Buttons */}
-          <motion.div variants={itemVariants} className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
-            <Link to="/projects" className="w-full sm:w-auto">
-              <motion.div
-                whileHover={{ scale: 1.04, y: -1 }}
-                whileTap={{ scale: 0.97 }}
-                className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-transparent bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-all duration-300 hover:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.25)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto sm:py-3"
-              >
-                Explore Projects
-                <motion.span
-                  className="inline-flex"
-                  initial={false}
-                  animate={{ x: 0 }}
-                  whileHover={{ x: 3 }}
+            {/* CTA Buttons */}
+            <motion.div variants={itemVariants} className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
+              <Link to="/projects" className="w-full sm:w-auto">
+                <motion.div
+                  whileHover={{ scale: 1.04, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="group inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-transparent bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-all duration-300 hover:shadow-[0_10px_30px_-8px_rgba(0,0,0,0.25)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto sm:py-3"
                 >
-                  <ArrowRight className="h-4 w-4" />
-                </motion.span>
-              </motion.div>
-            </Link>
-            <Link to="/signup" className="w-full sm:w-auto">
-              <motion.div
-                whileHover={{ scale: 1.03, y: -1 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
-              >
-                Join the Research Community
-              </motion.div>
-            </Link>
-            <Link to="/courses" className="w-full sm:w-auto">
-              <motion.div
-                whileHover={{ scale: 1.03, y: -1 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
-              >
-                Build With Micrylis
-              </motion.div>
-            </Link>
-          </motion.div>
+                  Explore Projects
+                  <motion.span
+                    className="inline-flex"
+                    initial={false}
+                    animate={{ x: 0 }}
+                    whileHover={{ x: 3 }}
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.span>
+                </motion.div>
+              </Link>
+              <Link to="/signup" className="w-full sm:w-auto">
+                <motion.div
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
+                >
+                  Join the Research Community
+                </motion.div>
+              </Link>
+              <Link to="/courses" className="w-full sm:w-auto">
+                <motion.div
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
+                >
+                  Build With Micrylis
+                </motion.div>
+              </Link>
+            </motion.div>
 
-          {/* ── Process Flow: Research → Prototype → ... → Venture ── */}
-          <ProcessFlow />
+            {/* Mobile only: Process flow below buttons */}
+            <div className="md:hidden">
+              <ProcessFlow />
+            </div>
+          </div>
+
+          {/* Right column — Process Flow (desktop only, top-aligned) */}
+          <motion.div
+            variants={itemVariants}
+            className="hidden md:block md:w-[340px] lg:w-[400px] md:mt-12"
+          >
+            <ProcessFlow />
+          </motion.div>
         </div>
 
         {/* Stats bar */}
