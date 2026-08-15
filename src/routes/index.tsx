@@ -428,27 +428,27 @@ function GrowthPath() {
       iconBg: "bg-student-soft",
       iconColor: "text-student",
       dotColor: "bg-student",
-      step: "Step 1",
-      title: "Discover",
-      description: "Assess your current skills and choose a personalized learning path.",
+      step: "STEP 1 — Discover",
+      title: "Find a problem worth solving.",
+      description: "Identify a real-world scientific or industry problem, understand the existing landscape, and define a clear research opportunity.",
     },
     {
       icon: Rocket,
       iconBg: "bg-startup-soft",
       iconColor: "text-startup",
       dotColor: "bg-startup",
-      step: "Step 2",
-      title: "Build",
-      description: "Work on real biotechnology and AI projects with structured guidance.",
+      step: "STEP 2 — Build",
+      title: "Turn research into a solution.",
+      description: "Work with mentors to research, design, prototype, test, and develop a solution or Proof of Concept.",
     },
     {
       icon: Trophy,
       iconBg: "bg-researcher-soft",
       iconColor: "text-researcher",
       dotColor: "bg-researcher",
-      step: "Step 3",
-      title: "Showcase",
-      description: "Publish your work, strengthen your portfolio, and become ready for internships, research labs, higher studies, or startups.",
+      step: "STEP 3 — Advance",
+      title: "Take your project beyond the program.",
+      description: "Document your work, build a strong research portfolio, and explore the next stage — POC, MVP, grants, incubation, industry collaboration, or venture development.",
     },
   ];
 
@@ -459,12 +459,12 @@ function GrowthPath() {
           <div>
             <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">01 — The Process</div>
             <h2 className="max-w-2xl font-display text-3xl sm:text-4xl md:text-5xl">
-              Your Growth Path
+              From Problem to Impact
             </h2>
           </div>
         </div>
         <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">
-          {cards.map((card, i) => {
+          {cards.map((card) => {
             const Icon = card.icon;
             return (
               <motion.div
@@ -487,7 +487,7 @@ function GrowthPath() {
                       {card.step}
                     </span>
                   </div>
-                  <h3 className="mt-2 font-display text-2xl transition-colors group-hover:text-foreground sm:text-3xl">{card.title}</h3>
+                  <h3 className="mt-2 font-display text-xl transition-colors group-hover:text-foreground sm:text-2xl">{card.title}</h3>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     {card.description}
                   </p>
