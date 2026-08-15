@@ -477,17 +477,20 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
 
           <Reveal delay={0.4}>
             <h3 className="mt-8 font-display text-xl text-foreground">The Project Outcome</h3>
-            <p className="mt-3">By the end of this project, you will have completed a structured research project in bioplastic innovation and sustainable biomaterials. You will understand how material science, green chemistry, and innovation thinking come together in developing sustainable alternatives — and you will have a documented portfolio of your work.</p>
+            <p className="mt-3">By the end of 30 days, participants will move beyond simply learning what bioplastics are.</p>
+            <p className="mt-3">They will develop the ability to identify a material problem, investigate existing scientific evidence, analyze technologies and patents, design a research approach, evaluate sustainability and feasibility, and translate scientific findings into an innovation-oriented research proposal.</p>
           </Reveal>
 
           <Reveal delay={0.45}>
             <h3 className="mt-8 font-display text-xl text-foreground">From Material Science to Real-World Innovation</h3>
-            <p className="mt-3">This project is designed to help you think like a researcher and innovator. You will learn to analyze material challenges, explore sustainable solutions, design experiments, interpret results, and communicate your findings — skills that are essential for academic research, industry R&D, and sustainability innovation.</p>
+            <div className="mt-4 rounded-xl border border-border bg-surface-elevated/60 p-5 text-center">
+              <p className="text-sm font-medium italic text-foreground">«Research the material. Understand the science. Identify the gap. Design the solution.»</p>
+            </div>
           </Reveal>
 
           <Reveal delay={0.5}>
             <h3 className="mt-8 font-display text-xl text-foreground">Project Positioning</h3>
-            <p className="mt-3">This is not a course. It is a guided research experience. You are not just learning about bioplastics — you are conducting original research into sustainable biomaterials and developing real solutions.</p>
+            <p className="mt-3">BioPlastic Innovation is a 30-day guided research project at the intersection of Polymer Science, Biotechnology, Sustainable Materials, Environmental Innovation, and Commercialization — designed to help participants understand how sustainable material concepts can progress from scientific research toward real-world applications.</p>
           </Reveal>
 
           <Reveal delay={0.55}>
