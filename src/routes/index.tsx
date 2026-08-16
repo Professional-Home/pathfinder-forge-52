@@ -5,6 +5,8 @@ import { SiteFooter } from "@/components/site-footer";
 
 import { useEffect, useState, useCallback, type ReactNode, useRef } from "react";
 import { motion, useTransform, type Variants, useInView, animate, useMotionValue, AnimatePresence } from "framer-motion";
+import { supabase } from "@/utils/supabase";
+import type { Session } from "@supabase/supabase-js";
 
 function RevealWrapper({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -204,6 +206,22 @@ function ProcessFlow() {
 }
 
 function Hero() {
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const isLoggedIn = !!session;
+
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -249,7 +267,7 @@ function Hero() {
       >
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-stretch lg:gap-14">
           {/* Left column — text content */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-8">
             {/* Main heading */}
             <h1 className="font-display text-[2.35rem] leading-[1.05] sm:text-3xl md:text-5xl lg:text-6xl">
               <div className="overflow-hidden pb-1">
@@ -341,15 +359,27 @@ function Hero() {
                   </motion.span>
                 </motion.div>
               </Link>
-              <Link to="/signup" className="w-full sm:w-auto">
-                <motion.div
-                  whileHover={{ scale: 1.03, y: -1 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
-                >
-                  Join the Research Community
-                </motion.div>
-              </Link>
+              {isLoggedIn ? (
+                <Link to="/dashboard" className="w-full sm:w-auto">
+                  <motion.div
+                    whileHover={{ scale: 1.03, y: -1 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
+                  >
+                    View Dashboard
+                  </motion.div>
+                </Link>
+              ) : (
+                <Link to="/signup" className="w-full sm:w-auto">
+                  <motion.div
+                    whileHover={{ scale: 1.03, y: -1 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
+                  >
+                    Join the Research Community
+                  </motion.div>
+                </Link>
+              )}
             </motion.div>
 
             {/* Mobile only: Process flow below buttons */}
@@ -361,7 +391,7 @@ function Hero() {
           {/* Right column — Process Flow (desktop only, vertically centered) */}
           <motion.div
             variants={itemVariants}
-            className="hidden lg:flex lg:col-span-5 lg:items-center"
+            className="hidden lg:flex lg:col-span-4 lg:items-center"
           >
             <ProcessFlow />
           </motion.div>
