@@ -72,7 +72,6 @@ function RefundPolicy() {
           Micrylis Biotech reserves the right to update or modify this Refund Policy at any time. Any changes will apply to new enrollments from the date of publication and will not retroactively affect students who enrolled under a prior version of this policy, unless required by law.
         </p>
       </LegalSection>
-
       <LegalSection title="7. Contact Us">
         <p>For questions about this policy or to submit a refund request, please contact:</p>
         <div className="mt-2 space-y-1">

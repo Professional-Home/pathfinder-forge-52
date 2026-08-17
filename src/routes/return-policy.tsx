@@ -35,7 +35,7 @@ function ReturnPolicy() {
 
       <LegalSection title="4. Contact Us">
         <p>
-          If you have any questions about this Return Policy or need assistance with a specific transaction, please contact us at support@micrylis.com.
+          If you have any questions about this Return Policy or need assistance with a specific transaction, please contact us at contact@micrylisbiotech.com.
         </p>
       </LegalSection>
     </LegalLayout>

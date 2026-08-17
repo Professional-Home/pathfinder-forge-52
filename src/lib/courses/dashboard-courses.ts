@@ -32,7 +32,7 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
 
 /** Merge Supabase courses with local store courses (dedupe by title or slug). */
 export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[] {
-  const normalizedSupabase: DashboardCourse[] = supabaseCourses
+  const normalizedSupabase: DashboardCourse[] = (supabaseCourses || [])
     .filter((c) => c.status === "published" || !c.status)
     .map((c) => {
       const defaultImage = (c.slug || c.title || c.name || "").toLowerCase().includes("drug")
@@ -50,14 +50,9 @@ export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[]
       };
     });
 
-  const merged = [...normalizedSupabase];
-  const existingTitles = new Set(normalizedSupabase.map((c) => (c.title || "").trim().toLowerCase()));
-
-  for (const storeCourse of getSeedDashboardCourses()) {
-    if (!existingTitles.has((storeCourse.title || "").trim().toLowerCase())) {
-      merged.push(storeCourse);
-    }
+  if (normalizedSupabase.length > 0) {
+    return normalizedSupabase;
   }
 
-  return merged;
+  return getSeedDashboardCourses();
 }

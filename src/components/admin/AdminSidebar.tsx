@@ -8,11 +8,13 @@ import {
   Users,
   GraduationCap,
   Calendar,
+  FileText,
 } from "lucide-react";
 
 export const adminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", shortLabel: "Home", to: "/admin/dashboard" },
   { icon: BookOpen, label: "Course Management", shortLabel: "Courses", to: "/admin/courses" },
+  { icon: FileText, label: "Blog Management", shortLabel: "Blogs", to: "/admin/blogs" },
   { icon: GraduationCap, label: "Course Enrollments", shortLabel: "Students", to: "/admin/enrollments" },
   { icon: Users, label: "Users", shortLabel: "Users", to: "/admin/users" },
   { icon: Users, label: "Mentor Management", shortLabel: "Mentors", to: "/admin/mentors" },
