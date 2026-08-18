@@ -151,9 +151,12 @@ function AdminDashboardPage() {
 
         <AdminCard title="Latest courses">
           {latestCourses.map((c) => {
-            const adminImage = (c.slug || c.title || "").toLowerCase().includes("drug")
+            const id = (c.slug || c.title || "").toLowerCase();
+            const adminImage = id.includes("drug")
               ? "/Photos/ai-drug-discovery-card.jpeg"
-              : "/Photos/bioplastic-card.jpeg";
+              : id.includes("bioinformatics")
+                ? "/Photos/ai-drug-discovery-card.jpeg"
+                : "/Photos/bioplastic-card.jpeg";
             return (
             <div key={c.id} className="flex items-center gap-3 border-b border-border/60 py-3 last:border-0">
               <img

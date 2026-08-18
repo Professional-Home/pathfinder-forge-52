@@ -223,9 +223,12 @@ function AdminCoursesPage() {
                       <TableCell>
                         <div className="flex items-center gap-3 min-w-[200px]">
                           {(() => {
-                            const adminDefaultImage = (course.slug || course.name || "").toLowerCase().includes("drug")
+                            const id = (course.slug || course.name || "").toLowerCase();
+                            const adminDefaultImage = id.includes("drug")
                               ? "/Photos/ai-drug-discovery-card.jpeg"
-                              : "/Photos/bioplastic-card.jpeg";
+                              : id.includes("bioinformatics")
+                                ? "/Photos/ai-drug-discovery-card.jpeg"
+                                : "/Photos/bioplastic-card.jpeg";
                             return (
                               <img
                                 src={getOptimizedImageUrl(adminDefaultImage, { width: 112, height: 80 })}
