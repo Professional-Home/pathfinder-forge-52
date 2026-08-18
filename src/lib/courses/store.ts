@@ -79,6 +79,50 @@ function getDefaultCourseImages(identifier: string): { thumbnail: string; cover:
   return { thumbnail: "/Photos/bioplastic-card.jpeg", cover: "/Photos/bioplastic-hero.jpeg" };
 }
 
+/** Frontend-only Bioinformatics course seed — ensures visibility before backend adds it to Supabase */
+const BIOINFORMATICS_LISTING_SEED: CourseListingItem = {
+  id: "bioinformatics-frontend-seed",
+  slug: "bioinformatics",
+  name: "Bioinformatics",
+  shortDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
+  category: "Biotechnology",
+  duration: "30 Days",
+  mode: "Online",
+  programFee: "₹1999",
+  difficulty: "intermediate",
+  featured: true,
+  status: "published",
+  applyUrl: "",
+  lastUpdated: new Date().toISOString().slice(0, 10),
+};
+
+const BIOINFORMATICS_FULL_SEED: CourseRecord = {
+  id: "bioinformatics-frontend-seed",
+  slug: "bioinformatics",
+  name: "Bioinformatics",
+  shortDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  fullDescription: "An AI-integrated bioinformatics platform project combining bioinformatics, artificial intelligence, genomics, and biomarker discovery.",
+  thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
+  coverImage: "/Photos/ai-drug-discovery-hero.jpeg",
+  duration: "30 Days",
+  mode: "Online",
+  programFee: "₹1999",
+  category: "Biotechnology",
+  difficulty: "intermediate",
+  certificate: "Certificate of Completion",
+  learningOutcomes: [],
+  curriculum: "",
+  requirements: "",
+  whoShouldJoin: "",
+  faqs: "",
+  seoTitle: "Bioinformatics — Micrylis Biotech",
+  seoDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  featured: true,
+  status: "published",
+  lastUpdated: new Date().toISOString().slice(0, 10),
+};
+
 function mapDbToListing(db: any): CourseListingItem {
   const images = getDefaultCourseImages(db.slug || db.title || "");
 
@@ -137,9 +181,15 @@ export async function fetchCoursesListing(options?: {
 
     const { data, error, count } = await query;
     if (!error && data && data.length > 0) {
+      const supabaseCourses = data.map(mapDbToListing);
+      // Merge Bioinformatics seed if not already in Supabase results
+      const hasBioinformatics = supabaseCourses.some((c) => c.slug === "bioinformatics");
+      if (!hasBioinformatics) {
+        supabaseCourses.push(BIOINFORMATICS_LISTING_SEED);
+      }
       return {
-        courses: data.map(mapDbToListing),
-        total: count ?? data.length,
+        courses: supabaseCourses,
+        total: (count ?? data.length) + (hasBioinformatics ? 0 : 1),
       };
     }
   } catch (err) {
@@ -205,7 +255,7 @@ export async function fetchCourseBySlug(slug: string): Promise<CourseRecord | nu
     console.error("Error fetching course by slug from Supabase:", err);
   }
 
-  return getCourseBySlug(slug) || null;
+  return getCourseBySlug(slug) || (slug === "bioinformatics" ? BIOINFORMATICS_FULL_SEED : null);
 }
 
 /** Fetch a single course by id — full data for edit/enrollment */
