@@ -66,17 +66,28 @@ export interface CourseListingItem {
   lastUpdated: string;
 }
 
+/** Centralized image resolver for all 3 courses */
+function getDefaultCourseImages(identifier: string): { thumbnail: string; cover: string } {
+  const lower = (identifier || "").toLowerCase();
+  if (lower.includes("drug")) {
+    return { thumbnail: "/Photos/ai-drug-discovery-card.jpeg", cover: "/Photos/ai-drug-discovery-hero.jpeg" };
+  }
+  if (lower.includes("bioinformatics")) {
+    // Temporary: reusing AI drug discovery images until dedicated bioinformatics images are provided
+    return { thumbnail: "/Photos/ai-drug-discovery-card.jpeg", cover: "/Photos/ai-drug-discovery-hero.jpeg" };
+  }
+  return { thumbnail: "/Photos/bioplastic-card.jpeg", cover: "/Photos/bioplastic-hero.jpeg" };
+}
+
 function mapDbToListing(db: any): CourseListingItem {
-  const defaultImage = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-card.jpeg"
-    : "/Photos/bioplastic-card.jpeg";
+  const images = getDefaultCourseImages(db.slug || db.title || "");
 
   return {
     id: String(db.id || db.slug),
     slug: db.slug || "course-slug",
     name: db.title || db.name || "Untitled Course",
     shortDescription: db.short_description || db.shortDescription || "",
-    thumbnail: defaultImage,
+    thumbnail: images.thumbnail,
     category: db.category || "Biotechnology",
     duration: db.duration || "30 Days",
     mode: db.mode || "Online",
@@ -152,16 +163,14 @@ export async function fetchCoursesListing(options?: {
   }
 
   const mappedLocal: CourseListingItem[] = localCourses.map((c) => {
-    const defaultImage = (c.slug || c.name || "")?.toLowerCase().includes("drug")
-      ? "/Photos/ai-drug-discovery-card.jpeg"
-      : "/Photos/bioplastic-card.jpeg";
+    const images = getDefaultCourseImages(c.slug || c.name || "");
 
     return {
       id: c.id,
       slug: c.slug,
       name: c.name,
       shortDescription: c.shortDescription,
-      thumbnail: defaultImage,
+      thumbnail: images.thumbnail,
       category: c.category,
       duration: c.duration,
       mode: c.mode,
@@ -217,13 +226,7 @@ export async function fetchCourseById(id: string): Promise<CourseRecord | null> 
 }
 
 function mapDbToFull(db: any): CourseRecord {
-  const defaultImage = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-card.jpeg"
-    : "/Photos/bioplastic-card.jpeg";
-
-  const defaultHero = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-hero.jpeg"
-    : "/Photos/bioplastic-hero.jpeg";
+  const images = getDefaultCourseImages(db.slug || db.title || "");
 
   return {
     id: String(db.id || db.slug),
@@ -231,8 +234,8 @@ function mapDbToFull(db: any): CourseRecord {
     name: db.title || db.name || "Untitled Course",
     shortDescription: db.short_description || db.shortDescription || "",
     fullDescription: db.full_description || db.fullDescription || "",
-    thumbnail: defaultImage,
-    coverImage: defaultHero,
+    thumbnail: images.thumbnail,
+    coverImage: images.cover,
     duration: db.duration || "30 Days",
     mode: db.mode || "Online",
     programFee: db.program_fee || db.programFee || "₹1999",
