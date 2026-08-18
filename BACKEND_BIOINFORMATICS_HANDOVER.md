@@ -164,3 +164,36 @@ These files contain course data logic and will automatically pick up the Supabas
 ## Existing Backend Handover
 
 If the project has an existing backend handover document (e.g., `docs/backend-instruction-join-button.md`), refer to it for general Supabase patterns and conventions used in this project.
+
+---
+
+## 13. Bioinformatics Webinar (Optional Backend)
+
+The webinar is currently implemented as a **frontend-only** component with hardcoded content in `src/routes/projects/index.tsx`.
+
+If backend persistence is needed in the future:
+
+### Webinar Data Requirements
+
+| Field | Value |
+|---|---|
+| `id` | Auto-generated UUID |
+| `title` | `Bioinformatics Webinar` |
+| `description` | Full webinar description (currently hardcoded in frontend) |
+| `status` | `published` or `draft` |
+| `created_at` | Timestamp |
+
+### When Backend Is Needed
+
+- If webinars need to be managed via admin panel (CRUD)
+- If webinar registration/attendance tracking is required
+- If multiple webinars need to be listed dynamically
+- If webinar scheduling (date/time) is added
+
+### Current State
+
+- Webinar content is fully hardcoded in the frontend
+- No database table exists for webinars
+- No API calls are made for webinar data
+- No image/media is associated with the webinar
+- No backend work is required for the current implementation
