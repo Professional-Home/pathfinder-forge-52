@@ -59,8 +59,8 @@ function About() {
                 <div className="rounded-xl border border-border bg-surface-elevated p-6">
                   <h3 className="font-semibold text-foreground mb-2">Mentor & Partner Relations</h3>
                   <p className="text-sm">Interested in mentoring or collaborating with Micrylis Biotech?</p>
-                  <a href="mailto:contact@micrylisbiotech.com" className="mt-4 inline-block text-sm font-mono text-foreground hover:underline">
-                    contact@micrylisbiotech.com
+                  <a href="mailto:micrylisbiotech@gmail.com" className="mt-4 inline-block text-sm font-mono text-foreground hover:underline">
+                    micrylisbiotech@gmail.com
                   </a>
                 </div>
                 
@@ -68,14 +68,14 @@ function About() {
                   <h3 className="font-semibold text-foreground mb-2">Social Channels</h3>
                   <p className="text-sm">Follow our latest updates and scientific content on social platforms.</p>
                   <div className="mt-4 flex flex-col gap-1.5 text-sm font-mono">
-                    <a href="https://www.youtube.com/@MicrylisBiotech" target="_blank" rel="noopener noreferrer" className="hover:underline text-foreground">
-                      YouTube: @MicrylisBiotech
-                    </a>
                     <a href="https://www.linkedin.com/in/micrylis-biotech-a4a4063aa/" target="_blank" rel="noopener noreferrer" className="hover:underline text-foreground">
                       LinkedIn: Micrylis Biotech
                     </a>
                     <a href="https://www.instagram.com/micrylis?igsh=cjR4ZGR1am1ubmI0" target="_blank" rel="noopener noreferrer" className="hover:underline text-foreground">
                       Instagram: @micrylis
+                    </a>
+                    <a href="https://www.youtube.com/@MicrylisBiotech" target="_blank" rel="noopener noreferrer" className="hover:underline text-foreground">
+                      YouTube: @MicrylisBiotech
                     </a>
                   </div>
                 </div>
@@ -93,5 +93,3 @@ function About() {
     </>
   );
 }
-
-

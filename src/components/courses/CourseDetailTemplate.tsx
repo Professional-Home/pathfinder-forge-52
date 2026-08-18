@@ -511,7 +511,57 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
 }
 
 /* ─────────────────────────────────────────────
-   SHARED SECTIONS — Applied to both courses
+   About Program — BIOINFORMATICS (Final Content)
+   ───────────────────────────────────────────── */
+function AboutProgramBioinformatics({ theme }: { theme: typeof themeColors.student }) {
+  return (
+    <section className="border-b border-border/60 py-14 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <Reveal>
+          <SectionLabel>About the program</SectionLabel>
+          <h2 className="max-w-3xl font-display text-3xl sm:text-4xl">AI-Integrated Bioinformatics &amp; NGS Platform</h2>
+        </Reveal>
+        <div className="mt-10 max-w-3xl space-y-6 text-base leading-relaxed text-muted-foreground">
+          <Reveal delay={0.05}>
+            <p>This project focuses on building an AI-integrated bioinformatics platform that can automate and simplify major stages of Next-Generation Sequencing (NGS) data analysis. The project combines bioinformatics, artificial intelligence, genomics, and biomarker discovery to create a practical research-oriented workflow for modern biological data analysis.</p>
+            <p className="mt-4">Participants will work through a complete NGS analysis pipeline, starting from raw sequencing data quality control and preprocessing, followed by sequence alignment, variant analysis, genomic interpretation, and biomarker identification. The project will also explore how AI and machine learning can assist in data interpretation, prediction, and decision-making.</p>
+          </Reveal>
+
+          <Reveal delay={0.1}>
+            <h3 className="mt-8 font-display text-xl text-foreground">Key Areas of the Project</h3>
+            <ul className="mt-4 space-y-2">
+              {[
+                "Raw NGS read quality control and preprocessing",
+                "Sequence alignment and genome mapping",
+                "Variant calling and annotation",
+                "Genomic data interpretation",
+                "Biomarker discovery and analysis",
+                "AI/ML integration into bioinformatics workflows",
+                "Automated NGS pipeline development",
+                "Visualization and reporting of biological results",
+                "Development of a scalable bioinformatics platform",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm">
+                  <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          <Reveal delay={0.15}>
+            <h3 className="mt-8 font-display text-xl text-foreground">What You Will Gain</h3>
+            <p className="mt-3">You will gain hands-on exposure to real-world bioinformatics workflows, NGS analysis, AI-assisted genomic interpretation, biomarker research, and computational biology while contributing to the development of a practical platform that can evolve from a research Proof of Concept (POC) toward a functional Minimum Viable Product (MVP).</p>
+            <p className="mt-4">This is not just a bioinformatics learning project it is an opportunity to work on the development of an AI-powered genomics platform designed around real research and industry challenges.</p>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SHARED SECTIONS — Applied to all courses
    ───────────────────────────────────────────── */
 
 const WHY_JOIN_CARDS = [
@@ -724,6 +774,7 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
   };
   const theme = themeColors[content.theme ?? "researcher"];
   const isAI = course.slug === "ai-in-drug-discovery";
+  const isBioinformatics = course.slug === "bioinformatics";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -732,7 +783,7 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
       <CourseHero course={course} content={content} />
 
       {/* About Program — Course-Specific */}
-      {isAI ? <AboutProgramAI theme={theme} /> : <AboutProgramBioPlastic theme={theme} />}
+      {isAI ? <AboutProgramAI theme={theme} /> : isBioinformatics ? <AboutProgramBioinformatics theme={theme} /> : <AboutProgramBioPlastic theme={theme} />}
 
       {/* ── Section 1: More Than an Internship ── */}
       <section className="border-b border-border/60 bg-surface/30 py-14 sm:py-20">

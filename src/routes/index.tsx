@@ -1003,59 +1003,9 @@ const FAQ_ITEMS: FAQItem[] = [
 
 function WhyMicrylis() {
   const [open, setOpen] = useState<number | null>(null);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    // Detect touch capability
-    const checkTouch = () => {
-      setIsTouchDevice(
-        "ontouchstart" in window || navigator.maxTouchPoints > 0
-      );
-    };
-    checkTouch();
-    window.addEventListener("pointerdown", function onPointer(e) {
-      if (e.pointerType === "touch") {
-        setIsTouchDevice(true);
-        window.removeEventListener("pointerdown", onPointer);
-      }
-    });
-  }, []);
-
-  const handleMouseEnter = useCallback(
-    (index: number) => {
-      if (isTouchDevice) return;
-      // Clear any pending close timeout
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
-      setOpen(index);
-    },
-    [isTouchDevice]
-  );
-
-  const handleMouseLeave = useCallback(() => {
-    if (isTouchDevice) return;
-    // Small delay so mouse can travel between question and answer area
-    hoverTimeoutRef.current = setTimeout(() => {
-      setOpen(null);
-    }, 150);
-  }, [isTouchDevice]);
-
-  const handleClick = useCallback(
-    (index: number) => {
-      if (!isTouchDevice) return;
-      setOpen((prev) => (prev === index ? null : index));
-    },
-    [isTouchDevice]
-  );
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    };
+  const handleClick = useCallback((index: number) => {
+    setOpen((prev) => (prev === index ? null : index));
   }, []);
 
   return (
@@ -1075,8 +1025,6 @@ function WhyMicrylis() {
               <div
                 key={i}
                 className="border-b border-border/60"
-                onMouseEnter={() => handleMouseEnter(i)}
-                onMouseLeave={handleMouseLeave}
               >
                 <button
                   onClick={() => handleClick(i)}

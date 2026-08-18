@@ -1,98 +1,126 @@
-# Frontend Implementation Summary — BioPlastic Content Update, Hero Cleanup & Refund Policy
+# ChatGPT Frontend Summary — Micrylis
 
-## Branch
-
-```
-feature/bioplastic-content-update
-```
-
-Based on: `feature/ai-drug-discovery-content`
+> **Last updated**: August 18, 2026
+> **Branch**: `feature/bioinformatics-course` (synced with latest `origin/main`)
 
 ---
 
-## What Was Changed
+## 1. Bioinformatics Course — Now Publicly Visible
 
-### BioPlastic Innovation — About Program Content
+Bioinformatics is the **3rd course** and is now properly visible across the entire frontend:
 
-**All BioPlastic Innovation content sections updated with exact user-provided text.**
+- **Projects listing** (`/projects`) — appears as a course card alongside BioPlastic Innovation and AI in Drug Discovery
+- **Course detail page** (`/projects/bioinformatics`) — full detail page with About Program, shared sections
+- **User dashboard** — course card in enrolled/available courses
+- **Admin panel** — course list, admin dashboard
+- **Grid updated** to `lg:grid-cols-3` for 3 courses
 
-- Introduction: New science/engineering/sustainability/commercialization description
-- What You Will Explore: 10 detailed research areas
-- Research Journey: 10-step structured workflow
-- 30-Day Project Structure: Updated all 4 weeks
-- Project Deliverables: 7 numbered deliverables in card layout
-- Skills You Will Develop: 14 skills in dot-separated inline format
-- Who Is This For: 10 specific student categories with closing paragraph
-- The Project Outcome: Participant-focused description
-- From Material Science: Quoted motto
-- Project Positioning: Full program description
+### How Visibility Works
 
-### Hero Section Cleanup (Both Courses)
+A frontend-only seed (`BIOINFORMATICS_LISTING_SEED` and `BIOINFORMATICS_FULL_SEED`) in `store.ts` ensures the course appears even before the backend adds it to Supabase. When Supabase returns courses, bioinformatics is merged in if not already present. Once the backend adds it to the `courses` table, the seed is automatically bypassed.
 
-- Removed unwanted introductory paragraphs between course title and Duration
-- Hero conditionally renders subtitle/description only when non-empty
-- Title, Duration, Mode, Program Fee preserved
+### Temporary Image
 
-### Footer Changes
-
-- **Removed**: Return Policy link from footer
-- **Preserved**: Privacy Policy, Refund Policy, Disclaimer
-
-### Refund Policy Page
-
-- **Removed**: Old refund policy content (mentorship sessions, course subscriptions, etc.)
-- **Added**: Complete new refund policy for Micrylis Biotech Student Research Project
-- **Content**: Exact user-provided legal content preserved without modification
-- **Section numbering**: 1, 1.1, 1.2, 2, 3, 4, 6, 7, 8 (intentionally no Section 5)
-- **Fees**: ₹1,499 domestic / $49.99 international
-- **Contact**: micrylisbiotech@gmail.com / +91 88490 05635
-- **UI**: Uses existing LegalLayout and LegalSection components
+Bioinformatics currently reuses the AI Drug Discovery images as temporary placeholders. All image paths are centralized in `store.ts` via `getDefaultCourseImages()`.
 
 ---
 
-## Files Modified
+## 2. Bioinformatics About Program Content — Updated
 
-| File | Change Type |
-|------|-------------|
-| `src/components/courses/CourseDetailTemplate.tsx` | BioPlastic content + hero cleanup |
-| `src/components/site-footer.tsx` | Removed Return Policy link |
-| `src/routes/refund-policy.tsx` | Complete refund policy replacement |
-| `CHATGPT_FRONTEND_SUMMARY.md` | Updated with all changes |
+The "About the Program" section uses the **exact user-provided content**:
 
-## Components Modified
+- **Title**: AI-Integrated Bioinformatics & NGS Platform
+- **Key Areas**: NGS QC, sequence alignment, variant calling, genomic interpretation, biomarker discovery, AI/ML integration, automated pipeline development, visualization, scalable platform
+- **What You Will Gain**: Hands-on bioinformatics workflows, NGS analysis, AI-assisted genomics, POC to MVP development
 
-- `AboutProgramBioPlastic` — All content updated
-- `CourseHero` — Conditional rendering of subtitle/description
-- `CourseDetailTemplate` — Hero fallback content cleared
-- `SiteFooter` — Removed Return Policy from COMPANY_LINKS
-- `RefundPolicy` — Complete page content replacement
+Content location: `src/components/courses/CourseDetailTemplate.tsx` → `AboutProgramBioinformatics` component
 
-## Testing Results
+---
 
-- ✅ TypeScript (`npx tsc --noEmit`) — Exit code 0
-- ✅ Production build (`npm run build`) — Successful
-- ✅ BioPlastic content validated
-- ✅ Hero cleanup verified
-- ✅ Return Policy removed from footer
-- ✅ Refund Policy page renders correctly
+## 3. Image Spacing — Fixed
 
-## Backend Requirements
+- PublicCourseCard image detection updated for 3 courses (bioinformatics was falling back to bioplastic image)
+- Projects grid updated to `lg:grid-cols-3` for balanced 3-column layout
+- Skeleton loading updated from 2 to 3 placeholders
 
-**NONE.** Frontend-only changes.
+---
 
-## Commit History
+## 4. About Us — Two Changes Only
 
-| # | Hash | Message |
-|---|------|---------|
-| 1 | `4c8ff85` | `feat(bioplastic): update research introduction, exploration, and journey` |
-| 2 | `ca01249` | `feat(bioplastic): update project structure and deliverables` |
-| 3 | `f993aad` | `feat(bioplastic): update skills and eligibility sections` |
-| 4 | `31e42ea` | `feat(bioplastic): update project outcome and positioning` |
-| 5 | `1e5d131` | `fix(courses): remove unwanted introductory paragraphs from hero section` |
-| 6 | `8126949` | `docs: update CHATGPT_FRONTEND_SUMMARY for bioplastic content update` |
-| 7 | `3582db8` | `fix(footer): remove return policy link` |
-| 8 | `747e2dd` | `feat(legal): replace refund policy with updated content` |
+1. **Mentor & Partner Relations** email changed to `micrylisbiotech@gmail.com`
+2. **Social Channels** order: LinkedIn → Instagram → YouTube
 
-## Remaining Issues
+No other About Us changes were made. The page uses `origin/main`'s latest structure with `SiteHeader` and updated content.
 
-- None identified
+---
+
+## 5. Bioinformatics Webinar — Added
+
+A webinar section was added **below the course cards** on the Projects page (`/projects`).
+
+- **Title**: Bioinformatics Webinar
+- **Interaction**: Read More button expands full content with AnimatePresence
+- **Content**: Exact user-provided wording without modifications
+- **No invented information**: No date, time, price, speaker, or registration URL
+- **Responsive**: Works on desktop, tablet, mobile
+- **Location**: `src/routes/projects/index.tsx` → `BioinformaticsWebinar` component
+
+---
+
+## 6. Backend Status
+
+**No backend/Supabase changes were made.**
+
+- No database tables modified
+- No SQL executed
+- No RLS policies changed
+- No edge functions created
+- Webinar is frontend-only (hardcoded content)
+
+Backend requirements documented in: **`BACKEND_BIOINFORMATICS_HANDOVER.md`**
+
+---
+
+## 7. Merge with Main
+
+- Synced with latest `origin/main` via `git merge origin/main`
+- **One merge conflict** in `src/routes/about.tsx` — resolved by keeping main's structure and applying our two required changes (email + social order)
+- `store.ts` and `dashboard-courses.ts` auto-merged successfully
+
+---
+
+## Git History
+
+### Branch
+
+`feature/bioinformatics-course` (synced with latest `origin/main`)
+
+### Commits (this session)
+
+| # | Message |
+|---|---------|
+| 1 | `merge: resolve about.tsx conflict (keep main structure + apply required changes)` |
+| 2 | `feat(courses): restore bioinformatics course visibility` |
+| 3 | `feat(courses): update bioinformatics program content` |
+| 4 | `fix(layout): reduce excessive image section spacing` |
+| 5 | `feat(webinar): add bioinformatics webinar section` |
+| 6 | `docs(backend): update bioinformatics backend handover` |
+| 7 | `docs: update frontend implementation summary` |
+
+### Files Created
+
+- `BACKEND_BIOINFORMATICS_HANDOVER.md` (updated with webinar section)
+- `CHATGPT_FRONTEND_SUMMARY.md`
+
+### Files Modified
+
+- `src/lib/courses/store.ts` — bioinformatics seed, merge logic, fallback
+- `src/components/courses/CourseDetailTemplate.tsx` — exact About Program content
+- `src/components/courses/PublicCourseCard.tsx` — 3-course image detection
+- `src/routes/projects/index.tsx` — 3-col grid, webinar section
+- `src/routes/about.tsx` — email + social order (via merge resolution)
+
+### Build Status
+
+- TypeScript: ✅ Pass
+- Build: Pending final verification

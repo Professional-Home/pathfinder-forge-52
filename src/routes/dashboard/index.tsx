@@ -301,9 +301,12 @@ function DashboardCourses() {
           ? generateWhatsAppLink(undefined, course.title, userEmail)
           : "";
 
-        const defaultImage = (course.title || course.id || "")?.toLowerCase().includes("drug")
+        const courseIdentifier = (course.title || course.id || "").toLowerCase();
+        const defaultImage = courseIdentifier.includes("drug")
           ? "/Photos/ai-drug-discovery-card.jpeg"
-          : "/Photos/bioplastic-card.jpeg";
+          : courseIdentifier.includes("bioinformatics")
+            ? "/Photos/ai-drug-discovery-card.jpeg"
+            : "/Photos/bioplastic-card.jpeg";
 
         const rawThumbnail = defaultImage;
         const thumbnailUrl = getOptimizedImageUrl(rawThumbnail, { width: 400, height: 200 });

@@ -21,9 +21,12 @@ function PublicCourseCardComponent({
     researcher: "group-hover:border-researcher/40 hover:shadow-md",
   };
 
-  const defaultImage = course.slug?.includes("drug") || course.name?.toLowerCase().includes("drug")
+  const courseId = (course.slug || course.name || "").toLowerCase();
+  const defaultImage = courseId.includes("drug")
     ? "/Photos/ai-drug-discovery-card.jpeg"
-    : "/Photos/bioplastic-card.jpeg";
+    : courseId.includes("bioinformatics")
+      ? "/Photos/ai-drug-discovery-card.jpeg"
+      : "/Photos/bioplastic-card.jpeg";
 
   const rawThumbnail = course.thumbnail || defaultImage;
 

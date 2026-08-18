@@ -66,17 +66,72 @@ export interface CourseListingItem {
   lastUpdated: string;
 }
 
+/** Centralized image resolver for all 3 courses */
+function getDefaultCourseImages(identifier: string): { thumbnail: string; cover: string } {
+  const lower = (identifier || "").toLowerCase();
+  if (lower.includes("drug")) {
+    return { thumbnail: "/Photos/ai-drug-discovery-card.jpeg", cover: "/Photos/ai-drug-discovery-hero.jpeg" };
+  }
+  if (lower.includes("bioinformatics")) {
+    // Temporary: reusing AI drug discovery images until dedicated bioinformatics images are provided
+    return { thumbnail: "/Photos/ai-drug-discovery-card.jpeg", cover: "/Photos/ai-drug-discovery-hero.jpeg" };
+  }
+  return { thumbnail: "/Photos/bioplastic-card.jpeg", cover: "/Photos/bioplastic-hero.jpeg" };
+}
+
+/** Frontend-only Bioinformatics course seed — ensures visibility before backend adds it to Supabase */
+const BIOINFORMATICS_LISTING_SEED: CourseListingItem = {
+  id: "bioinformatics-frontend-seed",
+  slug: "bioinformatics",
+  name: "Bioinformatics",
+  shortDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
+  category: "Biotechnology",
+  duration: "30 Days",
+  mode: "Online",
+  programFee: "₹1999",
+  difficulty: "intermediate",
+  featured: true,
+  status: "published",
+  applyUrl: "",
+  lastUpdated: new Date().toISOString().slice(0, 10),
+};
+
+const BIOINFORMATICS_FULL_SEED: CourseRecord = {
+  id: "bioinformatics-frontend-seed",
+  slug: "bioinformatics",
+  name: "Bioinformatics",
+  shortDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  fullDescription: "An AI-integrated bioinformatics platform project combining bioinformatics, artificial intelligence, genomics, and biomarker discovery.",
+  thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
+  coverImage: "/Photos/ai-drug-discovery-hero.jpeg",
+  duration: "30 Days",
+  mode: "Online",
+  programFee: "₹1999",
+  category: "Biotechnology",
+  difficulty: "intermediate",
+  certificate: "Certificate of Completion",
+  learningOutcomes: [],
+  curriculum: "",
+  requirements: "",
+  whoShouldJoin: "",
+  faqs: "",
+  seoTitle: "Bioinformatics — Micrylis Biotech",
+  seoDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  featured: true,
+  status: "published",
+  lastUpdated: new Date().toISOString().slice(0, 10),
+};
+
 function mapDbToListing(db: any): CourseListingItem {
-  const defaultImage = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-card.jpeg"
-    : "/Photos/bioplastic-card.jpeg";
+  const images = getDefaultCourseImages(db.slug || db.title || "");
 
   return {
     id: String(db.id || db.slug),
     slug: db.slug || "course-slug",
     name: db.title || db.name || "Untitled Course",
     shortDescription: db.short_description || db.shortDescription || "",
-    thumbnail: defaultImage,
+    thumbnail: images.thumbnail,
     category: db.category || "Biotechnology",
     duration: db.duration || "30 Days",
     mode: db.mode || "Online",
@@ -126,9 +181,15 @@ export async function fetchCoursesListing(options?: {
 
     const { data, error, count } = await query;
     if (!error && data && data.length > 0) {
+      const supabaseCourses = data.map(mapDbToListing);
+      // Merge Bioinformatics seed if not already in Supabase results
+      const hasBioinformatics = supabaseCourses.some((c) => c.slug === "bioinformatics");
+      if (!hasBioinformatics) {
+        supabaseCourses.push(BIOINFORMATICS_LISTING_SEED);
+      }
       return {
-        courses: data.map(mapDbToListing),
-        total: count ?? data.length,
+        courses: supabaseCourses,
+        total: (count ?? data.length) + (hasBioinformatics ? 0 : 1),
       };
     }
   } catch (err) {
@@ -152,16 +213,14 @@ export async function fetchCoursesListing(options?: {
   }
 
   const mappedLocal: CourseListingItem[] = localCourses.map((c) => {
-    const defaultImage = (c.slug || c.name || "")?.toLowerCase().includes("drug")
-      ? "/Photos/ai-drug-discovery-card.jpeg"
-      : "/Photos/bioplastic-card.jpeg";
+    const images = getDefaultCourseImages(c.slug || c.name || "");
 
     return {
       id: c.id,
       slug: c.slug,
       name: c.name,
       shortDescription: c.shortDescription,
-      thumbnail: defaultImage,
+      thumbnail: images.thumbnail,
       category: c.category,
       duration: c.duration,
       mode: c.mode,
@@ -196,7 +255,7 @@ export async function fetchCourseBySlug(slug: string): Promise<CourseRecord | nu
     console.error("Error fetching course by slug from Supabase:", err);
   }
 
-  return getCourseBySlug(slug) || null;
+  return getCourseBySlug(slug) || (slug === "bioinformatics" ? BIOINFORMATICS_FULL_SEED : null);
 }
 
 /** Fetch a single course by id — full data for edit/enrollment */
@@ -217,13 +276,7 @@ export async function fetchCourseById(id: string): Promise<CourseRecord | null> 
 }
 
 function mapDbToFull(db: any): CourseRecord {
-  const defaultImage = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-card.jpeg"
-    : "/Photos/bioplastic-card.jpeg";
-
-  const defaultHero = (db.slug || db.title || "")?.toLowerCase().includes("drug")
-    ? "/Photos/ai-drug-discovery-hero.jpeg"
-    : "/Photos/bioplastic-hero.jpeg";
+  const images = getDefaultCourseImages(db.slug || db.title || "");
 
   return {
     id: String(db.id || db.slug),
@@ -231,8 +284,8 @@ function mapDbToFull(db: any): CourseRecord {
     name: db.title || db.name || "Untitled Course",
     shortDescription: db.short_description || db.shortDescription || "",
     fullDescription: db.full_description || db.fullDescription || "",
-    thumbnail: defaultImage,
-    coverImage: defaultHero,
+    thumbnail: images.thumbnail,
+    coverImage: images.cover,
     duration: db.duration || "30 Days",
     mode: db.mode || "Online",
     programFee: db.program_fee || db.programFee || "₹1999",

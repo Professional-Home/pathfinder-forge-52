@@ -97,9 +97,12 @@ function CoursesPage() {
                 ? generateWhatsAppLink(undefined, course.title, userEmail)
                 : "";
 
-              const defaultImage = (course.title || course.id || "").toLowerCase().includes("drug")
+              const courseIdentifier = (course.title || course.id || "").toLowerCase();
+              const defaultImage = courseIdentifier.includes("drug")
                 ? "/Photos/ai-drug-discovery-card.jpeg"
-                : "/Photos/bioplastic-card.jpeg";
+                : courseIdentifier.includes("bioinformatics")
+                  ? "/Photos/ai-drug-discovery-card.jpeg"
+                  : "/Photos/bioplastic-card.jpeg";
               const thumbnailUrl = getOptimizedImageUrl(defaultImage, { width: 600, height: 300 });
 
               return (

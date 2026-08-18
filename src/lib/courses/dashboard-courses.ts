@@ -12,6 +12,14 @@ export interface DashboardCourse {
   status?: string;
 }
 
+/** Centralized image resolver for all 3 courses */
+function getDashboardCourseImage(identifier: string): string {
+  const lower = (identifier || "").toLowerCase();
+  if (lower.includes("drug")) return "/Photos/ai-drug-discovery-card.jpeg";
+  if (lower.includes("bioinformatics")) return "/Photos/ai-drug-discovery-card.jpeg"; // Temporary
+  return "/Photos/bioplastic-card.jpeg";
+}
+
 /** Published store courses mapped for the user dashboard. */
 export function getSeedDashboardCourses(): DashboardCourse[] {
   return getAllCourses()
@@ -22,9 +30,7 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
       description: c.shortDescription,
       category: c.category,
       duration: c.duration,
-      thumbnail: (c.slug || c.name || "").toLowerCase().includes("drug")
-        ? "/Photos/ai-drug-discovery-card.jpeg"
-        : "/Photos/bioplastic-card.jpeg",
+      thumbnail: getDashboardCourseImage(c.slug || c.name || ""),
       applyUrl: c.applyUrl,
       status: c.status,
     }));
@@ -34,21 +40,16 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
 export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[] {
   const normalizedSupabase: DashboardCourse[] = (supabaseCourses || [])
     .filter((c) => c.status === "published" || !c.status)
-    .map((c) => {
-      const defaultImage = (c.slug || c.title || c.name || "").toLowerCase().includes("drug")
-        ? "/Photos/ai-drug-discovery-card.jpeg"
-        : "/Photos/bioplastic-card.jpeg";
-      return {
-        id: String(c.id || c.slug),
-        title: c.title || c.name || "Untitled Course",
-        description: c.short_description || c.description || c.shortDescription || "",
-        category: c.category || "General",
-        duration: c.duration || "Self-paced",
-        thumbnail: defaultImage,
-        applyUrl: c.apply_url || c.applyUrl || "",
-        status: c.status || "published",
-      };
-    });
+    .map((c) => ({
+      id: String(c.id || c.slug),
+      title: c.title || c.name || "Untitled Course",
+      description: c.short_description || c.description || c.shortDescription || "",
+      category: c.category || "General",
+      duration: c.duration || "Self-paced",
+      thumbnail: getDashboardCourseImage(c.slug || c.title || c.name || ""),
+      applyUrl: c.apply_url || c.applyUrl || "",
+      status: c.status || "published",
+    }));
 
   if (normalizedSupabase.length > 0) {
     return normalizedSupabase;
