@@ -82,13 +82,13 @@ function ProjectsListingPage() {
           </div>
 
           {isLoading && projects.length === 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 lg:gap-6">
-              {[1, 2].map((i) => (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              {[1, 2, 3].map((i) => (
                 <div key={i} className="h-72 rounded-2xl border border-border bg-surface-elevated animate-pulse" />
               ))}
             </div>
           ) : projects.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 lg:gap-6">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
               {renderedProjects}
             </div>
           ) : (
