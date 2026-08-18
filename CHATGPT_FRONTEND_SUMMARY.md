@@ -1,94 +1,73 @@
 # ChatGPT Frontend Summary — Micrylis
 
 > **Last updated**: August 18, 2026
-> **Branch**: `feature/bioinformatics-course` (based on `feature/bioplastic-content-update`)
+> **Branch**: `feature/bioinformatics-course` (synced with latest `origin/main`)
 
 ---
 
-## New Course: Bioinformatics
+## 1. Bioinformatics Course — Now Publicly Visible
 
-### What was added
+Bioinformatics is the **3rd course** and is now properly visible across the entire frontend:
 
-A third course, **Bioinformatics**, was added to the Micrylis frontend. It follows the exact same architecture, components, and visual structure as the two existing courses:
-
-1. BioPlastic Innovation
-2. AI in Drug Discovery
-3. **Bioinformatics** *(new)*
-
-### Where it appears
-
-- **Public projects listing** (`/projects`) — course card with Learn More + Apply
-- **Course detail page** (`/projects/bioinformatics`) — full detail page using `CourseDetailTemplate`
+- **Projects listing** (`/projects`) — appears as a course card alongside BioPlastic Innovation and AI in Drug Discovery
+- **Course detail page** (`/projects/bioinformatics`) — full detail page with About Program, shared sections
 - **User dashboard** — course card in enrolled/available courses
-- **Admin panel** — course list, course cards, admin dashboard
+- **Admin panel** — course list, admin dashboard
+- **Grid updated** to `lg:grid-cols-3` for 3 courses
 
-### About Program content
+### How Visibility Works
 
-The "About the Program" section for Bioinformatics uses **temporary/placeholder content**. The user will provide final content later. The content is located in:
+A frontend-only seed (`BIOINFORMATICS_LISTING_SEED` and `BIOINFORMATICS_FULL_SEED`) in `store.ts` ensures the course appears even before the backend adds it to Supabase. When Supabase returns courses, bioinformatics is merged in if not already present. Once the backend adds it to the `courses` table, the seed is automatically bypassed.
 
-- `src/components/courses/CourseDetailTemplate.tsx` → `AboutProgramBioinformatics` component
+### Temporary Image
 
-All other sections (Benefits, Curriculum, Research Journey, Capstone, Outcomes, Who Can Join, Program Details) use the existing **shared content** that applies to all courses.
-
-### Temporary image
-
-Bioinformatics currently **reuses the AI Drug Discovery images** as temporary placeholders:
-
-- Thumbnail: `/Photos/ai-drug-discovery-card.jpeg`
-- Hero: `/Photos/ai-drug-discovery-hero.jpeg`
-
-**To replace the image later**, update these files:
-
-- `src/lib/project-images.ts` → `bioinformatics.thumbnail` and `bioinformatics.cover`
-- `src/lib/courses/store.ts` → `getDefaultCourseImages()` function, bioinformatics case
-- `src/lib/courses/dashboard-courses.ts` → `getDashboardCourseImage()` function, bioinformatics case
-- `src/routes/dashboard/index.tsx` → inline image detection
-- `src/routes/dashboard/courses.tsx` → inline image detection
-- `src/routes/admin/courses/index.tsx` → inline image detection
-- `src/routes/admin/dashboard.tsx` → inline image detection
-
-Or, once the Supabase record has valid image URLs in `thumbnail` and `cover_image` columns, the images will be used from the database automatically.
+Bioinformatics currently reuses the AI Drug Discovery images as temporary placeholders. All image paths are centralized in `store.ts` via `getDefaultCourseImages()`.
 
 ---
 
-## FAQ Behavior Change
+## 2. Bioinformatics About Program Content — Updated
 
-- All FAQ items on the homepage **start closed** (no item auto-opens)
-- FAQ items open **only on click**
-- Clicking an open item **closes it**
-- **Hover does NOT open** FAQ items (previous hover behavior was removed)
-- Works consistently on both desktop and mobile
+The "About the Program" section uses the **exact user-provided content**:
 
-### Files changed
+- **Title**: AI-Integrated Bioinformatics & NGS Platform
+- **Key Areas**: NGS QC, sequence alignment, variant calling, genomic interpretation, biomarker discovery, AI/ML integration, automated pipeline development, visualization, scalable platform
+- **What You Will Gain**: Hands-on bioinformatics workflows, NGS analysis, AI-assisted genomics, POC to MVP development
 
-- `src/routes/index.tsx` → `WhyMicrylis` component
+Content location: `src/components/courses/CourseDetailTemplate.tsx` → `AboutProgramBioinformatics` component
 
 ---
 
-## About Us Page Updates
+## 3. Image Spacing — Fixed
 
-### Mentor and Partner Relations
-
-- Section renamed from "Mentor Applications" to **"Mentor & Partner Relations"**
-- Email changed from `mentors@micrylis.com` to **`micrylisbiotech@gmail.com`**
-
-### Social Channels
-
-Added a new **Social Channels** section with the following order:
-
-1. **LinkedIn** — https://www.linkedin.com/in/micrylis-biotech-a4a4063aa/
-2. **Instagram** — https://www.instagram.com/micrylis?igsh=cjR4ZGR1am1ubmI0
-3. **YouTube** — https://www.youtube.com/@micrylisbiotech
-
-URLs were taken from the existing footer configuration.
-
-### Files changed
-
-- `src/routes/about.tsx`
+- PublicCourseCard image detection updated for 3 courses (bioinformatics was falling back to bioplastic image)
+- Projects grid updated to `lg:grid-cols-3` for balanced 3-column layout
+- Skeleton loading updated from 2 to 3 placeholders
 
 ---
 
-## Backend Status
+## 4. About Us — Two Changes Only
+
+1. **Mentor & Partner Relations** email changed to `micrylisbiotech@gmail.com`
+2. **Social Channels** order: LinkedIn → Instagram → YouTube
+
+No other About Us changes were made. The page uses `origin/main`'s latest structure with `SiteHeader` and updated content.
+
+---
+
+## 5. Bioinformatics Webinar — Added
+
+A webinar section was added **below the course cards** on the Projects page (`/projects`).
+
+- **Title**: Bioinformatics Webinar
+- **Interaction**: Read More button expands full content with AnimatePresence
+- **Content**: Exact user-provided wording without modifications
+- **No invented information**: No date, time, price, speaker, or registration URL
+- **Responsive**: Works on desktop, tablet, mobile
+- **Location**: `src/routes/projects/index.tsx` → `BioinformaticsWebinar` component
+
+---
+
+## 6. Backend Status
 
 **No backend/Supabase changes were made.**
 
@@ -96,11 +75,17 @@ URLs were taken from the existing footer configuration.
 - No SQL executed
 - No RLS policies changed
 - No edge functions created
-- No storage configuration changed
+- Webinar is frontend-only (hardcoded content)
 
-Backend requirements for the Bioinformatics course are documented in:
+Backend requirements documented in: **`BACKEND_BIOINFORMATICS_HANDOVER.md`**
 
-- **`BACKEND_BIOINFORMATICS_HANDOVER.md`** (project root)
+---
+
+## 7. Merge with Main
+
+- Synced with latest `origin/main` via `git merge origin/main`
+- **One merge conflict** in `src/routes/about.tsx` — resolved by keeping main's structure and applying our two required changes (email + social order)
+- `store.ts` and `dashboard-courses.ts` auto-merged successfully
 
 ---
 
@@ -108,34 +93,34 @@ Backend requirements for the Bioinformatics course are documented in:
 
 ### Branch
 
-`feature/bioinformatics-course` (created from `feature/bioplastic-content-update`)
+`feature/bioinformatics-course` (synced with latest `origin/main`)
 
-### Commits
+### Commits (this session)
 
-| # | Hash | Message |
-|---|------|---------|
-| 1 | `198139a` | `feat(courses): add bioinformatics course structure` |
-| 2 | `85aa605` | `feat(courses): add bioinformatics program content` |
-| 3 | `b9a2db6` | `feat(admin): add bioinformatics course support` |
-| 4 | `0db1910` | `fix(faq): require click to open faq items` |
-| 5 | `32881c9` | `fix(about): update mentor contact and social channels` |
-| 6 | `c924034` | `docs(backend): add bioinformatics backend handover` |
-| 7 | *(this commit)* | `docs: update frontend implementation summary` |
+| # | Message |
+|---|---------|
+| 1 | `merge: resolve about.tsx conflict (keep main structure + apply required changes)` |
+| 2 | `feat(courses): restore bioinformatics course visibility` |
+| 3 | `feat(courses): update bioinformatics program content` |
+| 4 | `fix(layout): reduce excessive image section spacing` |
+| 5 | `feat(webinar): add bioinformatics webinar section` |
+| 6 | `docs(backend): update bioinformatics backend handover` |
+| 7 | `docs: update frontend implementation summary` |
 
 ### Files Created
 
-- `BACKEND_BIOINFORMATICS_HANDOVER.md`
+- `BACKEND_BIOINFORMATICS_HANDOVER.md` (updated with webinar section)
 - `CHATGPT_FRONTEND_SUMMARY.md`
 
 ### Files Modified
 
-- `src/lib/project-images.ts`
-- `src/lib/courses/store.ts`
-- `src/lib/courses/dashboard-courses.ts`
-- `src/components/courses/CourseDetailTemplate.tsx`
-- `src/routes/dashboard/index.tsx`
-- `src/routes/dashboard/courses.tsx`
-- `src/routes/admin/courses/index.tsx`
-- `src/routes/admin/dashboard.tsx`
-- `src/routes/index.tsx`
-- `src/routes/about.tsx`
+- `src/lib/courses/store.ts` — bioinformatics seed, merge logic, fallback
+- `src/components/courses/CourseDetailTemplate.tsx` — exact About Program content
+- `src/components/courses/PublicCourseCard.tsx` — 3-course image detection
+- `src/routes/projects/index.tsx` — 3-col grid, webinar section
+- `src/routes/about.tsx` — email + social order (via merge resolution)
+
+### Build Status
+
+- TypeScript: ✅ Pass
+- Build: Pending final verification
