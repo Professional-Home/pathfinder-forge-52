@@ -511,7 +511,144 @@ function AboutProgramBioPlastic({ theme }: { theme: typeof themeColors.student }
 }
 
 /* ─────────────────────────────────────────────
-   SHARED SECTIONS — Applied to both courses
+   About Program — BIOINFORMATICS (Temporary Content)
+   Replace with final content when provided by the user.
+   ───────────────────────────────────────────── */
+function AboutProgramBioinformatics({ theme }: { theme: typeof themeColors.student }) {
+  return (
+    <section className="border-b border-border/60 py-14 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <Reveal>
+          <SectionLabel>About the program</SectionLabel>
+          <h2 className="max-w-3xl font-display text-3xl sm:text-4xl">Bioinformatics</h2>
+          <p className={`mt-3 max-w-2xl text-lg font-medium ${theme.accent}`}>
+            A 30-Day Research Project in Bioinformatics, Computational Biology &amp; Genomic Data Analysis
+          </p>
+        </Reveal>
+        <div className="mt-10 max-w-3xl space-y-6 text-base leading-relaxed text-muted-foreground">
+          <Reveal delay={0.05}>
+            <p>A guided research project exploring the intersection of biology, computer science, and data analysis. Participants investigate biological datasets, genomic sequences, molecular structures, and computational workflows to address real-world problems in healthcare, agriculture, drug development, and environmental science.</p>
+            <p className="mt-4">This project combines scientific research, computational tools, data analysis, and bioinformatics pipelines to provide hands-on experience in how modern biology leverages computation to accelerate discovery and innovation.</p>
+          </Reveal>
+
+          <Reveal delay={0.1}>
+            <h3 className="mt-8 font-display text-xl text-foreground">What You Will Explore</h3>
+            <ul className="mt-4 space-y-2">
+              {[
+                "Genomics & Sequence Analysis — Understand DNA, RNA, and protein sequences, and how to analyze them computationally.",
+                "Computational Biology — Explore algorithms, tools, and pipelines used to process and interpret biological data.",
+                "Molecular & Structural Biology — Investigate protein structures, molecular interactions, and structure-function relationships.",
+                "Biological Databases — Learn to navigate and extract meaningful data from major bioinformatics databases.",
+                "Data Analysis & Visualization — Apply statistical methods and visualization techniques to biological datasets.",
+                "Scientific Literature Research — Identify, evaluate, and synthesize research findings in bioinformatics.",
+                "Drug Target Identification — Explore how bioinformatics supports drug discovery through target identification and validation.",
+                "Phylogenetics & Evolutionary Analysis — Understand evolutionary relationships through computational methods.",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm">
+                  <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          <Reveal delay={0.15}>
+            <h3 className="mt-8 font-display text-xl text-foreground">Research Journey</h3>
+            <div className="mt-4 rounded-xl border border-border bg-surface-elevated/60 p-5">
+              <p className="text-sm font-medium text-foreground">
+                Problem Identification → Literature Review → Data Acquisition → Computational Analysis → Hypothesis Testing → Result Interpretation → Documentation → Final Research Output
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.2}>
+            <h3 className="mt-8 font-display text-xl text-foreground">30-Day Project Structure</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {[
+                { week: "Week 1", title: "Foundations of Bioinformatics", desc: "Introduction to bioinformatics, biological databases, sequence formats, computational tools, and identification of meaningful research problems." },
+                { week: "Week 2", title: "Data Analysis & Computational Methods", desc: "Explore sequence alignment, genomic analysis, structural bioinformatics, data processing pipelines, and scientific literature research." },
+                { week: "Week 3", title: "Advanced Analysis & Applications", desc: "Apply bioinformatics tools to real datasets, analyze results, explore drug discovery and precision medicine applications." },
+                { week: "Week 4", title: "From Research to Innovation", desc: "Develop the final research direction through evidence analysis, technical feasibility, result validation, and scientific communication." },
+              ].map((w) => (
+                <div key={w.week} className="rounded-xl border border-border/70 bg-background/60 p-4 transition hover:border-border-strong hover:shadow-md">
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{w.week}</span>
+                  <h4 className="mt-1 font-display text-lg text-foreground">{w.title}</h4>
+                  <p className="mt-1.5 text-sm text-muted-foreground">{w.desc}</p>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.25}>
+            <h3 className="mt-8 font-display text-xl text-foreground">Skills You Will Develop</h3>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {[
+                "Bioinformatics", "Genomics", "Computational Biology", "Sequence Analysis", "Scientific Research",
+                "Data Analysis", "Protein Structure", "Database Navigation", "Pipeline Design",
+                "Statistical Methods", "Visualization", "Scientific Communication",
+              ].map((s, i, arr) => (
+                <span key={s} className="text-sm font-medium text-foreground">
+                  {s}{i < arr.length - 1 && <span className="mx-1 text-muted-foreground">•</span>}
+                </span>
+              ))}
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.3}>
+            <h3 className="mt-8 font-display text-xl text-foreground">Who Is This For?</h3>
+            <p className="mt-3 text-sm font-medium text-foreground">Designed for:</p>
+            <ul className="mt-3 space-y-2">
+              {[
+                "Bioinformatics students",
+                "Biotechnology students",
+                "Computer Science students interested in biology",
+                "Life Science students",
+                "Genetics & Genomics students",
+                "Biomedical Engineering students",
+                "Data Science students interested in biology",
+                "Students interested in computational research",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-sm">
+                  <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${theme.accent}`} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-sm">No advanced prior expertise in bioinformatics is required. The project is structured to progressively introduce the scientific concepts, computational methods, and research methodology.</p>
+          </Reveal>
+
+          <Reveal delay={0.35}>
+            <h3 className="mt-8 font-display text-xl text-foreground">The Project Outcome</h3>
+            <p className="mt-3">By the end of 30 days, participants will move beyond theoretical understanding of bioinformatics.</p>
+            <p className="mt-3">They will develop the ability to formulate a research question, navigate biological databases, apply computational tools to real datasets, analyze and interpret results, and communicate scientific findings.</p>
+          </Reveal>
+
+          <Reveal delay={0.4}>
+            <div className="mt-8 rounded-xl border border-border bg-surface-elevated/60 p-5 text-center">
+              <p className="text-sm font-medium italic text-foreground">&laquo;Explore the data. Compute the answer. Research the unknown. Build the future.&raquo;</p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.45}>
+            <h3 className="mt-8 font-display text-xl text-foreground">Project Positioning</h3>
+            <p className="mt-3">Bioinformatics is a 30-day guided research project at the intersection of Computer Science, Genomics, Molecular Biology, and Data Analysis — designed to help participants experience how computational approaches are applied to modern biological research.</p>
+          </Reveal>
+
+          <Reveal delay={0.5}>
+            <div className="mt-8 rounded-xl border border-border bg-gradient-to-br from-background to-surface-elevated p-6 text-center">
+              <p className="font-display text-lg font-semibold text-foreground">
+                Explore. Analyze. Compute. Discover.
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SHARED SECTIONS — Applied to all courses
    ───────────────────────────────────────────── */
 
 const WHY_JOIN_CARDS = [
@@ -724,6 +861,7 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
   };
   const theme = themeColors[content.theme ?? "researcher"];
   const isAI = course.slug === "ai-in-drug-discovery";
+  const isBioinformatics = course.slug === "bioinformatics";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -732,7 +870,7 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
       <CourseHero course={course} content={content} />
 
       {/* About Program — Course-Specific */}
-      {isAI ? <AboutProgramAI theme={theme} /> : <AboutProgramBioPlastic theme={theme} />}
+      {isAI ? <AboutProgramAI theme={theme} /> : isBioinformatics ? <AboutProgramBioinformatics theme={theme} /> : <AboutProgramBioPlastic theme={theme} />}
 
       {/* ── Section 1: More Than an Internship ── */}
       <section className="border-b border-border/60 bg-surface/30 py-14 sm:py-20">
