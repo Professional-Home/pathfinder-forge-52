@@ -1,98 +1,141 @@
-# Frontend Implementation Summary — BioPlastic Content Update, Hero Cleanup & Refund Policy
+# ChatGPT Frontend Summary — Micrylis
 
-## Branch
-
-```
-feature/bioplastic-content-update
-```
-
-Based on: `feature/ai-drug-discovery-content`
+> **Last updated**: August 18, 2026
+> **Branch**: `feature/bioinformatics-course` (based on `feature/bioplastic-content-update`)
 
 ---
 
-## What Was Changed
+## New Course: Bioinformatics
 
-### BioPlastic Innovation — About Program Content
+### What was added
 
-**All BioPlastic Innovation content sections updated with exact user-provided text.**
+A third course, **Bioinformatics**, was added to the Micrylis frontend. It follows the exact same architecture, components, and visual structure as the two existing courses:
 
-- Introduction: New science/engineering/sustainability/commercialization description
-- What You Will Explore: 10 detailed research areas
-- Research Journey: 10-step structured workflow
-- 30-Day Project Structure: Updated all 4 weeks
-- Project Deliverables: 7 numbered deliverables in card layout
-- Skills You Will Develop: 14 skills in dot-separated inline format
-- Who Is This For: 10 specific student categories with closing paragraph
-- The Project Outcome: Participant-focused description
-- From Material Science: Quoted motto
-- Project Positioning: Full program description
+1. BioPlastic Innovation
+2. AI in Drug Discovery
+3. **Bioinformatics** *(new)*
 
-### Hero Section Cleanup (Both Courses)
+### Where it appears
 
-- Removed unwanted introductory paragraphs between course title and Duration
-- Hero conditionally renders subtitle/description only when non-empty
-- Title, Duration, Mode, Program Fee preserved
+- **Public projects listing** (`/projects`) — course card with Learn More + Apply
+- **Course detail page** (`/projects/bioinformatics`) — full detail page using `CourseDetailTemplate`
+- **User dashboard** — course card in enrolled/available courses
+- **Admin panel** — course list, course cards, admin dashboard
 
-### Footer Changes
+### About Program content
 
-- **Removed**: Return Policy link from footer
-- **Preserved**: Privacy Policy, Refund Policy, Disclaimer
+The "About the Program" section for Bioinformatics uses **temporary/placeholder content**. The user will provide final content later. The content is located in:
 
-### Refund Policy Page
+- `src/components/courses/CourseDetailTemplate.tsx` → `AboutProgramBioinformatics` component
 
-- **Removed**: Old refund policy content (mentorship sessions, course subscriptions, etc.)
-- **Added**: Complete new refund policy for Micrylis Biotech Student Research Project
-- **Content**: Exact user-provided legal content preserved without modification
-- **Section numbering**: 1, 1.1, 1.2, 2, 3, 4, 6, 7, 8 (intentionally no Section 5)
-- **Fees**: ₹1,499 domestic / $49.99 international
-- **Contact**: micrylisbiotech@gmail.com / +91 88490 05635
-- **UI**: Uses existing LegalLayout and LegalSection components
+All other sections (Benefits, Curriculum, Research Journey, Capstone, Outcomes, Who Can Join, Program Details) use the existing **shared content** that applies to all courses.
+
+### Temporary image
+
+Bioinformatics currently **reuses the AI Drug Discovery images** as temporary placeholders:
+
+- Thumbnail: `/Photos/ai-drug-discovery-card.jpeg`
+- Hero: `/Photos/ai-drug-discovery-hero.jpeg`
+
+**To replace the image later**, update these files:
+
+- `src/lib/project-images.ts` → `bioinformatics.thumbnail` and `bioinformatics.cover`
+- `src/lib/courses/store.ts` → `getDefaultCourseImages()` function, bioinformatics case
+- `src/lib/courses/dashboard-courses.ts` → `getDashboardCourseImage()` function, bioinformatics case
+- `src/routes/dashboard/index.tsx` → inline image detection
+- `src/routes/dashboard/courses.tsx` → inline image detection
+- `src/routes/admin/courses/index.tsx` → inline image detection
+- `src/routes/admin/dashboard.tsx` → inline image detection
+
+Or, once the Supabase record has valid image URLs in `thumbnail` and `cover_image` columns, the images will be used from the database automatically.
 
 ---
 
-## Files Modified
+## FAQ Behavior Change
 
-| File | Change Type |
-|------|-------------|
-| `src/components/courses/CourseDetailTemplate.tsx` | BioPlastic content + hero cleanup |
-| `src/components/site-footer.tsx` | Removed Return Policy link |
-| `src/routes/refund-policy.tsx` | Complete refund policy replacement |
-| `CHATGPT_FRONTEND_SUMMARY.md` | Updated with all changes |
+- All FAQ items on the homepage **start closed** (no item auto-opens)
+- FAQ items open **only on click**
+- Clicking an open item **closes it**
+- **Hover does NOT open** FAQ items (previous hover behavior was removed)
+- Works consistently on both desktop and mobile
 
-## Components Modified
+### Files changed
 
-- `AboutProgramBioPlastic` — All content updated
-- `CourseHero` — Conditional rendering of subtitle/description
-- `CourseDetailTemplate` — Hero fallback content cleared
-- `SiteFooter` — Removed Return Policy from COMPANY_LINKS
-- `RefundPolicy` — Complete page content replacement
+- `src/routes/index.tsx` → `WhyMicrylis` component
 
-## Testing Results
+---
 
-- ✅ TypeScript (`npx tsc --noEmit`) — Exit code 0
-- ✅ Production build (`npm run build`) — Successful
-- ✅ BioPlastic content validated
-- ✅ Hero cleanup verified
-- ✅ Return Policy removed from footer
-- ✅ Refund Policy page renders correctly
+## About Us Page Updates
 
-## Backend Requirements
+### Mentor and Partner Relations
 
-**NONE.** Frontend-only changes.
+- Section renamed from "Mentor Applications" to **"Mentor & Partner Relations"**
+- Email changed from `mentors@micrylis.com` to **`micrylisbiotech@gmail.com`**
 
-## Commit History
+### Social Channels
+
+Added a new **Social Channels** section with the following order:
+
+1. **LinkedIn** — https://www.linkedin.com/in/micrylis-biotech-a4a4063aa/
+2. **Instagram** — https://www.instagram.com/micrylis?igsh=cjR4ZGR1am1ubmI0
+3. **YouTube** — https://www.youtube.com/@micrylisbiotech
+
+URLs were taken from the existing footer configuration.
+
+### Files changed
+
+- `src/routes/about.tsx`
+
+---
+
+## Backend Status
+
+**No backend/Supabase changes were made.**
+
+- No database tables modified
+- No SQL executed
+- No RLS policies changed
+- No edge functions created
+- No storage configuration changed
+
+Backend requirements for the Bioinformatics course are documented in:
+
+- **`BACKEND_BIOINFORMATICS_HANDOVER.md`** (project root)
+
+---
+
+## Git History
+
+### Branch
+
+`feature/bioinformatics-course` (created from `feature/bioplastic-content-update`)
+
+### Commits
 
 | # | Hash | Message |
 |---|------|---------|
-| 1 | `4c8ff85` | `feat(bioplastic): update research introduction, exploration, and journey` |
-| 2 | `ca01249` | `feat(bioplastic): update project structure and deliverables` |
-| 3 | `f993aad` | `feat(bioplastic): update skills and eligibility sections` |
-| 4 | `31e42ea` | `feat(bioplastic): update project outcome and positioning` |
-| 5 | `1e5d131` | `fix(courses): remove unwanted introductory paragraphs from hero section` |
-| 6 | `8126949` | `docs: update CHATGPT_FRONTEND_SUMMARY for bioplastic content update` |
-| 7 | `3582db8` | `fix(footer): remove return policy link` |
-| 8 | `747e2dd` | `feat(legal): replace refund policy with updated content` |
+| 1 | `198139a` | `feat(courses): add bioinformatics course structure` |
+| 2 | `85aa605` | `feat(courses): add bioinformatics program content` |
+| 3 | `b9a2db6` | `feat(admin): add bioinformatics course support` |
+| 4 | `0db1910` | `fix(faq): require click to open faq items` |
+| 5 | `32881c9` | `fix(about): update mentor contact and social channels` |
+| 6 | `c924034` | `docs(backend): add bioinformatics backend handover` |
+| 7 | *(this commit)* | `docs: update frontend implementation summary` |
 
-## Remaining Issues
+### Files Created
 
-- None identified
+- `BACKEND_BIOINFORMATICS_HANDOVER.md`
+- `CHATGPT_FRONTEND_SUMMARY.md`
+
+### Files Modified
+
+- `src/lib/project-images.ts`
+- `src/lib/courses/store.ts`
+- `src/lib/courses/dashboard-courses.ts`
+- `src/components/courses/CourseDetailTemplate.tsx`
+- `src/routes/dashboard/index.tsx`
+- `src/routes/dashboard/courses.tsx`
+- `src/routes/admin/courses/index.tsx`
+- `src/routes/admin/dashboard.tsx`
+- `src/routes/index.tsx`
+- `src/routes/about.tsx`
