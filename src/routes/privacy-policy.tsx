@@ -419,7 +419,7 @@ function PrivacyPolicy() {
         </p>
         <div className="mt-3 p-4 rounded-lg bg-muted/40 border border-border/60 space-y-1 text-sm">
           <p className="font-semibold text-foreground">Micrylis Biotech</p>
-          <p>Email: <a href="mailto:privacy@micrylis.com" className="text-primary hover:underline">privacy@micrylis.com</a></p>
+          <p>Email: <a href="mailto:contact@micrylisbiotech.com" className="text-primary hover:underline">contact@micrylisbiotech.com</a></p>
           <p>Website: <a href="https://micrylis.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://micrylis.com</a></p>
           <p>Privacy Contact: Privacy & Data Protection Officer</p>
         </div>

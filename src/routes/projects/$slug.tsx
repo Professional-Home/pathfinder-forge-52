@@ -1,16 +1,12 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { CourseDetailTemplate } from "@/components/courses/CourseDetailTemplate";
-import { fetchCourseBySlug, getCourseBySlug } from "@/lib/courses/store";
+import { fetchCourseBySlug } from "@/lib/courses/store";
 
 export const Route = createFileRoute("/projects/$slug")({
   component: ProjectDetailPage,
   loader: async ({ params }) => {
-    // Try localStorage cache first for instant navigation
-    let project = getCourseBySlug(params.slug);
-    if (!project) {
-      // Fetch just this one course by slug — NOT all courses
-      project = (await fetchCourseBySlug(params.slug)) ?? undefined;
-    }
+    // Fetch fresh course data by slug directly from Supabase (falls back to store if needed)
+    const project = (await fetchCourseBySlug(params.slug)) ?? undefined;
     if (!project || project.status !== "published") {
       throw notFound();
     }

@@ -62,3 +62,37 @@ CREATE INDEX IF NOT EXISTS idx_courses_featured ON public.courses (featured);
 CREATE INDEX IF NOT EXISTS idx_courses_status_created ON public.courses (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_courses_status_updated ON public.courses (status, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_courses_category_status ON public.courses (category, status);
+
+-- ====================================================================
+-- 6. BLOGS TABLE SCHEMA
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.blogs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    excerpt TEXT,
+    content TEXT NOT NULL,
+    cover_image TEXT,
+    category TEXT DEFAULT 'Biotechnology',
+    author TEXT DEFAULT 'Micrylis Biotech Team',
+    read_time TEXT DEFAULT '5 min read',
+    status TEXT DEFAULT 'published',
+    featured BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.blogs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read blogs" ON public.blogs;
+CREATE POLICY "Allow public read blogs" ON public.blogs FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert blogs" ON public.blogs;
+CREATE POLICY "Allow public insert blogs" ON public.blogs FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update blogs" ON public.blogs;
+CREATE POLICY "Allow public update blogs" ON public.blogs FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public delete blogs" ON public.blogs;
+CREATE POLICY "Allow public delete blogs" ON public.blogs FOR DELETE USING (true);
+

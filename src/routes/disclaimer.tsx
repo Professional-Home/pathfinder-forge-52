@@ -44,7 +44,7 @@ function Disclaimer() {
 
       <LegalSection title="Contact Us">
         <p>
-          If you require any more information or have any questions about our site's disclaimer, please feel free to contact us by email at legal@micrylis.com.
+          If you require any more information or have any questions about our site's disclaimer, please feel free to contact us by email at contact@micrylisbiotech.com.
         </p>
       </LegalSection>
     </LegalLayout>

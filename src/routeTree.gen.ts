@@ -25,6 +25,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardPaymentsRouteImport } from './routes/dashboard/payments'
@@ -33,6 +34,7 @@ import { Route as DashboardGuidanceRouteImport } from './routes/dashboard/guidan
 import { Route as DashboardCoursesRouteImport } from './routes/dashboard/courses'
 import { Route as DashboardCertificatesRouteImport } from './routes/dashboard/certificates'
 import { Route as CoursesSlugRouteImport } from './routes/courses/$slug'
+import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
@@ -41,6 +43,7 @@ import { Route as AdminGuidanceRouteImport } from './routes/admin/guidance'
 import { Route as AdminEnrollmentsRouteImport } from './routes/admin/enrollments'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin/courses'
+import { Route as AdminBlogsRouteImport } from './routes/admin/blogs'
 import { Route as AdminCoursesIndexRouteImport } from './routes/admin/courses/index'
 import { Route as DashboardEnrollCourseIdRouteImport } from './routes/dashboard/enroll.$courseId'
 import { Route as DashboardBookMentorIdRouteImport } from './routes/dashboard/book.$mentorId'
@@ -128,6 +131,11 @@ const CoursesIndexRoute = CoursesIndexRouteImport.update({
   path: '/courses/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BlogRoute,
+} as any)
 const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
   id: '/projects/$slug',
   path: '/projects/$slug',
@@ -167,6 +175,11 @@ const CoursesSlugRoute = CoursesSlugRouteImport.update({
   id: '/courses/$slug',
   path: '/courses/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogRoute,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
@@ -208,6 +221,11 @@ const AdminCoursesRoute = AdminCoursesRouteImport.update({
   path: '/courses',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBlogsRoute = AdminBlogsRouteImport.update({
+  id: '/blogs',
+  path: '/blogs',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCoursesIndexRoute = AdminCoursesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -245,7 +263,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
@@ -255,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/admin/blogs': typeof AdminBlogsRoute
   '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
@@ -263,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -271,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/blog/': typeof BlogIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/projects/': typeof ProjectsIndexRoute
@@ -285,7 +306,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/blog': typeof BlogRoute
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
   '/login': typeof LoginRoute
@@ -294,6 +314,7 @@ export interface FileRoutesByTo {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/admin/blogs': typeof AdminBlogsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/guidance': typeof AdminGuidanceRoute
@@ -301,6 +322,7 @@ export interface FileRoutesByTo {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -309,6 +331,7 @@ export interface FileRoutesByTo {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/blog': typeof BlogIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/projects': typeof ProjectsIndexRoute
@@ -324,7 +347,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/blog': typeof BlogRoute
+  '/blog': typeof BlogRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
@@ -334,6 +357,7 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/admin/blogs': typeof AdminBlogsRoute
   '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
@@ -342,6 +366,7 @@ export interface FileRoutesById {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -350,6 +375,7 @@ export interface FileRoutesById {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/blog/': typeof BlogIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/projects/': typeof ProjectsIndexRoute
@@ -376,6 +402,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/admin/blogs'
     | '/admin/courses'
     | '/admin/dashboard'
     | '/admin/enrollments'
@@ -384,6 +411,7 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/users'
     | '/auth/callback'
+    | '/blog/$slug'
     | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -392,6 +420,7 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/projects/$slug'
+    | '/blog/'
     | '/courses/'
     | '/dashboard/'
     | '/projects/'
@@ -406,7 +435,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
-    | '/blog'
     | '/disclaimer'
     | '/employees'
     | '/login'
@@ -415,6 +443,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/admin/blogs'
     | '/admin/dashboard'
     | '/admin/enrollments'
     | '/admin/guidance'
@@ -422,6 +451,7 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/users'
     | '/auth/callback'
+    | '/blog/$slug'
     | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -430,6 +460,7 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/projects/$slug'
+    | '/blog'
     | '/courses'
     | '/dashboard'
     | '/projects'
@@ -454,6 +485,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/admin/blogs'
     | '/admin/courses'
     | '/admin/dashboard'
     | '/admin/enrollments'
@@ -462,6 +494,7 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/users'
     | '/auth/callback'
+    | '/blog/$slug'
     | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -470,6 +503,7 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/projects/$slug'
+    | '/blog/'
     | '/courses/'
     | '/dashboard/'
     | '/projects/'
@@ -485,7 +519,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
-  BlogRoute: typeof BlogRoute
+  BlogRoute: typeof BlogRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
   DisclaimerRoute: typeof DisclaimerRoute
   EmployeesRoute: typeof EmployeesRoute
@@ -616,6 +650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/projects/$slug': {
       id: '/projects/$slug'
       path: '/projects/$slug'
@@ -672,6 +713,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
+      parentRoute: typeof BlogRoute
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
@@ -726,6 +774,13 @@ declare module '@tanstack/react-router' {
       path: '/courses'
       fullPath: '/admin/courses'
       preLoaderRoute: typeof AdminCoursesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/blogs': {
+      id: '/admin/blogs'
+      path: '/blogs'
+      fullPath: '/admin/blogs'
+      preLoaderRoute: typeof AdminBlogsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/courses/': {
@@ -792,6 +847,7 @@ const AdminCoursesRouteWithChildren = AdminCoursesRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminBlogsRoute: typeof AdminBlogsRoute
   AdminCoursesRoute: typeof AdminCoursesRouteWithChildren
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminEnrollmentsRoute: typeof AdminEnrollmentsRoute
@@ -802,6 +858,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBlogsRoute: AdminBlogsRoute,
   AdminCoursesRoute: AdminCoursesRouteWithChildren,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminEnrollmentsRoute: AdminEnrollmentsRoute,
@@ -812,6 +869,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface BlogRouteChildren {
+  BlogSlugRoute: typeof BlogSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
+}
+
+const BlogRouteChildren: BlogRouteChildren = {
+  BlogSlugRoute: BlogSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
+}
+
+const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface DashboardRouteChildren {
   DashboardCertificatesRoute: typeof DashboardCertificatesRoute
@@ -845,7 +914,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
-  BlogRoute: BlogRoute,
+  BlogRoute: BlogRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
   DisclaimerRoute: DisclaimerRoute,
   EmployeesRoute: EmployeesRoute,
