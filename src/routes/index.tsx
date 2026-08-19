@@ -509,6 +509,22 @@ function GrowthPath() {
 }
 
 function HowItWorks() {
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const isLoggedIn = !!session;
+
   return (
     <section id="how" className="scroll-mt-24 border-b border-border/60 bg-surface/30">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-24 md:py-32">
@@ -564,7 +580,7 @@ function HowItWorks() {
             icon={LayoutDashboard}
             chipTitle="Execution Tracking"
             chipSubtitle="Kanban, calendar, and AI-powered progress monitoring."
-            button={{ text: "View Progress", href: "/signup" }}
+            button={{ text: "View Progress", href: isLoggedIn ? "/dashboard" : "/login" }}
             backgroundVisual={<ExecutionVisual />}
             imageSrc="/Execution Tracking.jpeg"
           />

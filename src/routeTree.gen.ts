@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WebinarsRouteImport } from './routes/webinars'
+import { Route as WebinarRouteImport } from './routes/webinar'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReturnPolicyRouteImport } from './routes/return-policy'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
@@ -51,6 +53,16 @@ import { Route as AdminCoursesNewRouteImport } from './routes/admin/courses/new'
 import { Route as AdminCoursesCourseIdPreviewRouteImport } from './routes/admin/courses/$courseId.preview'
 import { Route as AdminCoursesCourseIdEditRouteImport } from './routes/admin/courses/$courseId.edit'
 
+const WebinarsRoute = WebinarsRouteImport.update({
+  id: '/webinars',
+  path: '/webinars',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WebinarRoute = WebinarRouteImport.update({
+  id: '/webinar',
+  path: '/webinar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -273,6 +285,8 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/webinar': typeof WebinarRoute
+  '/webinars': typeof WebinarsRoute
   '/admin/blogs': typeof AdminBlogsRoute
   '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -314,6 +328,8 @@ export interface FileRoutesByTo {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/webinar': typeof WebinarRoute
+  '/webinars': typeof WebinarsRoute
   '/admin/blogs': typeof AdminBlogsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/enrollments': typeof AdminEnrollmentsRoute
@@ -357,6 +373,8 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/webinar': typeof WebinarRoute
+  '/webinars': typeof WebinarsRoute
   '/admin/blogs': typeof AdminBlogsRoute
   '/admin/courses': typeof AdminCoursesRouteWithChildren
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -402,6 +420,8 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/webinar'
+    | '/webinars'
     | '/admin/blogs'
     | '/admin/courses'
     | '/admin/dashboard'
@@ -443,6 +463,8 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/webinar'
+    | '/webinars'
     | '/admin/blogs'
     | '/admin/dashboard'
     | '/admin/enrollments'
@@ -485,6 +507,8 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/return-policy'
     | '/signup'
+    | '/webinar'
+    | '/webinars'
     | '/admin/blogs'
     | '/admin/courses'
     | '/admin/dashboard'
@@ -529,6 +553,8 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   ReturnPolicyRoute: typeof ReturnPolicyRoute
   SignupRoute: typeof SignupRoute
+  WebinarRoute: typeof WebinarRoute
+  WebinarsRoute: typeof WebinarsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
   ProjectsSlugRoute: typeof ProjectsSlugRoute
@@ -538,6 +564,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/webinars': {
+      id: '/webinars'
+      path: '/webinars'
+      fullPath: '/webinars'
+      preLoaderRoute: typeof WebinarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/webinar': {
+      id: '/webinar'
+      path: '/webinar'
+      fullPath: '/webinar'
+      preLoaderRoute: typeof WebinarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -924,6 +964,8 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   ReturnPolicyRoute: ReturnPolicyRoute,
   SignupRoute: SignupRoute,
+  WebinarRoute: WebinarRoute,
+  WebinarsRoute: WebinarsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   CoursesSlugRoute: CoursesSlugRoute,
   ProjectsSlugRoute: ProjectsSlugRoute,
