@@ -132,7 +132,6 @@ function CourseHero({ course, content }: { course: CourseRecord; content: Course
             {[
               { icon: Clock, label: "Duration", value: content.hero.duration },
               { icon: Globe, label: "Mode", value: content.hero.mode },
-              { icon: IndianRupee, label: "Program Fee", value: content.hero.programFee },
             ].map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
@@ -145,6 +144,16 @@ function CourseHero({ course, content }: { course: CourseRecord; content: Course
                 <div className="mt-1 text-sm font-semibold text-foreground">{value}</div>
               </div>
             ))}
+            <div className="rounded-xl border border-border/60 bg-background/70 px-4 py-3 backdrop-blur-sm">
+              <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                <IndianRupee className="h-3 w-3" />
+                Program Fee
+              </div>
+              <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <span className="line-through text-muted-foreground">₹1999</span>
+                <span>₹1499</span>
+              </div>
+            </div>
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
