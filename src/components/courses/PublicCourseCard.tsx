@@ -81,9 +81,10 @@ function PublicCourseCardComponent({
             <Globe className="h-3 w-3" />
             {course.mode}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/80 px-2 py-0.5 font-medium text-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-2 py-0.5 font-medium text-foreground">
             <IndianRupee className="h-3 w-3" />
-            {course.programFee.replace("₹", "")}
+            <span className="line-through text-muted-foreground">1999</span>
+            <span>1499</span>
           </span>
         </div>
 

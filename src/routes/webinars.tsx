@@ -152,9 +152,8 @@ function WebinarsPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="relative rounded-2xl border border-border/80 bg-surface-elevated/90 p-6 shadow-xl backdrop-blur-md sm:p-8"
               >
-                <div className="absolute -right-3 -top-3 rounded-full bg-student px-3 py-1 text-[11px] font-semibold text-white shadow-md">
-                  FREE WEBINAR
-                </div>
+
+
 
                 <div className="flex items-center gap-3">
                   <div className="grid h-12 w-12 place-items-center rounded-xl bg-student/10 text-student">
