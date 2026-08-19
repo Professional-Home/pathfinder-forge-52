@@ -380,6 +380,15 @@ function Hero() {
                   </motion.div>
                 </Link>
               )}
+              <Link to="/webinar" className="w-full sm:w-auto">
+                <motion.div
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border-strong bg-surface-elevated/80 backdrop-blur-sm px-5 py-3.5 text-sm font-semibold text-foreground transition-all duration-300 hover:border-foreground/40 hover:bg-accent hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] sm:w-auto sm:py-3"
+                >
+                  Webinar
+                </motion.div>
+              </Link>
             </motion.div>
 
             {/* Mobile only: Process flow below buttons */}
