@@ -25,7 +25,7 @@ function PublicCourseCardComponent({
   const defaultImage = courseId.includes("drug")
     ? "/Photos/ai-drug-discovery-card.jpeg"
     : courseId.includes("bioinformatics")
-      ? "/Photos/ai-drug-discovery-card.jpeg"
+      ? "/Photos/bio-cover.jpeg"
       : "/Photos/bioplastic-card.jpeg";
 
   const rawThumbnail = course.thumbnail || defaultImage;

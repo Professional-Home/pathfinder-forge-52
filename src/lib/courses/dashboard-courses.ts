@@ -16,7 +16,7 @@ export interface DashboardCourse {
 function getDashboardCourseImage(identifier: string): string {
   const lower = (identifier || "").toLowerCase();
   if (lower.includes("drug")) return "/Photos/ai-drug-discovery-card.jpeg";
-  if (lower.includes("bioinformatics")) return "/Photos/ai-drug-discovery-card.jpeg"; // Temporary
+  if (lower.includes("bioinformatics")) return "/Photos/bio-cover.jpeg";
   return "/Photos/bioplastic-card.jpeg";
 }
 
@@ -43,7 +43,7 @@ const BIOINFORMATICS_DASHBOARD_SEED: DashboardCourse = {
   description: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
   category: "Biotechnology",
   duration: "30 Days",
-  thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
+  thumbnail: "/Photos/bio-cover.jpeg",
   applyUrl: "",
   status: "published",
 };
