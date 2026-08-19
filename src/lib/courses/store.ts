@@ -73,8 +73,7 @@ function getDefaultCourseImages(identifier: string): { thumbnail: string; cover:
     return { thumbnail: "/Photos/ai-drug-discovery-card.jpeg", cover: "/Photos/ai-drug-discovery-hero.jpeg" };
   }
   if (lower.includes("bioinformatics")) {
-    // Temporary: reusing AI drug discovery images until dedicated bioinformatics images are provided
-    return { thumbnail: "/Photos/ai-drug-discovery-card.jpeg", cover: "/Photos/ai-drug-discovery-hero.jpeg" };
+    return { thumbnail: "/Photos/bio-cover.jpeg", cover: "/Photos/bio-inside.jpeg" };
   }
   return { thumbnail: "/Photos/bioplastic-card.jpeg", cover: "/Photos/bioplastic-hero.jpeg" };
 }
@@ -85,7 +84,7 @@ const BIOINFORMATICS_LISTING_SEED: CourseListingItem = {
   slug: "bioinformatics",
   name: "Bioinformatics",
   shortDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
-  thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
+  thumbnail: "/Photos/bio-cover.jpeg",
   category: "Biotechnology",
   duration: "30 Days",
   mode: "Online",
@@ -103,8 +102,8 @@ const BIOINFORMATICS_FULL_SEED: CourseRecord = {
   name: "Bioinformatics",
   shortDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
   fullDescription: "An AI-integrated bioinformatics platform project combining bioinformatics, artificial intelligence, genomics, and biomarker discovery.",
-  thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
-  coverImage: "/Photos/ai-drug-discovery-hero.jpeg",
+  thumbnail: "/Photos/bio-cover.jpeg",
+  coverImage: "/Photos/bio-inside.jpeg",
   duration: "30 Days",
   mode: "Online",
   programFee: "₹1999",

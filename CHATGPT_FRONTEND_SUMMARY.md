@@ -115,12 +115,25 @@ Backend requirements documented in: **`BACKEND_BIOINFORMATICS_HANDOVER.md`**
 ### Files Modified
 
 - `src/lib/courses/store.ts` — bioinformatics seed, merge logic, fallback
+- `src/lib/courses/dashboard-courses.ts` — bioinformatics dashboard/admin seed
 - `src/components/courses/CourseDetailTemplate.tsx` — exact About Program content
 - `src/components/courses/PublicCourseCard.tsx` — 3-course image detection
 - `src/routes/projects/index.tsx` — 3-col grid, webinar section
 - `src/routes/about.tsx` — email + social order (via merge resolution)
+- `src/routes/index.tsx` — Webinar CTA button in hero
 
 ### Build Status
 
 - TypeScript: ✅ Pass
-- Build: Pending final verification
+- Build: ✅ Pass
+
+---
+
+## 8. Homepage Webinar CTA — Added
+
+- **Webinar** button added beside "Join the Research Community" / "View Dashboard" in the homepage hero
+- Uses the same CTA styling as the existing buttons
+- Navigates to `/webinar` which redirects to `/webinars` (route from main)
+- Existing Projects page webinar section preserved
+- No backend changes made
+- Works on desktop, tablet, mobile

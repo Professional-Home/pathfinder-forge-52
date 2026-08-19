@@ -104,8 +104,9 @@ function ProjectsListingPage() {
         </div>
       </section>
 
-      {/* ── Webinar Section ── */}
+      {/* ── Webinar Section (commented out) ──
       <BioinformaticsWebinar />
+      */}
 
       <SiteFooter />
     </div>
