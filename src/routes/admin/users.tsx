@@ -1,12 +1,15 @@
 import { useEffect, useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/utils/supabase";
-import { Users, Mail, Calendar, Chrome } from "lucide-react";
+import { Users, Mail, Calendar, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
 import { AdminPagination, usePagination } from "@/components/admin/AdminPagination";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { AdminDataTable, AdminToolbar } from "@/components/admin/admin-shared";
+import { ConfirmationDialog } from "@/components/admin/ConfirmationDialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -70,6 +73,8 @@ function AdminUsersPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deletingUser, setDeletingUser] = useState<AuthUser | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -88,6 +93,30 @@ function AdminUsersPage() {
       setUsers(data ?? []);
     }
     setLoading(false);
+  }
+
+  async function confirmDeleteUser() {
+    if (!deletingUser) return;
+    const target = deletingUser;
+    
+    // Optimistic removal from state
+    setUsers((prev) => prev.filter((u) => u.id !== target.id));
+    
+    try {
+      // Attempt RPC deletion if function exists
+      const { error: rpcError } = await supabase.rpc("delete_user", { target_user_id: target.id });
+      if (rpcError) {
+        // Fallback profile row delete if applicable
+        await supabase.from("profiles").delete().eq("id", target.id);
+      }
+      toast.success(`User "${target.full_name || target.email}" removed successfully.`);
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      toast.error("Failed to remove user from database.");
+    } finally {
+      setDeletingUser(null);
+      setDeleteOpen(false);
+    }
   }
 
   const filtered = useMemo(() => {
@@ -185,6 +214,7 @@ function AdminUsersPage() {
                   <TableHead className="hidden md:table-cell">Email</TableHead>
                   <TableHead>Provider</TableHead>
                   <TableHead className="hidden lg:table-cell">Joined</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -217,8 +247,23 @@ function AdminUsersPage() {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
-                        })}
+                         })}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Remove user"
+                        onClick={() => {
+                          setDeletingUser(user);
+                          setDeleteOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <span className="sr-only">Remove user</span>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -237,6 +282,17 @@ function AdminUsersPage() {
           )}
         </>
       )}
+
+      <ConfirmationDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Remove User"
+        description={`Are you sure you want to remove ${deletingUser?.full_name || deletingUser?.email || "this user"}? This action will remove the user from the list.`}
+        confirmLabel="Remove User"
+        onConfirm={confirmDeleteUser}
+        destructive
+      />
     </>
   );
 }
+

@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { FlaskConical, Sparkles, Video, ChevronDown } from "lucide-react";
+import { FlaskConical, Sparkles, Video, ChevronDown, ExternalLink, ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PublicCourseCard } from "@/components/courses/PublicCourseCard";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCoursesListing, type CourseListingItem } from "@/lib/courses/store";
+import { WEBINAR_REGISTRATION_URL } from "@/lib/webinar-config";
 
 export const Route = createFileRoute("/projects/")({
   component: ProjectsListingPage,
@@ -120,12 +121,21 @@ function BioinformaticsWebinar() {
   return (
     <section className="border-t border-border/60 bg-surface/30 py-10 sm:py-14">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mb-8">
-          <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            <Video className="h-3 w-3 text-student" />
-            Webinar
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              <Video className="h-3 w-3 text-student" />
+              Webinar
+            </div>
+            <h2 className="font-display text-2xl sm:text-3xl">Upcoming Webinar</h2>
           </div>
-          <h2 className="font-display text-2xl sm:text-3xl">Upcoming Webinar</h2>
+          <Link
+            to="/webinars"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-student hover:underline"
+          >
+            <span>View Full Webinar Page</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
 
         <motion.div
@@ -189,21 +199,34 @@ function BioinformaticsWebinar() {
               )}
             </AnimatePresence>
 
-            <button
-              onClick={() => setExpanded((prev) => !prev)}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-accent sm:text-[13px] cursor-pointer"
-            >
-              {expanded ? "Show Less" : "Read More"}
-              <motion.div
-                animate={{ rotate: expanded ? 180 : 0 }}
-                transition={{ duration: 0.25 }}
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <a
+                href={WEBINAR_REGISTRATION_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2 text-xs sm:text-sm font-semibold text-background transition hover:opacity-90"
               >
-                <ChevronDown className="h-3.5 w-3.5" />
-              </motion.div>
-            </button>
+                <span>Register Now</span>
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+
+              <button
+                onClick={() => setExpanded((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground transition hover:bg-accent sm:text-[13px] cursor-pointer"
+              >
+                {expanded ? "Show Less" : "Read Details"}
+                <motion.div
+                  animate={{ rotate: expanded ? 180 : 0 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </motion.div>
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
     </section>
   );
 }
+
