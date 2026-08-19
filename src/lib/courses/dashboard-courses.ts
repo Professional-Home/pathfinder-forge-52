@@ -36,6 +36,18 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
     }));
 }
 
+/** Frontend-only Bioinformatics seed for dashboard/admin */
+const BIOINFORMATICS_DASHBOARD_SEED: DashboardCourse = {
+  id: "bioinformatics-frontend-seed",
+  title: "Bioinformatics",
+  description: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  category: "Biotechnology",
+  duration: "30 Days",
+  thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
+  applyUrl: "",
+  status: "published",
+};
+
 /** Merge Supabase courses with local store courses (dedupe by title or slug). */
 export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[] {
   const normalizedSupabase: DashboardCourse[] = (supabaseCourses || [])
@@ -52,6 +64,13 @@ export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[]
     }));
 
   if (normalizedSupabase.length > 0) {
+    // Merge bioinformatics seed if not already present in Supabase results
+    const hasBioinformatics = normalizedSupabase.some(
+      (c) => c.title.toLowerCase().includes("bioinformatics") || c.id === "bioinformatics-frontend-seed"
+    );
+    if (!hasBioinformatics) {
+      normalizedSupabase.push(BIOINFORMATICS_DASHBOARD_SEED);
+    }
     return normalizedSupabase;
   }
 
