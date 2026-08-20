@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, Clock, Globe, IndianRupee } from "lucide-react";
 import type { CourseListingItem } from "@/lib/courses/store";
+import { getCourseApplyUrl } from "@/lib/courses/data";
 import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 interface PublicCourseCardProps {
@@ -98,7 +99,7 @@ function PublicCourseCardComponent({
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <a
-            href={course.applyUrl || (course.slug === "ai-in-drug-discovery" ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
+            href={getCourseApplyUrl(course)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex flex-1 items-center justify-center rounded-full border border-border px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-accent sm:text-[13px]"

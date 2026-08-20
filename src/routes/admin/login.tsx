@@ -50,11 +50,11 @@ function AdminLoginPage() {
     setError("");
 
     setTimeout(() => {
-      const success = adminLogin(email, password);
-      if (success) {
+      const result = adminLogin(email, password);
+      if (result.success) {
         navigate({ to: "/admin/dashboard" });
       } else {
-        setError("Invalid credentials. Access denied.");
+        setError(result.error || "Invalid credentials. Access denied.");
       }
       setLoading(false);
     }, 600);

@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../utils/supabase";
 import { getCourseById } from "@/lib/courses/store";
+import { getCourseApplyUrl } from "@/lib/courses/data";
 
 export const Route = createFileRoute("/dashboard/enroll/$courseId")({
   component: CourseEnrollmentPage,
@@ -29,12 +30,7 @@ function CourseEnrollmentPage() {
 
   const c = course as any;
   const courseTitle = c?.title || c?.name || c?.course_name || "Research Project";
-  const applyUrl =
-    c?.apply_url ||
-    c?.applyUrl ||
-    (String(courseTitle).toLowerCase().includes("drug")
-      ? "https://forms.gle/83HAsS9PwXmLXiox6"
-      : "https://forms.gle/JiUaRVJYRuFtgtBc6");
+  const applyUrl = getCourseApplyUrl(c || { slug: courseId, title: courseTitle });
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">

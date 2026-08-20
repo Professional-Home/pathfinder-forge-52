@@ -19,3 +19,24 @@ export function getCourseStats(courses: CourseRecord[]) {
     featured: courses.filter((c) => c.featured).length,
   };
 }
+
+export function getCourseApplyUrl(course: {
+  applyUrl?: string;
+  apply_url?: string;
+  slug?: string;
+  name?: string;
+  title?: string;
+}): string {
+  if (course.applyUrl) return course.applyUrl;
+  if (course.apply_url) return course.apply_url;
+
+  const id = (course.slug || course.name || course.title || "").toLowerCase();
+  if (id.includes("bioinformatics")) {
+    return "https://forms.gle/Xuyta8tE1GW47d838";
+  }
+  if (id.includes("drug")) {
+    return "https://forms.gle/83HAsS9PwXmLXiox6";
+  }
+  return "https://forms.gle/JiUaRVJYRuFtgtBc6";
+}
+

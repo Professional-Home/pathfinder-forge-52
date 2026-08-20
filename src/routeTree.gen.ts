@@ -38,6 +38,7 @@ import { Route as DashboardCertificatesRouteImport } from './routes/dashboard/ce
 import { Route as CoursesSlugRouteImport } from './routes/courses/$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AdminWebinarsRouteImport } from './routes/admin/webinars'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
@@ -198,6 +199,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminWebinarsRoute = AdminWebinarsRouteImport.update({
+  id: '/webinars',
+  path: '/webinars',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -383,6 +391,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -430,6 +439,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/mentors'
     | '/admin/users'
+    | '/admin/webinars'
     | '/auth/callback'
     | '/blog/$slug'
     | '/courses/$slug'
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/mentors'
     | '/admin/users'
+    | '/admin/webinars'
     | '/auth/callback'
     | '/blog/$slug'
     | '/courses/$slug'
@@ -517,6 +528,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/admin/mentors'
     | '/admin/users'
+    | '/admin/webinars'
     | '/auth/callback'
     | '/blog/$slug'
     | '/courses/$slug'
@@ -767,6 +779,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/webinars': {
+      id: '/admin/webinars'
+      path: '/webinars'
+      fullPath: '/admin/webinars'
+      preLoaderRoute: typeof AdminWebinarsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -895,6 +914,7 @@ interface AdminRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMentorsRoute: typeof AdminMentorsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminWebinarsRoute: typeof AdminWebinarsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -906,6 +926,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   AdminMentorsRoute: AdminMentorsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminWebinarsRoute: AdminWebinarsRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

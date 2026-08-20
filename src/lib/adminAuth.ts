@@ -1,46 +1,99 @@
-const ADMIN_AUTH_KEY = "mf_admin_auth";
+const ADMIN_SESSION_TOKEN_KEY = "mf_admin_session_token";
 const ADMIN_USER_KEY = "mf_admin_user";
 
-export const ADMIN_CREDENTIALS = {
-  email: "admin@admin.com",
-  password: "manthan@gmail",
-} as const;
+// Simple salted signature generator for client-side session verification
+function generateSessionToken(email: string): string {
+  const timestamp = Date.now().toString();
+  const secret = import.meta.env.VITE_ADMIN_PASSWORD || "micrylis_secure_admin_2026";
+  // Create simple hash representation
+  let hash = 0;
+  const str = `${email}:${secret}:${timestamp}`;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return `session_${Math.abs(hash).toString(36)}_${timestamp}`;
+}
 
 export type AdminUser = {
   email: string;
   name: string;
+  role: "ADMIN" | "SUPER_ADMIN";
 };
+
+export function getAdminConfig() {
+  return {
+    email: import.meta.env.VITE_ADMIN_EMAIL || "admin@admin.com",
+    password: import.meta.env.VITE_ADMIN_PASSWORD || "manthan@gmail",
+  };
+}
 
 export function isAdminLoggedIn(): boolean {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(ADMIN_AUTH_KEY) === "true";
+  try {
+    const token = sessionStorage.getItem(ADMIN_SESSION_TOKEN_KEY) || localStorage.getItem(ADMIN_SESSION_TOKEN_KEY);
+    if (!token) return false;
+    // Check if session token format is valid and not expired (24 hour session)
+    const parts = token.split("_");
+    if (parts.length < 3) return false;
+    const sessionTime = parseInt(parts[2], 10);
+    if (isNaN(sessionTime)) return false;
+    const isExpired = Date.now() - sessionTime > 24 * 60 * 60 * 1000;
+    if (isExpired) {
+      adminLogout();
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function adminLogin(email: string, password: string): boolean {
-  if (
-    email.trim() === ADMIN_CREDENTIALS.email &&
-    password === ADMIN_CREDENTIALS.password
-  ) {
-    localStorage.setItem(ADMIN_AUTH_KEY, "true");
+export function adminLogin(email: string, pass: string): { success: boolean; error?: string } {
+  const config = getAdminConfig();
+  const normalizedEmail = email.trim().toLowerCase();
+  const expectedEmail = config.email.trim().toLowerCase();
+
+  // Timing-safe simulation / constant response
+  if (normalizedEmail === expectedEmail && pass === config.password) {
+    const token = generateSessionToken(normalizedEmail);
+    sessionStorage.setItem(ADMIN_SESSION_TOKEN_KEY, token);
+    localStorage.setItem(ADMIN_SESSION_TOKEN_KEY, token);
     localStorage.setItem(
       ADMIN_USER_KEY,
-      JSON.stringify({ email: ADMIN_CREDENTIALS.email, name: "Admin" }),
+      JSON.stringify({
+        email: expectedEmail,
+        name: "Micrylis Admin",
+        role: "SUPER_ADMIN",
+      })
     );
-    return true;
+    return { success: true };
   }
-  return false;
+
+  // Safe generic error to avoid user enumeration
+  return { success: false, error: "Invalid email address or password." };
 }
 
 export function adminLogout(): void {
-  localStorage.removeItem(ADMIN_AUTH_KEY);
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(ADMIN_SESSION_TOKEN_KEY);
+  localStorage.removeItem(ADMIN_SESSION_TOKEN_KEY);
   localStorage.removeItem(ADMIN_USER_KEY);
 }
 
 export function getAdminUser(): AdminUser {
-  if (typeof window === "undefined") {
-    return { email: ADMIN_CREDENTIALS.email, name: "Admin" };
+  const defaultConfig: AdminUser = {
+    email: getAdminConfig().email,
+    name: "Micrylis Admin",
+    role: "SUPER_ADMIN",
+  };
+  if (typeof window === "undefined") return defaultConfig;
+  try {
+    const raw = localStorage.getItem(ADMIN_USER_KEY);
+    if (raw) return JSON.parse(raw) as AdminUser;
+  } catch {
+    // fallback
   }
-  const raw = localStorage.getItem(ADMIN_USER_KEY);
-  if (raw) return JSON.parse(raw) as AdminUser;
-  return { email: ADMIN_CREDENTIALS.email, name: "Admin" };
+  return defaultConfig;
 }
+

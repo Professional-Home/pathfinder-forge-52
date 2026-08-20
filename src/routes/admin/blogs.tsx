@@ -249,145 +249,148 @@ function AdminBlogsPage() {
 
       {/* Form Dialog Modal */}
       {isDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-xl border border-border bg-surface-elevated p-6 shadow-xl space-y-6 my-8">
-            <div className="flex items-center justify-between border-b border-border pb-4">
-              <h2 className="font-display text-xl font-bold">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6">
+          <div className="relative flex flex-col w-full max-w-2xl max-h-[90vh] rounded-xl border border-border bg-surface-elevated shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border p-4 sm:p-6 shrink-0 bg-surface-elevated">
+              <h2 className="font-display text-lg sm:text-xl font-bold">
                 {editingBlog ? "Edit Article" : "Create New Article"}
               </h2>
               <button
+                type="button"
                 onClick={() => setIsDialogOpen(false)}
-                className="rounded p-1 text-muted-foreground hover:text-foreground"
+                className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div className="space-y-1.5">
-                <Label htmlFor="title">Article Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder="e.g. Advancements in Synthetic Biology"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs" data-lenis-prevent>
                 <div className="space-y-1.5">
-                  <Label htmlFor="slug">Slug (URL)</Label>
+                  <Label htmlFor="title">Article Title</Label>
                   <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: slugify(e.target.value) })}
-                    placeholder="advancements-in-synthetic-biology"
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => handleTitleChange(e.target.value)}
+                    placeholder="e.g. Advancements in Synthetic Biology"
                     required
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    placeholder="Biotechnology"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="author">Author Name</Label>
-                  <Input
-                    id="author"
-                    value={formData.author}
-                    onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                    placeholder="Dr. Jane Doe"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="readTime">Read Time</Label>
-                  <Input
-                    id="readTime"
-                    value={formData.readTime}
-                    onChange={(e) => setFormData({ ...formData, readTime: e.target.value })}
-                    placeholder="5 min read"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="excerpt">Excerpt / Summary</Label>
-                <Textarea
-                  id="excerpt"
-                  value={formData.excerpt}
-                  onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-                  rows={2}
-                  placeholder="Brief summary of the article..."
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="coverImage">Cover Image</Label>
-                <Input
-                  id="coverImage"
-                  value={formData.coverImage}
-                  onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                  placeholder="https://..."
-                />
-                <CloudinaryUpload
-                  label="Upload Cover Image via Cloudinary"
-                  value={formData.coverImage}
-                  onUploadSuccess={(url) => setFormData({ ...formData, coverImage: url })}
-                  onRemove={() => setFormData({ ...formData, coverImage: "" })}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="content">Full Article Content (Markdown format supported)</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows={8}
-                  placeholder="# Article Title&#10;&#10;Write your article paragraphs here..."
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
-                <div className="space-y-1.5">
-                  <Label>Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(v) => setFormData({ ...formData, status: v as BlogStatus })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-border p-3 mt-4">
-                  <div>
-                    <Label htmlFor="featured">Featured Article</Label>
-                    <p className="text-[10px] text-muted-foreground">Highlight on top of blog page</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="slug">Slug (URL)</Label>
+                    <Input
+                      id="slug"
+                      value={formData.slug}
+                      onChange={(e) => setFormData({ ...formData, slug: slugify(e.target.value) })}
+                      placeholder="advancements-in-synthetic-biology"
+                      required
+                    />
                   </div>
-                  <Switch
-                    id="featured"
-                    checked={formData.featured}
-                    onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="category">Category</Label>
+                    <Input
+                      id="category"
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      placeholder="Biotechnology"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="author">Author Name</Label>
+                    <Input
+                      id="author"
+                      value={formData.author}
+                      onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                      placeholder="Dr. Jane Doe"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="readTime">Read Time</Label>
+                    <Input
+                      id="readTime"
+                      value={formData.readTime}
+                      onChange={(e) => setFormData({ ...formData, readTime: e.target.value })}
+                      placeholder="5 min read"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="excerpt">Excerpt / Summary</Label>
+                  <Textarea
+                    id="excerpt"
+                    value={formData.excerpt}
+                    onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                    rows={2}
+                    placeholder="Brief summary of the article..."
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="coverImage">Cover Image</Label>
+                  <Input
+                    id="coverImage"
+                    value={formData.coverImage}
+                    onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                    placeholder="https://..."
+                  />
+                  <CloudinaryUpload
+                    label="Upload Cover Image via Cloudinary"
+                    value={formData.coverImage}
+                    onUploadSuccess={(url) => setFormData({ ...formData, coverImage: url })}
+                    onRemove={() => setFormData({ ...formData, coverImage: "" })}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="content">Full Article Content (Markdown format supported)</Label>
+                  <Textarea
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    rows={8}
+                    placeholder="# Article Title&#10;&#10;Write your article paragraphs here..."
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
+                  <div className="space-y-1.5">
+                    <Label>Status</Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(v) => setFormData({ ...formData, status: v as BlogStatus })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3 mt-4">
+                    <div>
+                      <Label htmlFor="featured">Featured Article</Label>
+                      <p className="text-[10px] text-muted-foreground">Highlight on top of blog page</p>
+                    </div>
+                    <Switch
+                      id="featured"
+                      checked={formData.featured}
+                      onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+              <div className="flex items-center justify-end gap-3 border-t border-border p-4 sm:p-6 shrink-0 bg-surface-elevated">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>

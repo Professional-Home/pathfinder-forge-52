@@ -5,6 +5,7 @@ import { supabase } from "../../utils/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { generateWhatsAppLink } from "@/utils/whatsapp";
 import { getOptimizedImageUrl } from "@/utils/cloudinary";
+import { getCourseApplyUrl } from "@/lib/courses/data";
 
 interface Course extends DashboardCourse {}
 
@@ -158,7 +159,7 @@ function CoursesPage() {
                         </>
                       ) : (
                         <a
-                          href={course.applyUrl || (String(course.title).toLowerCase().includes("drug") ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
+                          href={getCourseApplyUrl(course)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 transition font-medium"

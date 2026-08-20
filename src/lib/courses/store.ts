@@ -179,16 +179,11 @@ export async function fetchCoursesListing(options?: {
     query = query.range(from, to);
 
     const { data, error, count } = await query;
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const supabaseCourses = data.map(mapDbToListing);
-      // Merge Bioinformatics seed if not already in Supabase results
-      const hasBioinformatics = supabaseCourses.some((c) => c.slug === "bioinformatics");
-      if (!hasBioinformatics) {
-        supabaseCourses.push(BIOINFORMATICS_LISTING_SEED);
-      }
       return {
         courses: supabaseCourses,
-        total: (count ?? data.length) + (hasBioinformatics ? 0 : 1),
+        total: count ?? data.length,
       };
     }
   } catch (err) {

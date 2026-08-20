@@ -1,17 +1,26 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { supabase } from '../utils/supabase'
 import { useEffect, useState } from 'react'
+import { isAdminLoggedIn } from '@/lib/adminAuth'
 
 export const Route = createFileRoute('/employees')({
   component: EmployeesPage,
 })
 
 function EmployeesPage() {
+  const navigate = useNavigate()
   const [employees, setEmployees] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const isAuthorized = isAdminLoggedIn()
+
   useEffect(() => {
+    if (!isAuthorized) {
+      setLoading(false)
+      return
+    }
+
     async function fetchEmployees() {
       try {
         const { data, error } = await supabase
@@ -32,7 +41,24 @@ function EmployeesPage() {
     }
     
     fetchEmployees()
-  }, [])
+  }, [isAuthorized])
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 text-center">
+        <h1 className="text-2xl font-bold text-foreground">Access Restricted</h1>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">
+          Internal administrative connection test route. You must be signed in as an administrator to view this page.
+        </p>
+        <button
+          onClick={() => navigate({ to: '/admin/login' })}
+          className="mt-6 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 transition"
+        >
+          Go to Admin Login
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto min-h-screen">

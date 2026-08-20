@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Session } from "@supabase/supabase-js";
@@ -8,7 +8,7 @@ import {
   PUBLIC_EXPLORE_LINKS,
   PUBLIC_NAV_LINKS,
 } from "@/lib/nav-config";
-import { X } from "lucide-react";
+import { X, ChevronDown, Radio, Clock, Archive } from "lucide-react";
 
 const GridMenuIcon = memo(function GridMenuIcon({ className = "bg-current" }: { className?: string }) {
   return (
@@ -39,6 +39,9 @@ function SiteHeaderComponent() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [webinarDropdownOpen, setWebinarDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -78,6 +81,17 @@ function SiteHeaderComponent() {
     return () => window.removeEventListener("resize", handleResize);
   }, [menuOpen]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setWebinarDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const onLogoClick = useCallback(
     (e: React.MouseEvent) => {
       if (isHome) {
@@ -99,8 +113,92 @@ function SiteHeaderComponent() {
     [pathname],
   );
 
+  const handleDropdownEnter = () => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+      dropdownTimeoutRef.current = null;
+    }
+    setWebinarDropdownOpen(true);
+  };
+
+  const handleDropdownLeave = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setWebinarDropdownOpen(false);
+    }, 200);
+  };
+
+  const webinarSections = [
+    { name: "Upcoming Webinars", hash: "#upcoming", icon: Clock, desc: "Scheduled sessions" },
+    { name: "Live Webinars", hash: "#live", icon: Radio, desc: "Happening now" },
+    { name: "Past Webinars", hash: "#past", icon: Archive, desc: "Recordings & replays" },
+  ];
+
   const renderNavItem = (link: (typeof PUBLIC_NAV_LINKS)[number]) => {
     const active = isLinkActive(link.matchPath);
+
+    // Render Webinar item with dropdown
+    if (link.name === "Webinar") {
+      return (
+        <div
+          key={link.name}
+          ref={dropdownRef}
+          className="relative"
+          onMouseEnter={handleDropdownEnter}
+          onMouseLeave={handleDropdownLeave}
+        >
+          <Link
+            to={link.href}
+            className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors flex items-center gap-1 ${
+              active ? "text-foreground" : "hover:text-foreground"
+            }`}
+          >
+            <span className="relative z-10">{link.name}</span>
+            <ChevronDown
+              className={`relative z-10 h-3 w-3 transition-transform duration-200 ${
+                webinarDropdownOpen ? "rotate-180" : ""
+              }`}
+            />
+            <NavPill active={active} />
+          </Link>
+
+          <AnimatePresence>
+            {webinarDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-xl border border-border/80 bg-background/95 p-2 shadow-xl backdrop-blur-lg"
+              >
+                <div className="mb-1.5 px-3 pt-1">
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+                    Webinar Sections
+                  </span>
+                </div>
+                {webinarSections.map((section) => (
+                  <Link
+                    key={section.hash}
+                    to={`/webinars${section.hash}`}
+                    onClick={() => setWebinarDropdownOpen(false)}
+                    className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-surface-elevated"
+                  >
+                    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-student/10 text-student transition-colors group-hover:bg-student/20">
+                      <section.icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-foreground">{section.name}</div>
+                      <div className="text-[10px] text-muted-foreground">{section.desc}</div>
+                    </div>
+                  </Link>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    // Default nav item rendering
     return (
       <Link
         key={link.name}

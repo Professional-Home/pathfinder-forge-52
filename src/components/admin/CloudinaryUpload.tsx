@@ -34,8 +34,35 @@ export function CloudinaryUpload({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setLoading(true);
     setErrorMsg("");
+
+    // 1. File size check (5 MB limit)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setErrorMsg("File size exceeds maximum allowed limit of 5 MB.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    // 2. MIME type check
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+    if (!file.type || !allowedTypes.includes(file.type.toLowerCase())) {
+      setErrorMsg("Invalid file type. Only JPG, PNG, WEBP, GIF, and SVG images are allowed.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    // 3. Extension check
+    const allowedExts = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"];
+    const fileName = file.name.toLowerCase();
+    const hasValidExt = allowedExts.some((ext) => fileName.endsWith(ext));
+    if (!hasValidExt) {
+      setErrorMsg("Invalid file extension. Please select a valid image file.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const url = await uploadToCloudinary(file);

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Video,
@@ -21,23 +22,84 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { WEBINAR_REGISTRATION_URL, FEATURED_WEBINAR } from "@/lib/webinar-config";
+import { fetchWebinars } from "@/lib/webinars/store";
+import type { WebinarItem } from "@/lib/webinars/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/webinars")({
   component: WebinarsPage,
   head: () => ({
     meta: [
-      { title: `${FEATURED_WEBINAR.title} — Micrylis Biotech Webinar` },
+      { title: `Bioinformatics & Biotechnology Webinars — Micrylis` },
       {
         name: "description",
-        content: FEATURED_WEBINAR.shortDescription,
+        content: "Join live interactive biotechnology and computational biology webinars hosted by Micrylis Biotech Research Team.",
       },
     ],
   }),
 });
 
+function formatWebinarDate(iso: string): string {
+  if (!iso) return "Upcoming Date";
+  try {
+    return new Date(iso).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function formatWebinarTime(startIso: string, endIso: string): string {
+  if (!startIso) return "6:00 PM – 7:30 PM";
+  try {
+    const s = new Date(startIso).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const e = new Date(endIso).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return `${s} – ${e}`;
+  } catch {
+    return "6:00 PM – 7:30 PM";
+  }
+}
+
 function WebinarsPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const { data: webinars = [], isLoading } = useQuery({
+    queryKey: ["public-webinars"],
+    queryFn: () => fetchWebinars(false),
+  });
+
+  // Active / featured webinar: take first published from DB or fallback to static config
+  const activeWebinar: WebinarItem | null = webinars[0] || null;
+
+  const title = activeWebinar ? activeWebinar.title : FEATURED_WEBINAR.title;
+  const subtitle = activeWebinar ? activeWebinar.topic : FEATURED_WEBINAR.subtitle;
+  const description = activeWebinar ? activeWebinar.description : FEATURED_WEBINAR.shortDescription;
+  const regUrl = activeWebinar?.registrationUrl || WEBINAR_REGISTRATION_URL;
+  const dateStr = activeWebinar ? formatWebinarDate(activeWebinar.startDateTime) : FEATURED_WEBINAR.date;
+  const timeStr = activeWebinar ? formatWebinarTime(activeWebinar.startDateTime, activeWebinar.endDateTime) : FEATURED_WEBINAR.time;
+  const timezoneStr = activeWebinar ? activeWebinar.timezone : FEATURED_WEBINAR.timezone;
+  const speakerName = activeWebinar ? activeWebinar.speakerName : FEATURED_WEBINAR.speaker.name;
+  const speakerRole = activeWebinar ? activeWebinar.speakerDesignation : FEATURED_WEBINAR.speaker.role;
+  const speakerImg = activeWebinar ? activeWebinar.speakerImage : "";
+  const statusBadgeText = activeWebinar
+    ? activeWebinar.status === "live"
+      ? "Live Now"
+      : activeWebinar.status === "upcoming"
+        ? "Registration Open"
+        : "Past Webinar"
+    : FEATURED_WEBINAR.statusText;
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -84,42 +146,42 @@ function WebinarsPage() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-student opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-student" />
                   </span>
-                  {FEATURED_WEBINAR.statusText}
+                  {statusBadgeText}
                 </div>
 
                 {/* Title & Subtitle */}
                 <h1 className="font-display text-3xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-[3.25rem]">
-                  {FEATURED_WEBINAR.title}
+                  {title}
                 </h1>
                 
                 <p className="mt-3 font-display text-lg font-medium text-student md:text-xl">
-                  {FEATURED_WEBINAR.subtitle}
+                  {subtitle}
                 </p>
 
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                  {FEATURED_WEBINAR.shortDescription}
+                  {description}
                 </p>
 
                 {/* Quick Details Pills */}
                 <div className="mt-6 flex flex-wrap items-center gap-3 text-xs sm:text-sm">
                   <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-elevated px-3 py-1.5 font-medium text-foreground">
                     <Calendar className="h-4 w-4 text-student" />
-                    {FEATURED_WEBINAR.date}
+                    {dateStr}
                   </div>
                   <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-elevated px-3 py-1.5 font-medium text-foreground">
                     <Clock className="h-4 w-4 text-student" />
-                    {FEATURED_WEBINAR.time}
+                    {timeStr}
                   </div>
                   <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-elevated px-3 py-1.5 font-medium text-foreground">
                     <Globe className="h-4 w-4 text-researcher" />
-                    {FEATURED_WEBINAR.mode}
+                    Live Online (Interactive)
                   </div>
                 </div>
 
                 {/* CTA Buttons */}
                 <div className="mt-8 flex flex-wrap items-center gap-4">
                   <a
-                    href={WEBINAR_REGISTRATION_URL}
+                    href={regUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background shadow-lg transition-all duration-300 hover:opacity-90 hover:shadow-xl active:scale-[0.98]"
@@ -153,26 +215,29 @@ function WebinarsPage() {
                 className="relative rounded-2xl border border-border/80 bg-surface-elevated/90 p-6 shadow-xl backdrop-blur-md sm:p-8"
               >
 
-
-
                 <div className="flex items-center gap-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-xl bg-student/10 text-student">
-                    <Video className="h-6 w-6" />
-                  </div>
+                  {speakerImg ? (
+                    <img src={speakerImg} alt={speakerName} className="h-12 w-12 rounded-xl object-cover border border-border" />
+                  ) : (
+                    <div className="grid h-12 w-12 place-items-center rounded-xl bg-student/10 text-student">
+                      <Video className="h-6 w-6" />
+                    </div>
+                  )}
                   <div>
-                    <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Hosted by</div>
-                    <div className="font-display font-semibold text-foreground">{FEATURED_WEBINAR.speaker.organization}</div>
+                    <div className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Speaker / Mentor</div>
+                    <div className="font-display font-semibold text-foreground">{speakerName}</div>
+                    <div className="text-xs text-muted-foreground">{speakerRole}</div>
                   </div>
                 </div>
 
                 <div className="my-6 space-y-4 rounded-xl border border-border/50 bg-background/60 p-4 text-sm">
                   <div className="flex justify-between border-b border-border/40 pb-2.5">
                     <span className="text-muted-foreground">Date:</span>
-                    <span className="font-medium text-foreground">{FEATURED_WEBINAR.date}</span>
+                    <span className="font-medium text-foreground">{dateStr}</span>
                   </div>
                   <div className="flex justify-between border-b border-border/40 pb-2.5">
                     <span className="text-muted-foreground">Time:</span>
-                    <span className="font-medium text-foreground">{FEATURED_WEBINAR.time} ({FEATURED_WEBINAR.timezone})</span>
+                    <span className="font-medium text-foreground">{timeStr} ({timezoneStr})</span>
                   </div>
                   <div className="flex justify-between border-b border-border/40 pb-2.5">
                     <span className="text-muted-foreground">Venue:</span>
@@ -185,7 +250,7 @@ function WebinarsPage() {
                 </div>
 
                 <a
-                  href={WEBINAR_REGISTRATION_URL}
+                  href={regUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-center text-sm font-semibold text-background transition hover:opacity-90"
@@ -322,17 +387,21 @@ function WebinarsPage() {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <div className="grid h-12 w-12 place-items-center rounded-full bg-student-soft font-display text-lg font-bold text-student">
-                    MB
-                  </div>
+                  {speakerImg ? (
+                    <img src={speakerImg} alt={speakerName} className="h-12 w-12 rounded-full object-cover border border-border shrink-0" />
+                  ) : (
+                    <div className="grid h-12 w-12 place-items-center rounded-full bg-student-soft font-display text-base font-bold text-student shrink-0">
+                      MB
+                    </div>
+                  )}
                   <div>
-                    <h4 className="font-display font-semibold text-foreground">{FEATURED_WEBINAR.speaker.name}</h4>
-                    <p className="text-xs text-muted-foreground">{FEATURED_WEBINAR.speaker.role}</p>
+                    <h4 className="font-display font-semibold text-foreground">{speakerName}</h4>
+                    <p className="text-xs text-muted-foreground">{speakerRole}</p>
                   </div>
                 </div>
 
                 <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                  {FEATURED_WEBINAR.speaker.bio}
+                  {activeWebinar ? activeWebinar.description : FEATURED_WEBINAR.speaker.bio}
                 </p>
 
                 <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap gap-1.5">
@@ -354,11 +423,11 @@ function WebinarsPage() {
                   Ready to join?
                 </h4>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Fill in the quick Google Form to secure your free slot and receive the live access link.
+                  Fill in the quick registration form to secure your free slot and receive the live access link.
                 </p>
 
                 <a
-                  href={WEBINAR_REGISTRATION_URL}
+                  href={regUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-center text-sm font-semibold text-background transition hover:opacity-90 shadow-md"
@@ -450,7 +519,7 @@ function WebinarsPage() {
 
           <div className="mt-8 flex justify-center">
             <a
-              href={WEBINAR_REGISTRATION_URL}
+              href={regUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-background px-8 py-3.5 text-sm font-semibold text-foreground shadow-xl transition-transform hover:scale-105"
