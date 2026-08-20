@@ -86,6 +86,8 @@ function LoginPage() {
   const [isUnverified, setIsUnverified] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendLoading, setResendLoading] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
@@ -153,6 +155,47 @@ function LoginPage() {
       setSuccessMsg("Verification email sent! Please check your inbox.");
       setResendCooldown(60);
     }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    if (!otpCode.trim() || otpCode.trim().length < 6) {
+      setError("Please enter the 6-digit OTP code sent to your email.");
+      return;
+    }
+    setOtpLoading(true);
+    setError("");
+    setSuccessMsg("");
+
+    const { data, error: verifyErr } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: otpCode.trim(),
+      type: "signup",
+    });
+
+    if (verifyErr) {
+      const { data: emailData, error: emailVerifyErr } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otpCode.trim(),
+        type: "email",
+      });
+
+      if (emailVerifyErr) {
+        setOtpLoading(false);
+        setError(emailVerifyErr.message || verifyErr.message || "Invalid or expired OTP code.");
+        return;
+      }
+    }
+
+    setOtpLoading(false);
+    setSuccessMsg("Email verified successfully! Logging you in...");
+    setTimeout(() => {
+      navigate({ to: "/dashboard" });
+    }, 800);
   }
 
   async function handleForgotPasswordSubmit(e: React.FormEvent) {
@@ -497,24 +540,46 @@ function LoginPage() {
                     )}
                   </AnimatePresence>
 
-                  {/* Unverified Email Action */}
+                  {/* Unverified Email OTP Verification */}
                   {isUnverified && (
                     <motion.div
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-xl border border-border bg-surface-elevated p-4 text-center space-y-3"
+                      className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4 text-center space-y-3"
                     >
-                      <p className="text-xs text-muted-foreground">
-                        Haven't verified your email yet?
+                      <p className="text-xs font-medium text-foreground">
+                        Enter 6-Digit OTP Code sent to your email
                       </p>
-                      <button
-                        type="button"
-                        onClick={handleResendVerification}
-                        disabled={resendCooldown > 0 || resendLoading}
-                        className="w-full rounded-lg bg-foreground px-4 py-2 text-xs font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
-                      >
-                        {resendLoading ? "Sending..." : resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : "Resend Verification Email"}
-                      </button>
+                      
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          maxLength={6}
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                          placeholder="123456"
+                          className="w-full text-center font-mono text-xl tracking-[0.4em] rounded-lg border border-border bg-surface px-3 py-2 outline-none transition focus:border-foreground placeholder:tracking-normal placeholder:text-xs placeholder:text-muted-foreground/40"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyOtp}
+                          disabled={otpLoading || otpCode.length < 6}
+                          className="w-full rounded-lg bg-foreground px-4 py-2 text-xs font-semibold text-background transition hover:opacity-90 disabled:opacity-50"
+                        >
+                          {otpLoading ? "Verifying..." : "Verify OTP & Sign In →"}
+                        </button>
+                      </div>
+
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={handleResendVerification}
+                          disabled={resendCooldown > 0 || resendLoading}
+                          className="text-[11px] text-muted-foreground hover:text-foreground transition underline underline-offset-2 disabled:opacity-50"
+                        >
+                          {resendLoading ? "Sending..." : resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : "Resend Verification Code"}
+                        </button>
+                      </div>
                     </motion.div>
                   )}
 

@@ -44,11 +44,12 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Optional Hook Secret verification
-    const hookSecret = req.headers.get("x-supabase-auth-hook-secret");
-    if (SEND_EMAIL_HOOK_SECRET && hookSecret !== SEND_EMAIL_HOOK_SECRET) {
-      return new Response(JSON.stringify({ error: "Unauthorized hook request" }), {
-        status: 401,
+    const payload: EmailHookPayload = await req.json();
+    const { user, email_data } = payload;
+
+    if (!user || !email_data) {
+      return new Response(JSON.stringify({ error: "Invalid payload format" }), {
+        status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -60,9 +61,6 @@ serve(async (req: Request) => {
         headers: { "Content-Type": "application/json" },
       });
     }
-
-    const payload: EmailHookPayload = await req.json();
-    const { user, email_data } = payload;
     const recipientEmail = user.email;
     const fullName = user.user_metadata?.full_name || user.user_metadata?.name || recipientEmail.split("@")[0];
     const actionType = email_data.email_action_type;
@@ -73,24 +71,28 @@ serve(async (req: Request) => {
     let subject = "";
     let htmlContent = "";
 
+    const otpCode = email_data.token;
+
     if (actionType === "signup") {
-      subject = "Verify your email address — Micrylis";
+      subject = "Your Micrylis Verification Code: " + otpCode;
       htmlContent = buildEmailTemplate({
         title: "Welcome to Micrylis",
         heading: `Hi ${fullName},`,
-        bodyText: "Thanks for creating your account! Please verify your email address to get started with your personalized growth journey.",
+        bodyText: "Thanks for creating your account! Enter the 6-digit verification code below on the signup page to verify your account.",
         buttonText: "Verify Email Address",
         buttonUrl: confirmationUrl,
+        otpCode: otpCode,
         securityNote: "If you did not create a Micrylis account, you can safely ignore this email.",
       });
     } else if (actionType === "recovery") {
-      subject = "Reset your password — Micrylis";
+      subject = "Your Micrylis Password Reset Code: " + otpCode;
       htmlContent = buildEmailTemplate({
         title: "Reset Your Password",
         heading: `Hi ${fullName},`,
-        bodyText: "We received a request to reset your password. Click the button below to choose a new password.",
+        bodyText: "We received a request to reset your password. Use the 6-digit verification code below or click the button to proceed.",
         buttonText: "Reset Password",
         buttonUrl: confirmationUrl,
+        otpCode: otpCode,
         securityNote: "If you didn't request a password reset, please ignore this email. Your password will remain unchanged.",
       });
     } else if (actionType === "email_change") {
@@ -98,19 +100,21 @@ serve(async (req: Request) => {
       htmlContent = buildEmailTemplate({
         title: "Confirm Email Change",
         heading: `Hi ${fullName},`,
-        bodyText: "Please confirm your new email address by clicking the button below.",
+        bodyText: "Please confirm your new email address using the verification code below or click the button.",
         buttonText: "Confirm Email Change",
         buttonUrl: confirmationUrl,
+        otpCode: otpCode,
         securityNote: "If you did not request this change, please contact support immediately.",
       });
     } else {
-      subject = "Sign in to Micrylis";
+      subject = "Sign in to Micrylis — Your Code: " + otpCode;
       htmlContent = buildEmailTemplate({
-        title: "Sign in link",
+        title: "Sign in to Micrylis",
         heading: `Hi ${fullName},`,
-        bodyText: "Click the link below to sign in to your Micrylis account.",
+        bodyText: "Use the 6-digit verification code below to sign in to your Micrylis account.",
         buttonText: "Sign In to Micrylis",
         buttonUrl: confirmationUrl,
+        otpCode: otpCode,
         securityNote: "If you didn't request this email, you can safely ignore it.",
       });
     }
@@ -133,7 +137,7 @@ serve(async (req: Request) => {
     if (!resendResponse.ok) {
       const resendError = await resendResponse.text();
       console.error("Resend API error:", resendError);
-      return new Response(JSON.stringify({ error: "Failed to deliver email via Resend" }), {
+      return new Response(JSON.stringify({ error: "Failed to deliver email via Resend", details: resendError }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
@@ -160,9 +164,25 @@ interface TemplateOptions {
   buttonText: string;
   buttonUrl: string;
   securityNote: string;
+  otpCode?: string;
 }
 
-function buildEmailTemplate({ title, heading, bodyText, buttonText, buttonUrl, securityNote }: TemplateOptions): string {
+function buildEmailTemplate({ title, heading, bodyText, buttonText, buttonUrl, securityNote, otpCode }: TemplateOptions): string {
+  const otpBox = otpCode ? `
+              <!-- 6-Digit OTP Code Box -->
+              <div style="background-color: #161926; border: 1px dashed #3b82f6; border-radius: 14px; padding: 24px; text-align: center; margin-bottom: 28px;">
+                <p style="margin: 0 0 10px 0; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.5px;">
+                  Your 6-Digit Verification Code (OTP)
+                </p>
+                <div style="font-size: 36px; font-weight: 800; letter-spacing: 12px; color: #38bdf8; font-family: 'Space Grotesk', Consolas, monospace;">
+                  ${otpCode}
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #6b7280;">
+                  Enter this code on the website to complete verification.
+                </p>
+              </div>
+  ` : '';
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -192,9 +212,11 @@ function buildEmailTemplate({ title, heading, bodyText, buttonText, buttonUrl, s
               <h1 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #ffffff;">
                 ${heading}
               </h1>
-              <p style="margin: 0 0 28px 0; font-size: 15px; line-height: 1.6; color: #9ca3af;">
+              <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.6; color: #9ca3af;">
                 ${bodyText}
               </p>
+
+              ${otpBox}
 
               <!-- CTA Button -->
               <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto 28px auto;">
@@ -210,7 +232,7 @@ function buildEmailTemplate({ title, heading, bodyText, buttonText, buttonUrl, s
               <!-- Fallback Link Box -->
               <div style="background-color: #181b28; border: 1px solid #282d42; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; word-break: break-all;">
                 <p style="margin: 0 0 6px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
-                  If the button above doesn't work, copy and paste this link:
+                  Or click this direct link:
                 </p>
                 <a href="${buttonUrl}" target="_blank" style="font-size: 12px; color: #60a5fa; text-decoration: underline;">
                   ${buttonUrl}

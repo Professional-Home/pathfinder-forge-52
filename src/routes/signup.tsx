@@ -48,6 +48,8 @@ function SignupPage() {
   const [successMsg, setSuccessMsg] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendLoading, setResendLoading] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   useEffect(() => {
@@ -200,6 +202,43 @@ function SignupPage() {
       setSuccessMsg("Verification email sent! Please check your inbox.");
       setResendCooldown(60);
     }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!otpCode.trim() || otpCode.trim().length < 6) {
+      setError("Please enter the 6-digit OTP code sent to your email.");
+      return;
+    }
+    setOtpLoading(true);
+    setError("");
+    setSuccessMsg("");
+
+    const { data, error: verifyErr } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: otpCode.trim(),
+      type: "signup",
+    });
+
+    if (verifyErr) {
+      const { error: emailVerifyErr } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otpCode.trim(),
+        type: "email",
+      });
+
+      if (emailVerifyErr) {
+        setOtpLoading(false);
+        setError(emailVerifyErr.message || verifyErr.message || "Invalid or expired OTP code.");
+        return;
+      }
+    }
+
+    setOtpLoading(false);
+    setSuccessMsg("Account verified successfully! Proceeding...");
+    setTimeout(() => {
+      setStep("domain");
+    }, 800);
   }
 
 
@@ -666,23 +705,44 @@ function SignupPage() {
                 )}
               </AnimatePresence>
 
-              <div className="space-y-3 pt-2">
+              {/* OTP Form */}
+              <form onSubmit={handleVerifyOtp} className="space-y-4 text-left">
+                <div className="space-y-1.5">
+                  <label htmlFor="otp-input" className="block text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                    Enter 6-Digit OTP Code
+                  </label>
+                  <input
+                    id="otp-input"
+                    type="text"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="123456"
+                    className="w-full text-center font-mono text-2xl tracking-[0.5em] rounded-xl border border-border bg-surface-elevated px-4 py-3 outline-none transition focus:border-foreground placeholder:tracking-normal placeholder:text-sm placeholder:text-muted-foreground/40"
+                    required
+                  />
+                </div>
+
                 <motion.button
+                  type="submit"
+                  disabled={otpLoading || otpCode.length < 6}
+                  whileHover={{ scale: otpLoading || otpCode.length < 6 ? 1 : 1.02 }}
+                  whileTap={{ scale: otpLoading || otpCode.length < 6 ? 1 : 0.98 }}
+                  className="w-full rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition disabled:opacity-50"
+                >
+                  {otpLoading ? "Verifying OTP..." : "Verify OTP Code →"}
+                </motion.button>
+              </form>
+
+              <div className="space-y-3 pt-2">
+                <button
                   type="button"
                   onClick={handleResendVerification}
                   disabled={resendCooldown > 0 || resendLoading}
-                  whileHover={{ scale: resendCooldown > 0 ? 1 : 1.02 }}
-                  whileTap={{ scale: resendCooldown > 0 ? 1 : 0.98 }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition disabled:opacity-50"
+                  className="w-full rounded-xl border border-border bg-surface-elevated px-4 py-2.5 text-xs font-medium text-foreground transition hover:border-border-strong disabled:opacity-50"
                 >
-                  {resendLoading ? (
-                    "Sending..."
-                  ) : resendCooldown > 0 ? (
-                    `Resend email in ${resendCooldown}s`
-                  ) : (
-                    "Resend Verification Email"
-                  )}
-                </motion.button>
+                  {resendLoading ? "Resending Email..." : resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : "Resend Verification Code"}
+                </button>
 
                 <div className="flex items-center justify-between gap-3 pt-2">
                   <button
