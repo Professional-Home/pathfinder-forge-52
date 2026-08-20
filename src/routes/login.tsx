@@ -79,27 +79,104 @@ function LoginPage() {
     }
   }
 
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSuccess, setResetSuccess] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [isUnverified, setIsUnverified] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => setResendCooldown((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+    setIsUnverified(false);
+
     if (!email.trim() || !password.trim()) {
       setError("Please fill in all fields.");
       return;
     }
+
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
       password,
     });
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
+    setLoading(false);
+
+    if (signInError) {
+      const msg = signInError.message || "";
+      if (msg.toLowerCase().includes("email not confirmed")) {
+        setIsUnverified(true);
+        setError("Please verify your email address before signing in.");
+      } else if (msg.toLowerCase().includes("invalid login credentials")) {
+        setError("Invalid email or password.");
+      } else {
+        setError(msg || "Failed to sign in. Please try again.");
+      }
       return;
     }
 
+    if (data.session) {
+      navigate({ to: "/dashboard" });
+    }
+  }
+
+  async function handleResendVerification() {
+    if (resendCooldown > 0 || !email) return;
+    setResendLoading(true);
     setError("");
-    setLoading(false);
-    navigate({ to: "/dashboard" });
+    setSuccessMsg("");
+
+    const { error: resendErr } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      }
+    });
+
+    setResendLoading(false);
+
+    if (resendErr) {
+      setError(resendErr.message || "Failed to resend verification email.");
+    } else {
+      setSuccessMsg("Verification email sent! Please check your inbox.");
+      setResendCooldown(60);
+    }
+  }
+
+  async function handleForgotPasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    setResetLoading(true);
+    setError("");
+    setResetSuccess("");
+
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    setResetLoading(false);
+
+    if (resetErr) {
+      setError(resetErr.message || "Failed to send password reset email.");
+    } else {
+      setResetSuccess("If an account exists for this email, a password reset link has been sent.");
+    }
   }
 
   const orbs = [
@@ -246,185 +323,294 @@ function LoginPage() {
               <Wordmark />
             </div>
 
-            <div className="mb-8">
-              <h1 className="font-display text-4xl">Sign in</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Continue your personalized growth journey.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5" id="login-form">
-              {/* Email field */}
-              <div className="space-y-1.5">
-                <label htmlFor="login-email" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                  Email
-                </label>
-                <motion.div
-                  animate={{ borderColor: focusedField === "email" ? "oklch(0.18 0.015 260)" : "oklch(0.9 0.008 85)" }}
-                  className="relative overflow-hidden rounded-xl border bg-surface-elevated transition-shadow"
-                  style={{ boxShadow: focusedField === "email" ? "0 0 0 3px oklch(0.55 0.15 255 / 0.1)" : "none" }}
-                >
-                  <input
-                    id="login-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocusedField("email")}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                    className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
-                  />
-                </motion.div>
-              </div>
-
-              {/* Password field */}
-              <div className="space-y-1.5">
-                <label htmlFor="login-password" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                  Password
-                </label>
-                <motion.div
-                  animate={{ borderColor: focusedField === "password" ? "oklch(0.18 0.015 260)" : "oklch(0.9 0.008 85)" }}
-                  className="relative overflow-hidden rounded-xl border bg-surface-elevated transition-shadow"
-                  style={{ boxShadow: focusedField === "password" ? "0 0 0 3px oklch(0.55 0.15 255 / 0.1)" : "none" }}
-                >
-                  <input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setFocusedField("password")}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    className="w-full bg-transparent px-4 py-3.5 pr-12 text-sm outline-none placeholder:text-muted-foreground/50"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </motion.div>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="text-xs text-muted-foreground transition hover:text-foreground"
-                  >
-                    Forgot password?
-                  </button>
+            {isForgotPassword ? (
+              <div>
+                <div className="mb-8">
+                  <h1 className="font-display text-4xl">Reset password</h1>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Enter your registered email address and we'll send you a password reset link.
+                  </p>
                 </div>
-              </div>
 
-              {/* Error message */}
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: "auto" }}
-                    exit={{ opacity: 0, y: -6, height: 0 }}
-                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+                <form onSubmit={handleForgotPasswordSubmit} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <label htmlFor="reset-email" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                      Email Address
+                    </label>
+                    <div className="relative overflow-hidden rounded-xl border border-border bg-surface-elevated">
+                      <input
+                        id="reset-email"
+                        type="email"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
+                      />
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+                      >
+                        {error}
+                      </motion.div>
+                    )}
+                    {resetSuccess && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400"
+                      >
+                        {resetSuccess}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-60"
                   >
-                    {error}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    {resetLoading ? "Sending link..." : "Send Reset Link"}
+                  </button>
 
-              {/* Submit */}
-              <motion.button
-                type="submit"
-                id="login-submit"
-                disabled={loading}
-                whileHover={{ scale: loading ? 1 : 1.02 }}
-                whileTap={{ scale: loading ? 1 : 0.98 }}
-                className="relative w-full overflow-hidden rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition disabled:opacity-60"
-              >
-                <AnimatePresence mode="wait">
-                  {loading ? (
-                    <motion.span
-                      key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center justify-center gap-2"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPassword(false);
+                      setError("");
+                      setResetSuccess("");
+                    }}
+                    className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition underline underline-offset-4"
+                  >
+                    ← Back to Sign in
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div>
+                <div className="mb-8">
+                  <h1 className="font-display text-4xl">Sign in</h1>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Continue your personalized growth journey.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-5" id="login-form">
+                  {/* Email field */}
+                  <div className="space-y-1.5">
+                    <label htmlFor="login-email" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                      Email
+                    </label>
+                    <motion.div
+                      animate={{ borderColor: focusedField === "email" ? "oklch(0.18 0.015 260)" : "oklch(0.9 0.008 85)" }}
+                      className="relative overflow-hidden rounded-xl border bg-surface-elevated transition-shadow"
+                      style={{ boxShadow: focusedField === "email" ? "0 0 0 3px oklch(0.55 0.15 255 / 0.1)" : "none" }}
                     >
-                      <motion.span
-                        className="inline-block h-4 w-4 rounded-full border-2 border-background/30 border-t-background"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                      <input
+                        id="login-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onFocus={() => setFocusedField("email")}
+                        onBlur={() => setFocusedField(null)}
+                        placeholder="you@example.com"
+                        autoComplete="email"
+                        className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
                       />
-                      Signing in…
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="idle"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center justify-center gap-2"
-                    >
-                      Continue <ArrowRight className="h-3.5 w-3.5" />
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
+                    </motion.div>
+                  </div>
 
-              {/* Google sign-in */}
-              <motion.button
-                type="button"
-                id="login-google"
-                onClick={handleGoogleSignIn}
-                disabled={googleLoading || loading}
-                whileHover={{ scale: 1.02, boxShadow: "0 4px 20px -4px rgba(0,0,0,0.12)" }}
-                whileTap={{ scale: 0.98 }}
-                className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-surface-elevated px-5 py-3.5 text-sm font-medium text-foreground transition hover:border-border-strong disabled:opacity-60"
-              >
-                <AnimatePresence mode="wait">
-                  {googleLoading ? (
-                    <motion.span
-                      key="g-loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center gap-2"
+                  {/* Password field */}
+                  <div className="space-y-1.5">
+                    <label htmlFor="login-password" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                      Password
+                    </label>
+                    <motion.div
+                      animate={{ borderColor: focusedField === "password" ? "oklch(0.18 0.015 260)" : "oklch(0.9 0.008 85)" }}
+                      className="relative overflow-hidden rounded-xl border bg-surface-elevated transition-shadow"
+                      style={{ boxShadow: focusedField === "password" ? "0 0 0 3px oklch(0.55 0.15 255 / 0.1)" : "none" }}
                     >
-                      <motion.span
-                        className="inline-block h-4 w-4 rounded-full border-2 border-border-strong border-t-foreground"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                      <input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onFocus={() => setFocusedField("password")}
+                        onBlur={() => setFocusedField(null)}
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        className="w-full bg-transparent px-4 py-3.5 pr-12 text-sm outline-none placeholder:text-muted-foreground/50"
                       />
-                      Connecting…
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="g-idle"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center gap-3"
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </motion.div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsForgotPassword(true);
+                          setResetEmail(email);
+                          setError("");
+                        }}
+                        className="text-xs text-muted-foreground transition hover:text-foreground"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Error & Success feedback */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: "auto" }}
+                        exit={{ opacity: 0, y: -6, height: 0 }}
+                        className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+                      >
+                        {error}
+                      </motion.div>
+                    )}
+                    {successMsg && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: "auto" }}
+                        exit={{ opacity: 0, y: -6, height: 0 }}
+                        className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400"
+                      >
+                        {successMsg}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Unverified Email Action */}
+                  {isUnverified && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border border-border bg-surface-elevated p-4 text-center space-y-3"
                     >
-                      <GoogleIcon />
-                      Continue with Google
-                    </motion.span>
+                      <p className="text-xs text-muted-foreground">
+                        Haven't verified your email yet?
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={resendCooldown > 0 || resendLoading}
+                        className="w-full rounded-lg bg-foreground px-4 py-2 text-xs font-semibold text-background hover:opacity-90 transition disabled:opacity-50"
+                      >
+                        {resendLoading ? "Sending..." : resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : "Resend Verification Email"}
+                      </button>
+                    </motion.div>
                   )}
-                </AnimatePresence>
-              </motion.button>
 
+                  {/* Submit */}
+                  <motion.button
+                    type="submit"
+                    id="login-submit"
+                    disabled={loading}
+                    whileHover={{ scale: loading ? 1 : 1.02 }}
+                    whileTap={{ scale: loading ? 1 : 0.98 }}
+                    className="relative w-full overflow-hidden rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition disabled:opacity-60"
+                  >
+                    <AnimatePresence mode="wait">
+                      {loading ? (
+                        <motion.span
+                          key="loading"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="flex items-center justify-center gap-2"
+                        >
+                          <motion.span
+                            className="inline-block h-4 w-4 rounded-full border-2 border-background/30 border-t-background"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                          />
+                          Signing in…
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="idle"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="flex items-center justify-center gap-2"
+                        >
+                          Continue <ArrowRight className="h-3.5 w-3.5" />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
 
+                  {/* Google sign-in */}
+                  <motion.button
+                    type="button"
+                    id="login-google"
+                    onClick={handleGoogleSignIn}
+                    disabled={googleLoading || loading}
+                    whileHover={{ scale: 1.02, boxShadow: "0 4px 20px -4px rgba(0,0,0,0.12)" }}
+                    whileTap={{ scale: 0.98 }}
+                    className="mt-4 flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-surface-elevated px-5 py-3.5 text-sm font-medium text-foreground transition hover:border-border-strong disabled:opacity-60"
+                  >
+                    <AnimatePresence mode="wait">
+                      {googleLoading ? (
+                        <motion.span
+                          key="g-loading"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="flex items-center gap-2"
+                        >
+                          <motion.span
+                            className="inline-block h-4 w-4 rounded-full border-2 border-border-strong border-t-foreground"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                          />
+                          Connecting…
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="g-idle"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="flex items-center gap-3"
+                        >
+                          <GoogleIcon />
+                          Continue with Google
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
 
-              {/* Sign up link */}
-              <p className="text-center text-sm text-muted-foreground">
-                New to Micrylis?{" "}
-                <Link
-                  to="/signup"
-                  className="font-medium text-foreground underline-offset-4 hover:underline"
-                >
-                  Create an account
-                </Link>
-              </p>
-            </form>
+                  {/* Sign up link */}
+                  <p className="mt-4 text-center text-sm text-muted-foreground">
+                    New to Micrylis?{" "}
+                    <Link
+                      to="/signup"
+                      className="font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                      Create an account
+                    </Link>
+                  </p>
+                </form>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

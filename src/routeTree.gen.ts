@@ -13,6 +13,7 @@ import { Route as WebinarsRouteImport } from './routes/webinars'
 import { Route as WebinarRouteImport } from './routes/webinar'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReturnPolicyRouteImport } from './routes/return-policy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -72,6 +73,11 @@ const SignupRoute = SignupRouteImport.update({
 const ReturnPolicyRoute = ReturnPolicyRouteImport.update({
   id: '/return-policy',
   path: '/return-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
   '/webinar': typeof WebinarRoute
@@ -333,6 +340,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
   '/webinar': typeof WebinarRoute
@@ -379,6 +387,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
   '/webinar': typeof WebinarRoute
@@ -427,6 +436,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/privacy-policy'
     | '/refund-policy'
+    | '/reset-password'
     | '/return-policy'
     | '/signup'
     | '/webinar'
@@ -471,6 +481,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/privacy-policy'
     | '/refund-policy'
+    | '/reset-password'
     | '/return-policy'
     | '/signup'
     | '/webinar'
@@ -516,6 +527,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/privacy-policy'
     | '/refund-policy'
+    | '/reset-password'
     | '/return-policy'
     | '/signup'
     | '/webinar'
@@ -563,6 +575,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ReturnPolicyRoute: typeof ReturnPolicyRoute
   SignupRoute: typeof SignupRoute
   WebinarRoute: typeof WebinarRoute
@@ -602,6 +615,13 @@ declare module '@tanstack/react-router' {
       path: '/return-policy'
       fullPath: '/return-policy'
       preLoaderRoute: typeof ReturnPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/refund-policy': {
@@ -983,6 +1003,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ReturnPolicyRoute: ReturnPolicyRoute,
   SignupRoute: SignupRoute,
   WebinarRoute: WebinarRoute,

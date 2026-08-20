@@ -33,7 +33,7 @@ type DomainPick = "student" | "startup" | "researcher" | null;
 
 function SignupPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<"form" | "domain">("form");
+  const [step, setStep] = useState<"form" | "verification" | "domain">("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -45,6 +45,9 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,7 +62,7 @@ function SignupPage() {
       }
     }
 
-    // Listen for Google Login success
+    // Listen for Google Login / Session success
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         navigate({ to: "/dashboard" });
@@ -71,70 +74,131 @@ function SignupPage() {
     };
   }, [navigate]);
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => setResendCooldown((prev) => prev - 1), 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
     setError("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       }
     });
-
-    console.log("google sign in")
 
     if (error) {
       setError(error.message);
       setGoogleLoading(false);
     }
-    // No else block needed because Supabase will navigate the browser away to Google.
+  }
+
+  function validateForm(): string | null {
+    if (!name.trim() || name.trim().length < 2) return "Please enter your full name (at least 2 characters).";
+    if (name.trim().length > 100) return "Full name must not exceed 100 characters.";
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Please enter a valid email address.";
+    if (!mobile.trim() || !/^\+?[0-9\s\-()]{7,20}$/.test(mobile.trim())) return "Please enter a valid mobile number.";
+    if (!college.trim() || college.trim().length < 2) return "Please enter your college/university name.";
+    if (college.trim().length > 150) return "College name must not exceed 150 characters.";
+    if (degree.trim().length > 100) return "Degree must not exceed 100 characters.";
+    if (!password || password.length < 8) return "Password must be at least 8 characters long.";
+    return null;
   }
 
   async function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     setError("");
+    setSuccessMsg("");
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: email.trim(),
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
-          full_name: name,
-          mobile,
-          college,
-          degree,
+          full_name: name.trim(),
+          mobile: mobile.trim(),
+          college: college.trim(),
+          degree: degree.trim(),
         }
       }
     });
 
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
-    } else {
-      // Save user to public users table
-      if (data.user) {
+    if (signUpError) {
+      setError(signUpError.message || "Failed to create account. Please try again.");
+      return;
+    }
+
+    if (data.user) {
+      // Save to public users table
+      try {
         await supabase.from("users").upsert({
           id: data.user.id,
-          name,
-          email,
-          phone_no: mobile || null,
+          name: name.trim(),
+          email: email.trim(),
+          phone_no: mobile.trim() || null,
         });
-
-        // Save other details to profile table
-        await supabase.from("profile").upsert({
-          id: data.user.id,
-          email,
-          name,
-          mobile,
-          college,
-          degree
-        });
+      } catch (err) {
+        console.warn("User table sync note:", err);
       }
 
-      setStep("domain");
+      // Save details to profile table
+      try {
+        await supabase.from("profile").upsert({
+          id: data.user.id,
+          email: email.trim(),
+          name: name.trim(),
+          mobile: mobile.trim(),
+          college: college.trim(),
+          degree: degree.trim(),
+        });
+      } catch (err) {
+        console.warn("Profile table sync note:", err);
+      }
+
+      // Check if email confirmation is required (no session returned)
+      if (!data.session) {
+        setStep("verification");
+      } else {
+        setStep("domain");
+      }
+    }
+  }
+
+  async function handleResendVerification() {
+    if (resendCooldown > 0 || !email) return;
+    setResendLoading(true);
+    setError("");
+    setSuccessMsg("");
+
+    const { error: resendErr } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      }
+    });
+
+    setResendLoading(false);
+
+    if (resendErr) {
+      setError(resendErr.message || "Failed to resend verification email.");
+    } else {
+      setSuccessMsg("Verification email sent! Please check your inbox.");
+      setResendCooldown(60);
     }
   }
 
@@ -551,6 +615,93 @@ function SignupPage() {
               </form>
             </motion.div>
 
+          ) : step === "verification" ? (
+            <motion.div
+              key="verification-step"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-md text-center space-y-6"
+            >
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-student/10 text-student">
+                <Sparkles className="h-8 w-8" />
+              </div>
+
+              <div>
+                <h1 className="font-display text-3xl sm:text-4xl">Check your email</h1>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  We've sent a verification link to:
+                </p>
+                <div className="mt-2 inline-block rounded-lg border border-border bg-surface-elevated px-4 py-2 font-mono text-sm font-medium text-foreground">
+                  {email || "your email address"}
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                Please click the link in your email to activate your account. If you don't see it in your inbox, check your spam or junk folder.
+              </p>
+
+              {/* Error and Success Feedback */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-xs text-destructive"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+                {successMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs text-emerald-600 dark:text-emerald-400"
+                  >
+                    {successMsg}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="space-y-3 pt-2">
+                <motion.button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendCooldown > 0 || resendLoading}
+                  whileHover={{ scale: resendCooldown > 0 ? 1 : 1.02 }}
+                  whileTap={{ scale: resendCooldown > 0 ? 1 : 0.98 }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition disabled:opacity-50"
+                >
+                  {resendLoading ? (
+                    "Sending..."
+                  ) : resendCooldown > 0 ? (
+                    `Resend email in ${resendCooldown}s`
+                  ) : (
+                    "Resend Verification Email"
+                  )}
+                </motion.button>
+
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep("form")}
+                    className="text-xs text-muted-foreground hover:text-foreground transition underline underline-offset-4"
+                  >
+                    Edit email address
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep("domain")}
+                    className="text-xs font-medium text-foreground hover:underline"
+                  >
+                    Continue to pick lane →
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           ) : (
             <motion.div
               key="domain-step"

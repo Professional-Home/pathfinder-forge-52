@@ -178,7 +178,7 @@ function SiteHeaderComponent() {
                 {webinarSections.map((section) => (
                   <Link
                     key={section.hash}
-                    to={`/webinars${section.hash}`}
+                    to={`/webinars${section.hash}` as any}
                     onClick={() => setWebinarDropdownOpen(false)}
                     className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-surface-elevated"
                   >
