@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Play, Lock, MessageCircle, BookOpen } from "lucide-react";
+import { Play, Lock, MessageCircle, BookOpen, ArrowRight } from "lucide-react";
 import { mergeDashboardCourses, type DashboardCourse } from "@/lib/courses/dashboard-courses";
 import { supabase } from "../../utils/supabase";
 import { useQuery } from "@tanstack/react-query";
@@ -101,7 +101,7 @@ function CoursesPage() {
               const defaultImage = courseIdentifier.includes("drug")
                 ? "/Photos/ai-drug-discovery-card.jpeg"
                 : courseIdentifier.includes("bioinformatics")
-                  ? "/Photos/ai-drug-discovery-card.jpeg"
+                  ? "/Photos/bio-cover.jpeg"
                   : "/Photos/bioplastic-card.jpeg";
               const thumbnailUrl = getOptimizedImageUrl(defaultImage, { width: 600, height: 300 });
 
@@ -157,14 +157,23 @@ function CoursesPage() {
                           </a>
                         </>
                       ) : (
-                        <a
-                          href={course.applyUrl || (String(course.title).toLowerCase().includes("drug") ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 transition font-medium"
-                        >
-                          <Play className="h-3.5 w-3.5" /> Apply Now
-                        </a>
+                        <>
+                          <Link
+                            to="/projects/$slug"
+                            params={{ slug: course.slug }}
+                            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-accent transition font-medium"
+                          >
+                            <ArrowRight className="h-3.5 w-3.5" /> Explore More
+                          </Link>
+                          <a
+                            href={course.applyUrl || (String(course.title).toLowerCase().includes("drug") ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm text-background hover:opacity-90 transition font-medium"
+                          >
+                            <Play className="h-3.5 w-3.5" /> Apply Now
+                          </a>
+                        </>
                       )}
                     </div>
                   </div>

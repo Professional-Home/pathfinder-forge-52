@@ -2,6 +2,7 @@ import { getAllCourses } from "./store";
 
 export interface DashboardCourse {
   id: string;
+  slug: string;
   title: string;
   description: string;
   category: string;
@@ -10,6 +11,15 @@ export interface DashboardCourse {
   applyUrl?: string;
   apply_url?: string;
   status?: string;
+}
+
+/** Derive a URL-friendly slug from a course title */
+function deriveSlug(title: string): string {
+  const lower = (title || "").toLowerCase();
+  if (lower.includes("drug")) return "ai-in-drug-discovery";
+  if (lower.includes("bioinformatics")) return "bioinformatics";
+  if (lower.includes("bioplastic") || lower.includes("bio plastic")) return "bioplastic-innovation";
+  return lower.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 /** Centralized image resolver for all 3 courses */
@@ -26,6 +36,7 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
     .filter((c) => c.status === "published" || !c.status)
     .map((c) => ({
       id: c.id,
+      slug: c.slug || deriveSlug(c.name),
       title: c.name,
       description: c.shortDescription,
       category: c.category,
@@ -39,6 +50,7 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
 /** Frontend-only Bioinformatics seed for dashboard/admin */
 const BIOINFORMATICS_DASHBOARD_SEED: DashboardCourse = {
   id: "bioinformatics-frontend-seed",
+  slug: "bioinformatics",
   title: "Bioinformatics",
   description: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
   category: "Biotechnology",
@@ -52,8 +64,9 @@ const BIOINFORMATICS_DASHBOARD_SEED: DashboardCourse = {
 export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[] {
   const normalizedSupabase: DashboardCourse[] = (supabaseCourses || [])
     .filter((c) => c.status === "published" || !c.status)
-    .map((c) => ({
+    .map((c: any) => ({
       id: String(c.id || c.slug),
+      slug: c.slug || deriveSlug(c.title || c.name || ""),
       title: c.title || c.name || "Untitled Course",
       description: c.short_description || c.description || c.shortDescription || "",
       category: c.category || "General",
