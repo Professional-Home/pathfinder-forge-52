@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, Rocket, Check, Users, Map, Trophy, Milestone, LayoutDashboard, Plus } from "lucide-react";
+import { ArrowRight, Sparkles, Rocket, Check, Users, Map, Trophy, Milestone, LayoutDashboard, Plus, Star } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -66,6 +66,7 @@ function Landing() {
       <RevealWrapper><GrowthPath /></RevealWrapper>
       <RevealWrapper><HowItWorks /></RevealWrapper>
       <RevealWrapper><ProductPreview /></RevealWrapper>
+      <Testimonials />
       <RevealWrapper><WhyMicrylis /></RevealWrapper>
       <SiteFooter />
     </div>
@@ -846,6 +847,161 @@ function ProductPreview() {
           </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+
+/* ─────────────────────────────────────────────
+   Testimonials Section
+   ───────────────────────────────────────────── */
+
+const TESTIMONIALS = [
+  {
+    name: "Sai Shrestha",
+    institution: "Nit warangal",
+    rating: 5,
+    content: [
+      { text: "My research internship at Micrylis Biotech was an enriching and rewarding experience the strengthened my teamwork, communication, coordination and professional networking skills in a suppoetive and collaborative environment.", bold: false },
+      { text: "During my internship, I worked on the ", bold: false },
+      { text: "development of biodegradable pipette tips, where I gained valuable knowledge about different polymers, material selection and the importance of analytical and logical decision-making in product development.", bold: true },
+      { text: " Explorig this new field challenged me and expanded my scientific perspective beyond my existing interests.", bold: false },
+      { text: "\n\nI am sincerel grateful to Micrylis Biotech for this opportunity to learn from experienced professionals, enhance my problem-solving abilities and contribute to a meaningful project. The knowledge, guidance and experiences I gained will continue to shape my professional journey.", bold: false },
+    ],
+  },
+  {
+    name: "Riddhi mewada",
+    institution: "DBT, VNSGU",
+    rating: 5,
+    content: [
+      { text: "Interning at ", bold: false },
+      { text: "Micrylis Biotech", bold: true },
+      { text: " was a truly rewarding and enriching experience. During my internship, I had the opportunity to lead on-ground market research, engaging with laboratories and understanding their existing practices, challenges, and requirements. Alongside this, I studied ", bold: false },
+      { text: "CPCB biomedical waste management reports across multiple states in India", bold: true },
+      { text: ", analysing data related to waste generation, treatment, and disposal to identify gaps and potential business opportunities for the company.", bold: false },
+      { text: "\n\nWhat made this experience particularly valuable was the opportunity to work at the intersection of research, market analysis, and business strategy. I was trusted with responsibilities that directly contributed to understanding the market and identifying opportunities for Micrylis Biotech\u2019s growth. This hands-on exposure not only strengthened my research and analytical skills but also gave me a deeper understanding of how scientific innovation can be translated into meaningful, real-world solutions.", bold: false },
+    ],
+  },
+  {
+    name: "Minal Mahesh Patil",
+    institution: undefined,
+    rating: 5,
+    content: [
+      { text: "I\u2019m grateful for the opportunity to intern at ", bold: false },
+      { text: "Micrylis Biotech", bold: true },
+      { text: ". It was an excellent learning experience that helped me grow both personally and professionally.", bold: false },
+      { text: "\n\nDuring my internship, ", bold: false },
+      { text: "I worked on the research and development of MCT tubes", bold: true },
+      { text: ", where I gained hands-on experience in scientific analysis, technical documentation, and product development. Working with such a supportive, knowledgeable, and encouraging team enhanced my technical skills, strengthened my confidence, and gave me valuable exposure to real-world biotechnology research and innovation.", bold: false },
+      { text: "\n\nA heartfelt thank you to the entire Micrylis Biotech team for their guidance and mentorship. I highly recommend Micrylis Biotech to anyone seeking meaningful industry experience and professional growth.", bold: false },
+    ],
+  },
+  {
+    name: "Sareema hasan",
+    institution: undefined,
+    rating: 5,
+    content: [
+      { text: "My Internship at ", bold: false },
+      { text: "Micrylis Biotech", bold: true },
+      { text: " was an enriching and rewarding experience that contributed significantly to both my personal and professional growth. Working with such a ", bold: false },
+      { text: "suppotive and knowledgeable team", bold: true },
+      { text: " made the learning process enjoyable and inspiring. Everyone was approachable, collaborative and always willing to guide me whenever I needed assistance.", bold: false },
+      { text: "\n\nDuring my internship, I had the opportunity to work on the ", bold: false },
+      { text: "development and scientific analysis of semi-biodegradable Petri plates.", bold: true },
+      { text: " This experience strengthened my research, analytical, documentation and report-writing skills while giving me valuable exposure to real-world industrial practices. It also improved my confidence, problem-solving abilities and understanding of teamwork in a professional environment.", bold: false },
+      { text: "\n\nI am truly grateful to the entire Micrylis Biotech team for ", bold: false },
+      { text: "mentorship, encouragement and continuous supoort throughout my internship.", bold: true },
+      { text: " This experience has been a valuable milestone in my career and I would recommend Micrylis Biotech to students and asprirng professionals seeking meaningful industry exposure.", bold: false },
+    ],
+  },
+];
+
+function TestimonialCard({ testimonial }: { testimonial: typeof TESTIMONIALS[number] }) {
+  return (
+    <div className="flex w-[340px] shrink-0 flex-col rounded-2xl border border-border/70 bg-surface-elevated/90 p-6 shadow-sm backdrop-blur-sm sm:w-[400px]">
+      {/* Stars */}
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: testimonial.rating }).map((_, i) => (
+          <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+        {testimonial.content.map((segment, i) =>
+          segment.bold ? (
+            <strong key={i} className="font-semibold text-foreground">{segment.text}</strong>
+          ) : (
+            <span key={i}>{segment.text}</span>
+          )
+        )}
+      </div>
+
+      {/* Author */}
+      <div className="mt-5 border-t border-border/50 pt-4">
+        <div className="font-display text-sm font-semibold text-foreground">{testimonial.name}</div>
+        {testimonial.institution && (
+          <div className="mt-0.5 text-xs text-muted-foreground">{testimonial.institution}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Testimonials() {
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Double the testimonials for seamless infinite loop
+  const doubled = [...TESTIMONIALS, ...TESTIMONIALS];
+
+  return (
+    <section className="border-b border-border/60 bg-surface/30 py-12 sm:py-16 md:py-20 overflow-hidden">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6 }}
+          className="mb-10 text-center sm:mb-12"
+        >
+          <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">Testimonials</div>
+          <h2 className="font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl md:text-5xl">
+            What our interns say
+          </h2>
+        </motion.div>
+      </div>
+
+      {/* Carousel wrapper */}
+      <div
+        className="relative"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onClick={() => setIsPaused((p) => !p)}
+      >
+        {/* Fade edges */}
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-background to-transparent sm:w-24" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-background to-transparent sm:w-24" />
+
+        <div
+          className="flex gap-5"
+          style={{
+            width: "max-content",
+            animation: `testimonialScroll 40s linear infinite`,
+            animationPlayState: isPaused ? "paused" : "running",
+          }}
+        >
+          {doubled.map((t, i) => (
+            <TestimonialCard key={`${t.name}-${i}`} testimonial={t} />
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes testimonialScroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
     </section>
   );
 }
