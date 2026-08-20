@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { FlaskConical, Sparkles, Video, ChevronDown, ExternalLink, ArrowRight } from "lucide-react";
+import { FlaskConical, CheckCircle2, Video, ChevronDown, ExternalLink, ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PublicCourseCard } from "@/components/courses/PublicCourseCard";
@@ -76,7 +76,7 @@ function ProjectsListingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-8">
             <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              <Sparkles className="h-3 w-3 text-student" />
+              <CheckCircle2 className="h-3 w-3 text-student" />
               Available now
             </div>
             <h2 className="font-display text-2xl sm:text-3xl">Featured projects</h2>
