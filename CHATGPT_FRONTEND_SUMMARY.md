@@ -1,6 +1,6 @@
 # ChatGPT Frontend Summary — Micrylis
 
-> **Last updated**: August 18, 2026
+> **Last updated**: August 20, 2026
 > **Branch**: `feature/bioinformatics-course` (synced with latest `origin/main`)
 
 ---
@@ -106,6 +106,7 @@ Backend requirements documented in: **`BACKEND_BIOINFORMATICS_HANDOVER.md`**
 | 5 | `feat(webinar): add bioinformatics webinar section` |
 | 6 | `docs(backend): update bioinformatics backend handover` |
 | 7 | `docs: update frontend implementation summary` |
+| 8 | `fix(projects): replace available status icon with CheckCircle2` |
 
 ### Files Created
 
@@ -118,7 +119,7 @@ Backend requirements documented in: **`BACKEND_BIOINFORMATICS_HANDOVER.md`**
 - `src/lib/courses/dashboard-courses.ts` — bioinformatics dashboard/admin seed
 - `src/components/courses/CourseDetailTemplate.tsx` — exact About Program content
 - `src/components/courses/PublicCourseCard.tsx` — 3-course image detection
-- `src/routes/projects/index.tsx` — 3-col grid, webinar section
+- `src/routes/projects/index.tsx` — 3-col grid, webinar section, available icon replacement
 - `src/routes/about.tsx` — email + social order (via merge resolution)
 - `src/routes/index.tsx` — Webinar CTA button in hero
 
@@ -137,3 +138,43 @@ Backend requirements documented in: **`BACKEND_BIOINFORMATICS_HANDOVER.md`**
 - Existing Projects page webinar section preserved
 - No backend changes made
 - Works on desktop, tablet, mobile
+
+---
+
+## 9. Projects "Available now" Icon — Replaced
+
+- **Previous icon**: `Sparkles` (lucide-react) — looked AI-generated/decorative
+- **New icon**: `CheckCircle2` (lucide-react) — professional, communicates availability/active status
+- **Reused existing icon library**: lucide-react (already installed, `CheckCircle2` already used in `webinars.tsx` and `guidance.tsx`)
+- **No custom SVG or new dependency added**
+- "Available now" text unchanged
+- Existing colors, spacing, layout, and responsive behavior preserved
+- **File modified**: `src/routes/projects/index.tsx` (import + usage on 2 lines)
+
+---
+
+## 10. Decorative Hyphen Audit — No Changes Needed
+
+A thorough review of **all user-facing content** across the entire frontend was performed:
+
+- Homepage (`index.tsx`) — FAQ, growth path, feature cards, product preview
+- Projects page (`projects/index.tsx`)
+- Course detail template (`CourseDetailTemplate.tsx`) — BioPlastic, AI Drug Discovery, Bioinformatics
+- About page (`about.tsx`)
+- Webinar pages (`webinars.tsx`, `webinar-config.ts`)
+- Site footer (`site-footer.tsx`)
+- Blog data (`lib/blogs/store.ts`)
+- Course data stores (`lib/courses/store.ts`, `data.ts`, `dashboard-courses.ts`)
+- Legal pages (privacy, refund, disclaimer, return policy)
+- Login, signup, onboarding, dashboard pages
+
+**Result**: No unnecessary decorative hyphens were found. All hyphens/dashes in the codebase are either:
+
+1. **Em dashes (`—`)** used intentionally for title separators ("Projects — Micrylis Biotech"), section labels ("01 — The Process"), and natural English punctuation
+2. **Legitimate compound terms**: AI-integrated, research-oriented, bio-based, life-science, POC-to-MVP, etc.
+3. **Code-level operations**: Array indexing, math operations, CSS classes
+4. **Arrows (`→`)**: Used as flow indicators in research journey diagrams
+5. **Dots (`•`)**: Used as inline separators between skill tags
+
+No content was modified for this task. Legitimate hyphens were preserved.
+
