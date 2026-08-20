@@ -16,6 +16,16 @@ CREATE TABLE IF NOT EXISTS public.profile (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Ensure all columns exist if the table was created previously without them
+ALTER TABLE public.profile ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.profile ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE public.profile ADD COLUMN IF NOT EXISTS mobile TEXT;
+ALTER TABLE public.profile ADD COLUMN IF NOT EXISTS college TEXT;
+ALTER TABLE public.profile ADD COLUMN IF NOT EXISTS degree TEXT;
+ALTER TABLE public.profile ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
+ALTER TABLE public.profile ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+ALTER TABLE public.profile ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+
 -- 2. Create or Update public.users table (Secondary reference)
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -25,6 +35,12 @@ CREATE TABLE IF NOT EXISTS public.users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS phone_no TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now());
 
 -- 3. Enable Row Level Security (RLS)
 ALTER TABLE public.profile ENABLE ROW LEVEL SECURITY;
@@ -46,9 +62,6 @@ DROP POLICY IF EXISTS "Users can update own profile" ON public.profile;
 CREATE POLICY "Users can update own profile" ON public.profile
     FOR UPDATE USING (auth.uid() = id)
     WITH CHECK (auth.uid() = id AND (role IS NOT DISTINCT FROM (SELECT role FROM public.profile WHERE id = auth.uid())));
-
--- Block users from reading/updating other users' profiles
--- (Handled implicitly by auth.uid() = id checks)
 
 -- 5. RLS POLICIES FOR public.users
 DROP POLICY IF EXISTS "Users can view own user record" ON public.users;
