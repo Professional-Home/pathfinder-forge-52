@@ -11,8 +11,8 @@ export const PUBLIC_NAV_LINKS = [
     isRoute: true as const,
     matchPath: "/projects",
   },
-  { name: "Blog", href: "/blog", isRoute: true as const, matchPath: "/blog" },
   { name: "Webinar", href: "/webinars", isRoute: true as const, matchPath: "/webinars" },
+  { name: "Blog", href: "/blog", isRoute: true as const, matchPath: "/blog" },
 ] as const;
 
 export const PUBLIC_EXPLORE_LINKS = [
@@ -24,10 +24,8 @@ export const PUBLIC_EXPLORE_LINKS = [
     isRoute: true as const,
     matchPath: "/projects",
   },
+  { name: "Webinar", href: "/webinars", isRoute: true as const, matchPath: "/webinars" },
   { name: "Blog", href: "/blog", isRoute: true as const, matchPath: "/blog" },
-  { name: "Upcoming Webinars", href: "/webinars#upcoming", isRoute: true as const, matchPath: "/webinars" },
-  { name: "Live Webinars", href: "/webinars#live", isRoute: true as const, matchPath: "/webinars" },
-  { name: "Past Webinars", href: "/webinars#past", isRoute: true as const, matchPath: "/webinars" },
 ] as const;
 
 export const SCROLL_SPY_OFFSET = 120;

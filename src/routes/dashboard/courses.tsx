@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Play, Lock, MessageCircle, BookOpen } from "lucide-react";
+import { Play, Lock, MessageCircle, BookOpen, ArrowRight } from "lucide-react";
 import { mergeDashboardCourses, type DashboardCourse } from "@/lib/courses/dashboard-courses";
 import { supabase } from "../../utils/supabase";
 import { useQuery } from "@tanstack/react-query";
@@ -102,7 +102,7 @@ function CoursesPage() {
               const defaultImage = courseIdentifier.includes("drug")
                 ? "/Photos/ai-drug-discovery-card.jpeg"
                 : courseIdentifier.includes("bioinformatics")
-                  ? "/Photos/ai-drug-discovery-card.jpeg"
+                  ? "/Photos/bio-cover.jpeg"
                   : "/Photos/bioplastic-card.jpeg";
               const thumbnailUrl = getOptimizedImageUrl(defaultImage, { width: 600, height: 300 });
 
