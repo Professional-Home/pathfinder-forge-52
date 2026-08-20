@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Play, Calendar, BookOpen, Users, Award, TrendingUp, Clock, ArrowUpRight, Lock, MessageCircle } from "lucide-react";
+import { Play, Calendar, BookOpen, Users, Award, TrendingUp, Clock, ArrowUpRight, Lock, MessageCircle, ArrowRight } from "lucide-react";
 import { mockUser, type User } from "@/lib/mockUser";
 import { type Domain, DOMAINS } from "@/lib/domain";
 import { Card, Greeting, MentorRow, GuidanceRow } from "@/components/dashboard-shared";
@@ -305,7 +305,7 @@ function DashboardCourses() {
         const defaultImage = courseIdentifier.includes("drug")
           ? "/Photos/ai-drug-discovery-card.jpeg"
           : courseIdentifier.includes("bioinformatics")
-            ? "/Photos/ai-drug-discovery-card.jpeg"
+            ? "/Photos/bio-cover.jpeg"
             : "/Photos/bioplastic-card.jpeg";
 
         const rawThumbnail = defaultImage;
@@ -350,14 +350,23 @@ function DashboardCourses() {
                     </a>
                   </>
                 ) : (
-                  <a
-                    href={course.applyUrl || (String(course.title).toLowerCase().includes("drug") ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-md bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 transition font-medium"
-                  >
-                    <Play className="h-3 w-3" /> Apply Now
-                  </a>
+                  <>
+                    <a
+                      href={course.applyUrl || (String(course.title).toLowerCase().includes("drug") ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-md bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 transition font-medium"
+                    >
+                      <Play className="h-3 w-3" /> Apply Now
+                    </a>
+                    <Link
+                      to="/projects/$slug"
+                      params={{ slug: course.slug }}
+                      className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs text-foreground hover:bg-accent transition font-medium"
+                    >
+                      <ArrowRight className="h-3 w-3" /> Explore More
+                    </Link>
+                  </>
                 )}
               </div>
             </div>

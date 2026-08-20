@@ -917,6 +917,8 @@ const TESTIMONIALS = [
 ];
 
 function TestimonialCard({ testimonial }: { testimonial: typeof TESTIMONIALS[number] }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <div className="flex w-[340px] shrink-0 flex-col rounded-2xl border border-border/70 bg-surface-elevated/90 p-6 shadow-sm backdrop-blur-sm sm:w-[400px]">
       {/* Stars */}
@@ -927,7 +929,9 @@ function TestimonialCard({ testimonial }: { testimonial: typeof TESTIMONIALS[num
       </div>
 
       {/* Content */}
-      <div className="mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+      <div
+        className={`mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-line ${!expanded ? "line-clamp-4" : ""}`}
+      >
         {testimonial.content.map((segment, i) =>
           segment.bold ? (
             <strong key={i} className="font-semibold text-foreground">{segment.text}</strong>
@@ -937,8 +941,20 @@ function TestimonialCard({ testimonial }: { testimonial: typeof TESTIMONIALS[num
         )}
       </div>
 
+      {/* Read more toggle */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setExpanded((prev) => !prev);
+        }}
+        className="mt-2 self-start text-xs font-medium text-student hover:underline transition-colors"
+      >
+        {expanded ? "Read less" : "Read more"}
+      </button>
+
       {/* Author */}
-      <div className="mt-5 border-t border-border/50 pt-4">
+      <div className="mt-4 border-t border-border/50 pt-4">
         <div className="font-display text-sm font-semibold text-foreground">{testimonial.name}</div>
         {testimonial.institution && (
           <div className="mt-0.5 text-xs text-muted-foreground">{testimonial.institution}</div>
