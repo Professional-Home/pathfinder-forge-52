@@ -1,5 +1,5 @@
 /**
- * Test Script for Supabase Auth Send Email Hook (Resend Integration)
+ * Test Script for Supabase Auth Send Email Hook (Nodemailer Integration)
  *
  * Usage with Node / tsx:
  *   npx tsx scripts/test-email-hook.ts
@@ -75,7 +75,7 @@ async function runTest() {
     console.log("Response Body:", responseText);
 
     if (response.ok) {
-      console.log("\n✅ SUCCESS: Edge Function executed successfully and Resend delivered the email.");
+      console.log("\n✅ SUCCESS: Edge Function executed successfully and Nodemailer delivered the email.");
     } else {
       console.error("\n❌ FAILURE: Edge Function returned an error response.");
     }

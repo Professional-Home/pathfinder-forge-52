@@ -104,7 +104,6 @@ function Sidebar({ domain }: { domain: Domain }) {
     // { icon: BookOpen, label: "Guidance", to: "/dashboard/guidance" },
     { icon: Users, label: "Mentors", to: "/dashboard/mentors" },
     { icon: GradIcon, label: "Courses", to: "/dashboard/courses" },
-    { icon: Award, label: "Certificates", to: "/dashboard/certificates" },
     // { icon: Wallet, label: "Payments", to: "/dashboard/payments" },
     { icon: Settings, label: "Settings", to: "/dashboard/settings" },
   ];
@@ -150,7 +149,6 @@ function MobileNav({ domain }: { domain: Domain }) {
     // { icon: BookOpen, label: "Guidance", to: "/dashboard/guidance" },
     { icon: Users, label: "Mentors", to: "/dashboard/mentors" },
     { icon: GradIcon, label: "Courses", to: "/dashboard/courses" },
-    { icon: Award, label: "Certificates", to: "/dashboard/certificates" },
     // { icon: Wallet, label: "Payments", to: "/dashboard/payments" },
     { icon: Settings, label: "Settings", to: "/dashboard/settings" },
   ];

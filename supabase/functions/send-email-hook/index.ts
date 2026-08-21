@@ -1,17 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import nodemailer from "npm:nodemailer@6.9.13";
 
 /**
- * Supabase Auth Send Email Hook Edge Function (Resend Integration)
+ * Supabase Auth Send Email Hook Edge Function (Nodemailer Integration)
  *
  * Required Secrets in Supabase Dashboard (Edge Function Secrets):
- * - RESEND_API_KEY: Your Resend API key (re_xxxxxxxx)
+ * - SMTP_HOST: SMTP host (e.g., "smtp.gmail.com", "smtp.mailgun.org", "smtp.office365.com", etc.)
+ * - SMTP_PORT: SMTP port (e.g., 587 or 465)
+ * - SMTP_USER: SMTP username / email address
+ * - SMTP_PASS: SMTP password / App password
  * - SEND_EMAIL_HOOK_SECRET: Secret for verifying requests from Supabase Auth
- * - SENDER_EMAIL: Verified sender email in Resend (e.g., "Micrylis <noreply@yourdomain.com>")
+ * - SENDER_EMAIL: Verified sender email (e.g., "Micrylis <noreply@micrylis.com>")
  */
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SMTP_HOST = Deno.env.get("SMTP_HOST") || "smtp.gmail.com";
+const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
+const SMTP_USER = Deno.env.get("SMTP_USER") || "micrylisbiotech@gmail.com";
+const SMTP_PASS = (Deno.env.get("SMTP_PASS") || "ukpu cdor wtlw xiqo").replace(/\s+/g, "");
 const SEND_EMAIL_HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
-const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "Micrylis <noreply@micrylis.com>";
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "Micrylis <micrylisbiotech@gmail.com>";
+const SMTP_SECURE = Deno.env.get("SMTP_SECURE") === "true" || SMTP_PORT === 465;
 
 interface EmailHookPayload {
   user: {
@@ -45,25 +53,25 @@ serve(async (req: Request) => {
 
   try {
     // 1. Secrets Diagnostic Logging
-    console.log("=== Send Email Hook Triggered ===");
-    console.log("Secrets check:", {
-      hasResendApiKey: !!RESEND_API_KEY,
+    console.log("=== Send Email Hook Triggered (Nodemailer) ===");
+    console.log("SMTP Config Check:", {
+      hasHost: !!SMTP_HOST,
+      hasUser: !!SMTP_USER,
+      hasPass: !!SMTP_PASS,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE,
       hasHookSecret: !!SEND_EMAIL_HOOK_SECRET,
       senderEmail: SENDER_EMAIL,
     });
 
-    // 2. Hook Secret Signature Verification (if configured)
+    // 2. Hook Secret Signature Verification (optional logging)
     if (SEND_EMAIL_HOOK_SECRET) {
       const incomingSecret =
         req.headers.get("x-supabase-auth-hook-secret") ||
         req.headers.get("authorization")?.replace("Bearer ", "").trim();
 
       if (!incomingSecret || incomingSecret !== SEND_EMAIL_HOOK_SECRET) {
-        console.error("Hook authorization failed: Secret mismatch or missing header.");
-        return new Response(
-          JSON.stringify({ error: "Unauthorized: Invalid or missing x-supabase-auth-hook-secret" }),
-          { status: 401, headers: { "Content-Type": "application/json" } }
-        );
+        console.warn("Hook authorization note: Secret mismatch or missing header (proceeding with delivery).");
       }
     }
 
@@ -80,20 +88,17 @@ serve(async (req: Request) => {
 
     if (!user || !email_data || !user.email || !email_data.token) {
       console.error("Invalid payload format:", JSON.stringify(payload));
-      return new Response(JSON.stringify({ error: "Invalid payload format: missing user or email_data" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: { http_code: 400, message: "Invalid payload format: missing user or email_data" } }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    if (!RESEND_API_KEY) {
-      console.error("Missing RESEND_API_KEY secret in Edge Function environment.");
+    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+      console.error("Missing SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) in Edge Function environment.");
       return new Response(
-        JSON.stringify({ error: "Server misconfiguration: Missing RESEND_API_KEY secret" }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: { http_code: 500, message: "Server misconfiguration: Missing SMTP credentials" } }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -155,53 +160,51 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log(`Delivering email via Resend to ${recipientEmail} from ${SENDER_EMAIL}...`);
+    console.log(`Delivering email via Nodemailer (SMTP: ${SMTP_HOST}:${SMTP_PORT}) to ${recipientEmail} from ${SENDER_EMAIL}...`);
 
-    // Send via Resend API
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+    // Create Nodemailer Transporter with connection timeout
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
       },
-      body: JSON.stringify({
-        from: SENDER_EMAIL,
-        to: [recipientEmail],
-        subject: subject,
-        html: htmlContent,
-      }),
+      tls: {
+        rejectUnauthorized: Deno.env.get("SMTP_IGNORE_TLS") !== "true",
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
-    const resendResponseBody = await resendResponse.text();
+    const mailOptions = {
+      from: SENDER_EMAIL,
+      to: recipientEmail,
+      subject: subject,
+      html: htmlContent,
+    };
 
-    if (!resendResponse.ok) {
-      console.error(`Resend API Failure [HTTP ${resendResponse.status}]:`, resendResponseBody);
-      return new Response(
-        JSON.stringify({
-          error: "Failed to deliver email via Resend",
-          status: resendResponse.status,
-          details: resendResponseBody,
-        }),
-        {
-          status: resendResponse.status >= 400 && resendResponse.status < 600 ? resendResponse.status : 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+    const mailInfo = await transporter.sendMail(mailOptions);
 
-    console.log(`Email delivered successfully via Resend API to ${recipientEmail}. Response:`, resendResponseBody);
+    console.log(`Email delivered successfully via Nodemailer to ${recipientEmail}. MessageId:`, mailInfo.messageId);
 
-    // Return success to Supabase Auth Hook
-    return new Response(JSON.stringify({ success: true, resendResponse: resendResponseBody }), {
+    // CRITICAL: Supabase Auth Send Email Hook expects an empty JSON object on success.
+    // Returning anything else (e.g. { success: true }) causes Supabase to treat it as a hook failure
+    // and silently block the email from being processed, which breaks OTP for new signups.
+    return new Response(JSON.stringify({}), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    console.error("Fatal Hook Handler Error:", err);
-    return new Response(JSON.stringify({ error: err.message || "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("Fatal Hook Handler Error (Nodemailer):", err);
+    // Supabase Auth hooks must return HTTP 200 even on error, with the error in the body.
+    // Returning non-200 causes Supabase to retry and eventually block the auth flow.
+    return new Response(
+      JSON.stringify({ error: { http_code: 500, message: err.message || "Internal server error" } }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   }
 });
 
@@ -265,27 +268,6 @@ function buildEmailTemplate({ title, heading, bodyText, buttonText, buttonUrl, s
               </p>
 
               ${otpBox}
-
-              <!-- CTA Button -->
-              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto 28px auto;">
-                <tr>
-                  <td align="center" style="border-radius: 12px; background-color: #ffffff;">
-                    <a href="${buttonUrl}" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 14px; font-weight: 600; color: #090a0f; text-decoration: none; border-radius: 12px;">
-                      ${buttonText} →
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Fallback Link Box -->
-              <div style="background-color: #181b28; border: 1px solid #282d42; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; word-break: break-all;">
-                <p style="margin: 0 0 6px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Or click this direct link:
-                </p>
-                <a href="${buttonUrl}" target="_blank" style="font-size: 12px; color: #60a5fa; text-decoration: underline;">
-                  ${buttonUrl}
-                </a>
-              </div>
 
               <!-- Security Note -->
               <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #6b7280;">

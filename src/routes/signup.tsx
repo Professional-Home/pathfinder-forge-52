@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, GraduationCap, Rocket, Microscope, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, GraduationCap, Rocket, Microscope, Sparkles, Check, Loader2 } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
 import { setCookie } from "@/lib/cookies";
+import { sendOtp, verifyOtp } from "@/lib/auth-server";
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 
 /** Official Google "G" logo in SVG */
 function GoogleIcon() {
@@ -98,6 +100,7 @@ function SignupPage() {
     }
   }
 
+
   function validateForm(): string | null {
     if (!name.trim() || name.trim().length < 2) return "Please enter your full name (at least 2 characters).";
     if (name.trim().length > 100) return "Full name must not exceed 100 characters.";
@@ -123,60 +126,34 @@ function SignupPage() {
 
     setLoading(true);
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+    try {
+      // Send OTP via our secure server function
+      const result = await sendOtp({
         data: {
-          full_name: name.trim(),
-          mobile: mobile.trim(),
-          college: college.trim(),
-          degree: degree.trim(),
+          email: email.trim().toLowerCase(),
+          purpose: "signup",
+          name: name.trim(),
+        },
+      });
+
+      setLoading(false);
+
+      if (!result.success) {
+        if (result.code === "RATE_LIMITED") {
+          setError(result.message || "Please wait before requesting a new code.");
+        } else {
+          setError(result.message || "Failed to send verification code. Please try again.");
         }
-      }
-    });
-
-    setLoading(false);
-
-    if (signUpError) {
-      setError(signUpError.message || "Failed to create account. Please try again.");
-      return;
-    }
-
-    if (data.user) {
-      // Save to public users table
-      try {
-        await supabase.from("users").upsert({
-          id: data.user.id,
-          name: name.trim(),
-          email: email.trim(),
-          phone_no: mobile.trim() || null,
-        });
-      } catch (err) {
-        console.warn("User table sync note:", err);
+        return;
       }
 
-      // Save details to profile table
-      try {
-        await supabase.from("profile").upsert({
-          id: data.user.id,
-          email: email.trim(),
-          name: name.trim(),
-          mobile: mobile.trim(),
-          college: college.trim(),
-          degree: degree.trim(),
-        });
-      } catch (err) {
-        console.warn("Profile table sync note:", err);
-      }
-
-      // Check if email confirmation is required (no session returned)
-      if (!data.session) {
-        setStep("verification");
-      } else {
-        setStep("domain");
-      }
+      // OTP sent successfully — move to verification step
+      setStep("verification");
+      setResendCooldown(60);
+    } catch (err: any) {
+      setLoading(false);
+      console.error("Signup error:", err);
+      setError("Network error. Please check your connection and try again.");
     }
   }
 
@@ -186,60 +163,125 @@ function SignupPage() {
     setError("");
     setSuccessMsg("");
 
-    const { error: resendErr } = await supabase.auth.resend({
-      type: "signup",
-      email: email.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+    try {
+      const result = await sendOtp({
+        data: {
+          email: email.trim().toLowerCase(),
+          purpose: "signup",
+          name: name.trim(),
+        },
+      });
+
+      setResendLoading(false);
+
+      if (!result.success) {
+        if (result.code === "RATE_LIMITED") {
+          setError(result.message);
+        } else {
+          setError(result.message || "Failed to resend verification code.");
+        }
+      } else {
+        setSuccessMsg("Verification code sent! Please check your inbox (and spam folder).");
+        setResendCooldown(60);
       }
-    });
-
-    setResendLoading(false);
-
-    if (resendErr) {
-      setError(resendErr.message || "Failed to resend verification email.");
-    } else {
-      setSuccessMsg("Verification email sent! Please check your inbox.");
-      setResendCooldown(60);
+    } catch (err) {
+      setResendLoading(false);
+      setError("Network error. Please check your connection and try again.");
     }
   }
 
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
     if (!otpCode.trim() || otpCode.trim().length < 6) {
-      setError("Please enter the 6-digit OTP code sent to your email.");
+      setError("Please enter the 6-digit verification code sent to your email.");
       return;
     }
     setOtpLoading(true);
     setError("");
     setSuccessMsg("");
 
-    const { data, error: verifyErr } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: otpCode.trim(),
-      type: "signup",
-    });
-
-    if (verifyErr) {
-      const { error: emailVerifyErr } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: otpCode.trim(),
-        type: "email",
+    try {
+      // Verify OTP via our secure server function
+      const result = await verifyOtp({
+        data: {
+          email: email.trim().toLowerCase(),
+          otp: otpCode.trim(),
+          purpose: "signup",
+          password: password,
+          metadata: {
+            full_name: name.trim(),
+            mobile: mobile.trim(),
+            college: college.trim(),
+            degree: degree.trim(),
+          },
+        },
       });
 
-      if (emailVerifyErr) {
-        setOtpLoading(false);
-        setError(emailVerifyErr.message || verifyErr.message || "Invalid or expired OTP code.");
+      setOtpLoading(false);
+
+      if (!result.success) {
+        setError(result.message || "Invalid or expired verification code.");
         return;
       }
-    }
 
-    setOtpLoading(false);
-    setSuccessMsg("Account verified successfully! Proceeding...");
-    setTimeout(() => {
-      setStep("domain");
-    }, 800);
+      // OTP verified — user is created server-side. Now sign in with Supabase client
+      setSuccessMsg("Account verified successfully! Setting up your session...");
+
+      // Sign in with the password they just created
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password,
+      });
+
+      if (signInError) {
+        console.warn("Auto sign-in failed:", signInError.message);
+        // Still proceed — account is created and verified
+        setSuccessMsg("Account created! Please sign in with your credentials.");
+        setTimeout(() => {
+          navigate({ to: "/login" });
+        }, 1500);
+        return;
+      }
+
+      // Save to public users/profile tables
+      if (signInData?.user) {
+        try {
+          await supabase.from("users").upsert({
+            id: signInData.user.id,
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            phone_no: mobile.trim() || null,
+          });
+        } catch (err) {
+          console.warn("User table sync note:", err);
+        }
+
+        try {
+          await supabase.from("profile").upsert({
+            id: signInData.user.id,
+            email: email.trim().toLowerCase(),
+            name: name.trim(),
+            mobile: mobile.trim(),
+            college: college.trim(),
+            degree: degree.trim(),
+          });
+        } catch (err) {
+          console.warn("Profile table sync note:", err);
+        }
+      }
+
+      // Proceed to domain pick step
+      setTimeout(() => {
+        setStep("domain");
+      }, 800);
+    } catch (err: any) {
+      setOtpLoading(false);
+      console.error("OTP verification error:", err);
+      setError("Network error. Please check your connection and try again.");
+    }
   }
+
+
 
 
 
@@ -300,6 +342,32 @@ function SignupPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+      {/* High-End Animated Loading Overlay */}
+      <LoadingOverlay
+        isOpen={loading || otpLoading || resendLoading || googleLoading}
+        title={
+          loading
+            ? "Sending OTP Email..."
+            : otpLoading
+            ? "Verifying Code..."
+            : resendLoading
+            ? "Resending Code..."
+            : "Connecting to Google..."
+        }
+        subtitle={
+          loading
+            ? "Connecting to Gmail SMTP server & dispatching your 6-digit OTP..."
+            : otpLoading
+            ? "Checking 6-digit OTP security hash & configuring your account..."
+            : resendLoading
+            ? "Generating a fresh 6-digit OTP code..."
+            : "Redirecting to Google secure authentication..."
+        }
+        badgeText={
+          otpLoading ? "CSPRNG Cryptographic Verification" : "Gmail SMTP Encrypted Stream"
+        }
+      />
+
       {/* Background orbs */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         {orbs.map((orb, i) => (
@@ -584,11 +652,21 @@ function SignupPage() {
                 <motion.button
                   type="submit"
                   id="signup-submit"
+                  disabled={loading}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition hover:opacity-90"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-60"
                 >
-                  Continue <ArrowRight className="h-3.5 w-3.5" />
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-background" />
+                      <span>Sending OTP code...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Continue</span> <ArrowRight className="h-3.5 w-3.5" />
+                    </>
+                  )}
                 </motion.button>
 
                 {/* Google sign-up */}
@@ -670,7 +748,7 @@ function SignupPage() {
               <div>
                 <h1 className="font-display text-3xl sm:text-4xl">Check your email</h1>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  We've sent a verification link to:
+                  We've sent a 6-digit verification code to:
                 </p>
                 <div className="mt-2 inline-block rounded-lg border border-border bg-surface-elevated px-4 py-2 font-mono text-sm font-medium text-foreground">
                   {email || "your email address"}
@@ -678,7 +756,7 @@ function SignupPage() {
               </div>
 
               <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
-                Please click the link in your email to activate your account. If you don't see it in your inbox, check your spam or junk folder.
+                Please enter the 6-digit OTP code from your email to activate your account. If you don't see it in your inbox, check your spam or junk folder.
               </p>
 
               {/* Error and Success Feedback */}

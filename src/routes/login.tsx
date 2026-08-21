@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, GraduationCap, Rocket, Microscope, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, GraduationCap, Rocket, Microscope, Sparkles, Loader2 } from "lucide-react";
 import { Wordmark } from "@/components/brand";
 import { supabase } from "@/utils/supabase";
 import { getCookie } from "@/lib/cookies";
+import { sendOtp, verifyOtp } from "@/lib/auth-server";
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -139,21 +141,29 @@ function LoginPage() {
     setError("");
     setSuccessMsg("");
 
-    const { error: resendErr } = await supabase.auth.resend({
-      type: "signup",
-      email: email.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+    try {
+      const result = await sendOtp({
+        data: {
+          email: email.trim().toLowerCase(),
+          purpose: "signup",
+        },
+      });
+
+      setResendLoading(false);
+
+      if (!result.success) {
+        if (result.code === "RATE_LIMITED") {
+          setError(result.message);
+        } else {
+          setError(result.message || "Failed to resend verification code.");
+        }
+      } else {
+        setSuccessMsg("Verification code sent! Please check your inbox.");
+        setResendCooldown(60);
       }
-    });
-
-    setResendLoading(false);
-
-    if (resendErr) {
-      setError(resendErr.message || "Failed to resend verification email.");
-    } else {
-      setSuccessMsg("Verification email sent! Please check your inbox.");
-      setResendCooldown(60);
+    } catch (err) {
+      setResendLoading(false);
+      setError("Network error. Please check your connection and try again.");
     }
   }
 
@@ -164,41 +174,68 @@ function LoginPage() {
       return;
     }
     if (!otpCode.trim() || otpCode.trim().length < 6) {
-      setError("Please enter the 6-digit OTP code sent to your email.");
+      setError("Please enter the 6-digit verification code sent to your email.");
       return;
     }
     setOtpLoading(true);
     setError("");
     setSuccessMsg("");
 
-    const { data, error: verifyErr } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: otpCode.trim(),
-      type: "signup",
-    });
-
-    if (verifyErr) {
-      const { data: emailData, error: emailVerifyErr } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: otpCode.trim(),
-        type: "email",
+    try {
+      const result = await verifyOtp({
+        data: {
+          email: email.trim().toLowerCase(),
+          otp: otpCode.trim(),
+          purpose: "signup",
+        },
       });
 
-      if (emailVerifyErr) {
-        setOtpLoading(false);
-        setError(emailVerifyErr.message || verifyErr.message || "Invalid or expired OTP code.");
+      setOtpLoading(false);
+
+      if (!result.success) {
+        setError(result.message || "Invalid or expired verification code.");
         return;
       }
-    }
 
-    setOtpLoading(false);
-    setSuccessMsg("Email verified successfully! Logging you in...");
-    setTimeout(() => {
-      navigate({ to: "/dashboard" });
-    }, 800);
+      // OTP verified — email is now confirmed, try signing in with password
+      setSuccessMsg("Email verified! Signing you in...");
+
+      if (password) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+
+        if (!signInError && signInData?.session) {
+          setTimeout(() => {
+            navigate({ to: "/dashboard" });
+          }, 800);
+          return;
+        }
+      }
+
+      // If no password or sign-in failed, redirect to login
+      setSuccessMsg("Email verified successfully! Please sign in.");
+      setTimeout(() => {
+        setIsUnverified(false);
+        setError("");
+        setSuccessMsg("Your email is now verified. Please enter your password and sign in.");
+      }, 1000);
+    } catch (err: any) {
+      setOtpLoading(false);
+      console.error("OTP verification error:", err);
+      setError("Network error. Please check your connection and try again.");
+    }
   }
 
-  async function handleForgotPasswordSubmit(e: React.FormEvent) {
+
+
+  const [resetStep, setResetStep] = useState<"email" | "verify">("email");
+  const [resetOtp, setResetOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  async function handleSendResetOtp(e: React.FormEvent) {
     e.preventDefault();
     if (!resetEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.trim())) {
       setError("Please enter a valid email address.");
@@ -209,18 +246,74 @@ function LoginPage() {
     setError("");
     setResetSuccess("");
 
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    try {
+      const result = await sendOtp({
+        data: {
+          email: resetEmail.trim().toLowerCase(),
+          purpose: "reset_password",
+        },
+      });
 
-    setResetLoading(false);
+      setResetLoading(false);
 
-    if (resetErr) {
-      setError(resetErr.message || "Failed to send password reset email.");
-    } else {
-      setResetSuccess("If an account exists for this email, a password reset link has been sent.");
+      if (!result.success) {
+        setError(result.message || "Failed to send reset code. Please try again.");
+      } else {
+        setResetStep("verify");
+        setResetSuccess("Verification code sent! Please check your email inbox.");
+      }
+    } catch (err: any) {
+      setResetLoading(false);
+      setError("Network error. Please check your connection and try again.");
     }
   }
+
+  async function handleVerifyResetOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetOtp.trim() || resetOtp.trim().length < 6) {
+      setError("Please enter the 6-digit verification code sent to your email.");
+      return;
+    }
+    if (!newPassword.trim() || newPassword.trim().length < 6) {
+      setError("New password must be at least 6 characters long.");
+      return;
+    }
+
+    setResetLoading(true);
+    setError("");
+    setResetSuccess("");
+
+    try {
+      const result = await verifyOtp({
+        data: {
+          email: resetEmail.trim().toLowerCase(),
+          otp: resetOtp.trim(),
+          purpose: "reset_password",
+          password: newPassword.trim(),
+        },
+      });
+
+      setResetLoading(false);
+
+      if (!result.success) {
+        setError(result.message || "Invalid or expired verification code.");
+      } else {
+        setResetSuccess("Password reset successfully! Redirecting to sign in...");
+        setTimeout(() => {
+          setIsForgotPassword(false);
+          setResetStep("email");
+          setEmail(resetEmail.trim());
+          setPassword("");
+          setError("");
+          setResetSuccess("");
+        }, 1500);
+      }
+    } catch (err: any) {
+      setResetLoading(false);
+      setError("Network error. Please check your connection and try again.");
+    }
+  }
+
 
   const orbs = [
     { color: "var(--student)", x: "10%", y: "20%", size: 320, delay: 0 },
@@ -268,6 +361,34 @@ function LoginPage() {
           }}
         />
       </div>
+
+      {/* High-End Animated Loading Overlay */}
+      <LoadingOverlay
+        isOpen={loading || resetLoading || googleLoading}
+        title={
+          resetLoading
+            ? resetStep === "email"
+              ? "Sending Verification Code..."
+              : "Updating Password..."
+            : googleLoading
+            ? "Connecting to Google..."
+            : "Signing in..."
+        }
+        subtitle={
+          resetLoading
+            ? resetStep === "email"
+              ? "Connecting to Gmail SMTP server & sending your 6-digit OTP..."
+              : "Verifying OTP code & updating your password in Supabase..."
+            : googleLoading
+            ? "Redirecting to Google secure authentication..."
+            : "Verifying your credentials & establishing session..."
+        }
+        badgeText={
+          resetLoading
+            ? "Gmail SMTP Encrypted Stream"
+            : "TLS 1.3 Session Security"
+        }
+      />
 
       {/* Header */}
       <motion.header
@@ -371,71 +492,190 @@ function LoginPage() {
                 <div className="mb-8">
                   <h1 className="font-display text-4xl">Reset password</h1>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Enter your registered email address and we'll send you a password reset link.
+                    {resetStep === "email"
+                      ? "Enter your registered email address and we'll send a 6-digit verification code to your inbox."
+                      : "Enter the 6-digit verification code sent to your email and your new password."}
                   </p>
                 </div>
 
-                <form onSubmit={handleForgotPasswordSubmit} className="space-y-5">
-                  <div className="space-y-1.5">
-                    <label htmlFor="reset-email" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                      Email Address
-                    </label>
-                    <div className="relative overflow-hidden rounded-xl border border-border bg-surface-elevated">
+                {resetStep === "email" ? (
+                  <form onSubmit={handleSendResetOtp} className="space-y-5">
+                    <div className="space-y-1.5">
+                      <label htmlFor="reset-email" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                        Email Address
+                      </label>
+                      <div className="relative overflow-hidden rounded-xl border border-border bg-surface-elevated">
+                        <input
+                          id="reset-email"
+                          type="email"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          required
+                          className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
+                        />
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {error && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+                        >
+                          {error}
+                        </motion.div>
+                      )}
+                      {resetSuccess && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400"
+                        >
+                          {resetSuccess}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <button
+                      type="submit"
+                      disabled={resetLoading}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-60"
+                    >
+                      {resetLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-background" />
+                          <span>Sending code...</span>
+                        </>
+                      ) : (
+                        <span>Send Verification Code →</span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(false);
+                        setResetStep("email");
+                        setError("");
+                        setResetSuccess("");
+                      }}
+                      className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition underline underline-offset-4"
+                    >
+                      ← Back to Sign in
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleVerifyResetOtp} className="space-y-5">
+                    <div className="space-y-1.5">
+                      <label htmlFor="reset-otp" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                        6-Digit Verification Code
+                      </label>
                       <input
-                        id="reset-email"
-                        type="email"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        placeholder="you@example.com"
+                        id="reset-otp"
+                        type="text"
+                        maxLength={6}
+                        value={resetOtp}
+                        onChange={(e) => setResetOtp(e.target.value.replace(/[^0-9]/g, ""))}
+                        placeholder="123456"
                         required
-                        className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground/50"
+                        className="w-full text-center font-mono text-xl tracking-[0.4em] rounded-xl border border-border bg-surface-elevated px-4 py-3 outline-none transition focus:border-foreground placeholder:tracking-normal placeholder:text-xs placeholder:text-muted-foreground/40"
                       />
                     </div>
-                  </div>
 
-                  <AnimatePresence>
-                    {error && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+                    <div className="space-y-1.5">
+                      <label htmlFor="new-password" className="block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                        New Password
+                      </label>
+                      <div className="relative overflow-hidden rounded-xl border border-border bg-surface-elevated">
+                        <input
+                          id="new-password"
+                          type={showNewPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="At least 6 characters"
+                          required
+                          minLength={6}
+                          className="w-full bg-transparent px-4 py-3.5 pr-12 text-sm outline-none placeholder:text-muted-foreground/50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+                        >
+                          {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {error && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+                        >
+                          {error}
+                        </motion.div>
+                      )}
+                      {resetSuccess && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400"
+                        >
+                          {resetSuccess}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <button
+                      type="submit"
+                      disabled={resetLoading || resetOtp.length < 6 || newPassword.length < 6}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-60"
+                    >
+                      {resetLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-background" />
+                          <span>Resetting password...</span>
+                        </>
+                      ) : (
+                        <span>Reset Password & Sign In →</span>
+                      )}
+                    </button>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetStep("email");
+                          setError("");
+                          setResetSuccess("");
+                        }}
+                        className="hover:text-foreground transition underline underline-offset-4"
                       >
-                        {error}
-                      </motion.div>
-                    )}
-                    {resetSuccess && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400"
+                        ← Change email
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsForgotPassword(false);
+                          setResetStep("email");
+                          setError("");
+                          setResetSuccess("");
+                        }}
+                        className="hover:text-foreground transition underline underline-offset-4"
                       >
-                        {resetSuccess}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <button
-                    type="submit"
-                    disabled={resetLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3.5 text-sm font-medium text-background transition hover:opacity-90 disabled:opacity-60"
-                  >
-                    {resetLoading ? "Sending link..." : "Send Reset Link"}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsForgotPassword(false);
-                      setError("");
-                      setResetSuccess("");
-                    }}
-                    className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition underline underline-offset-4"
-                  >
-                    ← Back to Sign in
-                  </button>
-                </form>
+                        Back to Sign in
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             ) : (
               <div>
