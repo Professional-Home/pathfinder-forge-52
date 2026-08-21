@@ -26,6 +26,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import type { CoursePageContent, CourseRecord } from "@/lib/courses/types";
+import { getCourseApplyUrl } from "@/lib/courses/data";
 import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 const themeColors = {
@@ -158,7 +159,7 @@ function CourseHero({ course, content }: { course: CourseRecord; content: Course
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href={course.applyUrl || (course.slug === "ai-in-drug-discovery" ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
+              href={getCourseApplyUrl(course)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition hover:opacity-90"
@@ -1089,7 +1090,7 @@ export function CourseDetailTemplate({ course }: { course: CourseRecord }) {
               </ul>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <a
-                  href={course.applyUrl || (course.slug === "ai-in-drug-discovery" ? "https://forms.gle/83HAsS9PwXmLXiox6" : "https://forms.gle/JiUaRVJYRuFtgtBc6")}
+                  href={getCourseApplyUrl(course)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-8 py-3.5 text-sm font-semibold text-background transition hover:opacity-90 sm:w-auto"

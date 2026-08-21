@@ -11,7 +11,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SEND_EMAIL_HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
-const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "Micrylis <onboarding@resend.dev>";
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "Micrylis <noreply@micrylis.com>";
 
 interface EmailHookPayload {
   user: {
@@ -44,23 +44,59 @@ serve(async (req: Request) => {
   }
 
   try {
+    // 1. Secrets Diagnostic Logging
+    console.log("=== Send Email Hook Triggered ===");
+    console.log("Secrets check:", {
+      hasResendApiKey: !!RESEND_API_KEY,
+      hasHookSecret: !!SEND_EMAIL_HOOK_SECRET,
+      senderEmail: SENDER_EMAIL,
+    });
+
+    // 2. Hook Secret Signature Verification (if configured)
+    if (SEND_EMAIL_HOOK_SECRET) {
+      const incomingSecret =
+        req.headers.get("x-supabase-auth-hook-secret") ||
+        req.headers.get("authorization")?.replace("Bearer ", "").trim();
+
+      if (!incomingSecret || incomingSecret !== SEND_EMAIL_HOOK_SECRET) {
+        console.error("Hook authorization failed: Secret mismatch or missing header.");
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: Invalid or missing x-supabase-auth-hook-secret" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // 3. Parse and Log Incoming Payload
     const payload: EmailHookPayload = await req.json();
+    console.log("Incoming Payload Summary:", {
+      userEmail: payload?.user?.email,
+      actionType: payload?.email_data?.email_action_type,
+      hasToken: !!payload?.email_data?.token,
+      redirectTo: payload?.email_data?.redirect_to,
+    });
+
     const { user, email_data } = payload;
 
-    if (!user || !email_data) {
-      return new Response(JSON.stringify({ error: "Invalid payload format" }), {
+    if (!user || !email_data || !user.email || !email_data.token) {
+      console.error("Invalid payload format:", JSON.stringify(payload));
+      return new Response(JSON.stringify({ error: "Invalid payload format: missing user or email_data" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
     if (!RESEND_API_KEY) {
-      console.error("Missing RESEND_API_KEY secret");
-      return new Response(JSON.stringify({ error: "Server misconfiguration: Missing RESEND_API_KEY" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      console.error("Missing RESEND_API_KEY secret in Edge Function environment.");
+      return new Response(
+        JSON.stringify({ error: "Server misconfiguration: Missing RESEND_API_KEY secret" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
+
     const recipientEmail = user.email;
     const fullName = user.user_metadata?.full_name || user.user_metadata?.name || recipientEmail.split("@")[0];
     const actionType = email_data.email_action_type;
@@ -119,6 +155,8 @@ serve(async (req: Request) => {
       });
     }
 
+    console.log(`Delivering email via Resend to ${recipientEmail} from ${SENDER_EMAIL}...`);
+
     // Send via Resend API
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -134,22 +172,32 @@ serve(async (req: Request) => {
       }),
     });
 
+    const resendResponseBody = await resendResponse.text();
+
     if (!resendResponse.ok) {
-      const resendError = await resendResponse.text();
-      console.error("Resend API error:", resendError);
-      return new Response(JSON.stringify({ error: "Failed to deliver email via Resend", details: resendError }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      console.error(`Resend API Failure [HTTP ${resendResponse.status}]:`, resendResponseBody);
+      return new Response(
+        JSON.stringify({
+          error: "Failed to deliver email via Resend",
+          status: resendResponse.status,
+          details: resendResponseBody,
+        }),
+        {
+          status: resendResponse.status >= 400 && resendResponse.status < 600 ? resendResponse.status : 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
+    console.log(`Email delivered successfully via Resend API to ${recipientEmail}. Response:`, resendResponseBody);
+
     // Return success to Supabase Auth Hook
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, resendResponse: resendResponseBody }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    console.error("Hook handler error:", err);
+    console.error("Fatal Hook Handler Error:", err);
     return new Response(JSON.stringify({ error: err.message || "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

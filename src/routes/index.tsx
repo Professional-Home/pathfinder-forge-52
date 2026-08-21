@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Sparkles, Rocket, Check, Users, Map, Trophy, Milestone, LayoutDashboard, Plus, Star } from "lucide-react";
+import { ArrowRight, Sparkles, Rocket, Check, Users, Map, Trophy, Milestone, LayoutDashboard, Plus, Star, MessageSquare, Send, CheckCircle2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { getStoredReviews, getOnly5StarReviews, addReview, fetchReviewsFromSupabase, checkUserCanSubmitReview, type ReviewItem } from "@/lib/reviews/store";
 
 import { useEffect, useState, useCallback, type ReactNode, useRef } from "react";
 import { motion, useTransform, type Variants, useInView, animate, useMotionValue, AnimatePresence } from "framer-motion";
@@ -59,6 +60,11 @@ export const Route = createFileRoute("/")(  {
 });
 
 function Landing() {
+  const [reviewTrigger, setReviewTrigger] = useState(0);
+  const handleReviewSubmitted = useCallback(() => {
+    setReviewTrigger((prev) => prev + 1);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
@@ -66,7 +72,8 @@ function Landing() {
       <RevealWrapper><GrowthPath /></RevealWrapper>
       <RevealWrapper><HowItWorks /></RevealWrapper>
       <RevealWrapper><ProductPreview /></RevealWrapper>
-      <Testimonials />
+      <Testimonials key={reviewTrigger} />
+      <RevealWrapper><ReviewFormSection onSubmitted={handleReviewSubmitted} /></RevealWrapper>
       <RevealWrapper><WhyMicrylis /></RevealWrapper>
       <SiteFooter />
     </div>
@@ -853,112 +860,60 @@ function ProductPreview() {
 
 
 /* ─────────────────────────────────────────────
-   Testimonials Section
+   Testimonials & Reviews Section (Showing 5-Star Ratings)
    ───────────────────────────────────────────── */
 
-const TESTIMONIALS = [
-  {
-    name: "Sai Shrestha",
-    institution: "Nit warangal",
-    rating: 5,
-    content: [
-      { text: "My research internship at Micrylis Biotech was an enriching and rewarding experience the strengthened my teamwork, communication, coordination and professional networking skills in a suppoetive and collaborative environment.", bold: false },
-      { text: "During my internship, I worked on the ", bold: false },
-      { text: "development of biodegradable pipette tips, where I gained valuable knowledge about different polymers, material selection and the importance of analytical and logical decision-making in product development.", bold: true },
-      { text: " Explorig this new field challenged me and expanded my scientific perspective beyond my existing interests.", bold: false },
-      { text: "\n\nI am sincerel grateful to Micrylis Biotech for this opportunity to learn from experienced professionals, enhance my problem-solving abilities and contribute to a meaningful project. The knowledge, guidance and experiences I gained will continue to shape my professional journey.", bold: false },
-    ],
-  },
-  {
-    name: "Riddhi mewada",
-    institution: "DBT, VNSGU",
-    rating: 5,
-    content: [
-      { text: "Interning at ", bold: false },
-      { text: "Micrylis Biotech", bold: true },
-      { text: " was a truly rewarding and enriching experience. During my internship, I had the opportunity to lead on-ground market research, engaging with laboratories and understanding their existing practices, challenges, and requirements. Alongside this, I studied ", bold: false },
-      { text: "CPCB biomedical waste management reports across multiple states in India", bold: true },
-      { text: ", analysing data related to waste generation, treatment, and disposal to identify gaps and potential business opportunities for the company.", bold: false },
-      { text: "\n\nWhat made this experience particularly valuable was the opportunity to work at the intersection of research, market analysis, and business strategy. I was trusted with responsibilities that directly contributed to understanding the market and identifying opportunities for Micrylis Biotech\u2019s growth. This hands-on exposure not only strengthened my research and analytical skills but also gave me a deeper understanding of how scientific innovation can be translated into meaningful, real-world solutions.", bold: false },
-    ],
-  },
-  {
-    name: "Minal Mahesh Patil",
-    institution: undefined,
-    rating: 5,
-    content: [
-      { text: "I\u2019m grateful for the opportunity to intern at ", bold: false },
-      { text: "Micrylis Biotech", bold: true },
-      { text: ". It was an excellent learning experience that helped me grow both personally and professionally.", bold: false },
-      { text: "\n\nDuring my internship, ", bold: false },
-      { text: "I worked on the research and development of MCT tubes", bold: true },
-      { text: ", where I gained hands-on experience in scientific analysis, technical documentation, and product development. Working with such a supportive, knowledgeable, and encouraging team enhanced my technical skills, strengthened my confidence, and gave me valuable exposure to real-world biotechnology research and innovation.", bold: false },
-      { text: "\n\nA heartfelt thank you to the entire Micrylis Biotech team for their guidance and mentorship. I highly recommend Micrylis Biotech to anyone seeking meaningful industry experience and professional growth.", bold: false },
-    ],
-  },
-  {
-    name: "Sareema hasan",
-    institution: undefined,
-    rating: 5,
-    content: [
-      { text: "My Internship at ", bold: false },
-      { text: "Micrylis Biotech", bold: true },
-      { text: " was an enriching and rewarding experience that contributed significantly to both my personal and professional growth. Working with such a ", bold: false },
-      { text: "suppotive and knowledgeable team", bold: true },
-      { text: " made the learning process enjoyable and inspiring. Everyone was approachable, collaborative and always willing to guide me whenever I needed assistance.", bold: false },
-      { text: "\n\nDuring my internship, I had the opportunity to work on the ", bold: false },
-      { text: "development and scientific analysis of semi-biodegradable Petri plates.", bold: true },
-      { text: " This experience strengthened my research, analytical, documentation and report-writing skills while giving me valuable exposure to real-world industrial practices. It also improved my confidence, problem-solving abilities and understanding of teamwork in a professional environment.", bold: false },
-      { text: "\n\nI am truly grateful to the entire Micrylis Biotech team for ", bold: false },
-      { text: "mentorship, encouragement and continuous supoort throughout my internship.", bold: true },
-      { text: " This experience has been a valuable milestone in my career and I would recommend Micrylis Biotech to students and asprirng professionals seeking meaningful industry exposure.", bold: false },
-    ],
-  },
-];
-
-function TestimonialCard({ testimonial }: { testimonial: typeof TESTIMONIALS[number] }) {
+function TestimonialCard({ testimonial }: { testimonial: ReviewItem }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div className="flex w-[340px] shrink-0 flex-col rounded-2xl border border-border/70 bg-surface-elevated/90 p-6 shadow-sm backdrop-blur-sm sm:w-[400px]">
-      {/* Stars */}
-      <div className="flex items-center gap-0.5">
-        {Array.from({ length: testimonial.rating }).map((_, i) => (
-          <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-        ))}
+      {/* Top Header with 5 Stars */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-0.5">
+          {Array.from({ length: testimonial.rating }).map((_, i) => (
+            <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+          ))}
+        </div>
+        <span className="rounded-full bg-amber-400/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-amber-500 border border-amber-400/20">
+          5.0 Rating
+        </span>
       </div>
 
       {/* Content */}
       <div
-        className={`mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-line ${!expanded ? "line-clamp-4" : ""}`}
+        className={`mt-4 text-sm leading-relaxed text-muted-foreground whitespace-pre-line ${
+          !expanded ? "line-clamp-4" : ""
+        }`}
       >
-        {testimonial.content.map((segment, i) =>
-          segment.bold ? (
-            <strong key={i} className="font-semibold text-foreground">{segment.text}</strong>
-          ) : (
-            <span key={i}>{segment.text}</span>
-          )
-        )}
+        {testimonial.content}
       </div>
 
       {/* Read more toggle */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setExpanded((prev) => !prev);
-        }}
-        className="mt-2 self-start text-xs font-medium text-student hover:underline transition-colors"
-      >
-        {expanded ? "Read less" : "Read more"}
-      </button>
+      {testimonial.content.length > 160 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((prev) => !prev);
+          }}
+          className="mt-2 self-start text-xs font-medium text-student hover:underline transition-colors cursor-pointer"
+        >
+          {expanded ? "Read less" : "Read more"}
+        </button>
+      )}
 
-      {/* Author */}
-      <div className="mt-4 border-t border-border/50 pt-4">
+      {/* Author Details */}
+      <div className="mt-auto pt-4 border-t border-border/50">
         <div className="font-display text-sm font-semibold text-foreground">{testimonial.name}</div>
-        {testimonial.institution && (
-          <div className="mt-0.5 text-xs text-muted-foreground">{testimonial.institution}</div>
-        )}
+        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          {testimonial.institution && <span>{testimonial.institution}</span>}
+          {testimonial.project && (
+            <span className="rounded bg-surface px-1.5 py-0.5 text-[10px] font-medium border border-border/60">
+              {testimonial.project}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -966,12 +921,20 @@ function TestimonialCard({ testimonial }: { testimonial: typeof TESTIMONIALS[num
 
 function Testimonials() {
   const [isPaused, setIsPaused] = useState(false);
+  const [fiveStarReviews, setFiveStarReviews] = useState<ReviewItem[]>([]);
 
-  // Double the testimonials for seamless infinite loop
-  const doubled = [...TESTIMONIALS, ...TESTIMONIALS];
+  useEffect(() => {
+    // Fetch live from Supabase & filter strictly for 5-star ratings
+    fetchReviewsFromSupabase().then((all) => {
+      const only5Star = getOnly5StarReviews(all);
+      setFiveStarReviews(only5Star);
+    });
+  }, []);
+
+  const doubled = [...fiveStarReviews, ...fiveStarReviews];
 
   return (
-    <section className="border-b border-border/60 bg-surface/30 py-12 sm:py-16 md:py-20 overflow-hidden">
+    <section id="testimonials" className="border-b border-border/60 bg-surface/30 py-12 sm:py-16 md:py-20 overflow-hidden">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -980,10 +943,16 @@ function Testimonials() {
           transition={{ duration: 0.6 }}
           className="mb-10 text-center sm:mb-12"
         >
-          <div className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">Testimonials</div>
-          <h2 className="font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 font-mono text-xs font-semibold text-amber-500">
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            5-Star Rated Student &amp; Researcher Feedback ({fiveStarReviews.length})
+          </div>
+          <h2 className="mt-2 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl md:text-5xl">
             What our interns say
           </h2>
+          <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+            Top-rated 5-star ratings and experiences shared by our community.
+          </p>
         </motion.div>
       </div>
 
@@ -1002,12 +971,12 @@ function Testimonials() {
           className="flex gap-5"
           style={{
             width: "max-content",
-            animation: `testimonialScroll 40s linear infinite`,
+            animation: `testimonialScroll 45s linear infinite`,
             animationPlayState: isPaused ? "paused" : "running",
           }}
         >
           {doubled.map((t, i) => (
-            <TestimonialCard key={`${t.name}-${i}`} testimonial={t} />
+            <TestimonialCard key={`${t.id || t.name}-${i}`} testimonial={t} />
           ))}
         </div>
       </div>
@@ -1018,6 +987,254 @@ function Testimonials() {
           100% { transform: translateX(-50%); }
         }
       `}</style>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Interactive Review & Rating Form
+   ───────────────────────────────────────────── */
+
+function ReviewFormSection({ onSubmitted }: { onSubmitted?: () => void }) {
+  const [rating, setRating] = useState<number>(5);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [name, setName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [project, setProject] = useState("Bioinformatics");
+  const [content, setContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [limitError, setLimitError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+        if (session.user.email) {
+          setUserEmail(session.user.email);
+        }
+        if (session.user.user_metadata?.full_name) {
+          setName(session.user.user_metadata.full_name);
+        }
+      }
+    });
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !content.trim()) return;
+
+    setLimitError(null);
+    setIsSubmitting(true);
+
+    const result = await addReview({
+      name: name.trim(),
+      userEmail: userEmail.trim() || undefined,
+      userId,
+      institution: institution.trim() || undefined,
+      rating,
+      project,
+      content: content.trim(),
+    });
+
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      setLimitError(result.error || "You have reached the maximum limit of 2 reviews per user.");
+      return;
+    }
+
+    setSubmittedSuccess(true);
+    setName("");
+    setContent("");
+
+    if (onSubmitted) onSubmitted();
+
+    setTimeout(() => {
+      setSubmittedSuccess(false);
+    }, 6000);
+  };
+
+  const ratingLabels: Record<number, string> = {
+    5: "5.0 ★ Exceptional & Highly Recommended",
+    4: "4.0 ★ Very Good Experience",
+    3: "3.0 ★ Good",
+    2: "2.0 ★ Needs Improvement",
+    1: "1.0 ★ Unsatisfactory",
+  };
+
+  return (
+    <section id="leave-review" className="border-b border-border/60 bg-background py-14 sm:py-20 scroll-mt-24">
+      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <div className="text-center mb-10">
+          <div className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground inline-flex items-center justify-center gap-1.5">
+            <MessageSquare className="h-3.5 w-3.5 text-student" /> Leave a Review
+          </div>
+          <h2 className="font-display text-3xl sm:text-4xl font-medium tracking-tight text-foreground">
+            Give Your Rating &amp; Review
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
+            Have you completed a research project, internship, or webinar with Micrylis Biotech? Share your rating and feedback below.
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-border/80 bg-surface-elevated/80 p-6 sm:p-10 shadow-lg backdrop-blur-md">
+          {submittedSuccess ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="py-10 text-center space-y-4"
+            >
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-student/15 text-student">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <h3 className="font-display text-2xl font-semibold text-foreground">Thank You for Your Review!</h3>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Your rating has been saved to Supabase and added to our review section. We appreciate your feedback!
+              </p>
+              <button
+                type="button"
+                onClick={() => setSubmittedSuccess(false)}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-2.5 text-xs font-semibold text-background transition hover:opacity-90 cursor-pointer"
+              >
+                Submit Another Review
+              </button>
+            </motion.div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {limitError && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-xs font-medium text-red-400 flex items-center gap-2">
+                  <span className="text-base">⚠️</span>
+                  <span>{limitError}</span>
+                </div>
+              )}
+
+              {/* Rating selection */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  Select Rating <span className="text-red-400">*</span>
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const active = star <= (hoverRating || rating);
+                      return (
+                        <button
+                          key={star}
+                          type="button"
+                          onMouseEnter={() => setHoverRating(star)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          onClick={() => setRating(star)}
+                          className="p-1 transition-transform hover:scale-125 focus:outline-none cursor-pointer"
+                          aria-label={`Rate ${star} stars`}
+                        >
+                          <Star
+                            className={`h-7 w-7 transition-colors ${
+                              active ? "fill-amber-400 text-amber-400" : "text-border/80 fill-transparent"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs font-mono font-medium text-amber-500 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20">
+                    {ratingLabels[hoverRating || rating]}
+                  </span>
+                </div>
+              </div>
+
+              {/* Form Grid */}
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Your Full Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ananya Sharma"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Your Email Address (for review limit)
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. user@example.com"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Institution / University / Role
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. IISc Bangalore / Researcher"
+                    value={institution}
+                    onChange={(e) => setInstitution(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Project / Program
+                  </label>
+                  <select
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-foreground focus:outline-none"
+                  >
+                    <option value="Bioinformatics">Bioinformatics &amp; Computational Biology</option>
+                    <option value="AI in Drug Discovery">AI in Drug Discovery</option>
+                    <option value="BioPlastic Innovation">BioPlastic &amp; Sustainable Materials</option>
+                    <option value="Research Internship">General Research Internship</option>
+                    <option value="Micrylis Webinar">Webinar / Workshop</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Review Textarea */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Your Review &amp; Feedback <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Share details about your learning experience, project deliverables, mentor guidance, or overall feedback..."
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-foreground focus:outline-none"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-8 py-3.5 text-sm font-semibold text-background transition hover:opacity-90 disabled:opacity-50 cursor-pointer sm:w-auto"
+              >
+                {isSubmitting ? "Submitting Review..." : "Submit Review & Rating"}
+                <Send className="h-4 w-4" />
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

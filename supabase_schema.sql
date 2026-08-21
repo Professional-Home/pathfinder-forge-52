@@ -96,3 +96,34 @@ CREATE POLICY "Allow public update blogs" ON public.blogs FOR UPDATE USING (true
 DROP POLICY IF EXISTS "Allow public delete blogs" ON public.blogs;
 CREATE POLICY "Allow public delete blogs" ON public.blogs FOR DELETE USING (true);
 
+-- ====================================================================
+-- 7. REVIEWS TABLE SCHEMA
+-- ====================================================================
+CREATE TABLE IF NOT EXISTS public.reviews (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    user_id TEXT DEFAULT '',
+    user_email TEXT DEFAULT '',
+    name TEXT NOT NULL,
+    institution TEXT DEFAULT '',
+    rating INTEGER NOT NULL DEFAULT 5,
+    content TEXT NOT NULL,
+    project TEXT DEFAULT 'Bioinformatics',
+    status TEXT DEFAULT 'published',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read reviews" ON public.reviews;
+CREATE POLICY "Allow public read reviews" ON public.reviews FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow public insert reviews" ON public.reviews;
+CREATE POLICY "Allow public insert reviews" ON public.reviews FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public update reviews" ON public.reviews;
+CREATE POLICY "Allow public update reviews" ON public.reviews FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow public delete reviews" ON public.reviews;
+CREATE POLICY "Allow public delete reviews" ON public.reviews FOR DELETE USING (true);
+
+

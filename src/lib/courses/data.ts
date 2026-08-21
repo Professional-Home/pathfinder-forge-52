@@ -32,7 +32,7 @@ export function getCourseApplyUrl(course: {
 
   const id = (course.slug || course.name || course.title || "").toLowerCase();
   if (id.includes("bioinformatics")) {
-    return "https://forms.gle/Xuyta8tE1GW47d838";
+    return "https://forms.gle/2dHi7iyXxoPFX8aL8";
   }
   if (id.includes("drug")) {
     return "https://forms.gle/83HAsS9PwXmLXiox6";

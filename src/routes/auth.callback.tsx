@@ -13,22 +13,61 @@ function AuthCallbackPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    // Supabase automatically parses the #access_token hash on page load.
-    // We just need to wait for onAuthStateChange to fire with a valid session.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          // Clean navigation — no hash in the URL
-          navigate({ to: "/dashboard", replace: true });
-        } else if (event === "SIGNED_OUT" || (!session && event !== "INITIAL_SESSION")) {
-          setErrorMsg("Authentication failed. Please try signing in again.");
+    async function handleAuthCallback() {
+      // 1. Check if token_hash and type exist in URL search parameters (from direct email link)
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenHash = searchParams.get("token_hash");
+      const typeParam = searchParams.get("type");
+      const redirectToParam = searchParams.get("redirect_to");
+
+      if (tokenHash && typeParam) {
+        const otpType = (
+          typeParam === "signup"
+            ? "signup"
+            : typeParam === "recovery"
+            ? "recovery"
+            : typeParam === "email_change"
+            ? "email_change"
+            : "email"
+        );
+
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: otpType as any,
+        });
+
+        if (error) {
+          console.error("Callback token_hash verification error:", error);
+          setErrorMsg(error.message || "Failed to verify email link.");
           setStatus("error");
+          return;
+        }
+
+        if (data.session) {
+          if (typeParam === "recovery") {
+            navigate({ to: "/reset-password", replace: true });
+          } else {
+            const dest = redirectToParam ? decodeURIComponent(redirectToParam) : "/dashboard";
+            navigate({ to: dest as any, replace: true });
+          }
+          return;
         }
       }
-    );
 
-    // Also check immediately in case the session is already available
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      // 2. Also check hash-based OAuth / magic link tokens (#access_token=...)
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          if (event === "SIGNED_IN" && session) {
+            navigate({ to: "/dashboard", replace: true });
+          } else if (event === "SIGNED_OUT" || (!session && event !== "INITIAL_SESSION")) {
+            setErrorMsg("Authentication failed. Please try signing in again.");
+            setStatus("error");
+          }
+        }
+      );
+
+      // Check existing session
+      const { data: { session }, error } = await supabase.auth.getSession();
       if (error) {
         setErrorMsg(error.message);
         setStatus("error");
@@ -37,18 +76,21 @@ function AuthCallbackPage() {
       if (session) {
         navigate({ to: "/dashboard", replace: true });
       }
-    });
 
-    // Fallback: if after 8 seconds nothing happened, show an error
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+
+    handleAuthCallback();
+
+    // Fallback: if after 10 seconds nothing happened, show an error
     const timeout = setTimeout(() => {
       setErrorMsg("Authentication timed out. Please try again.");
       setStatus("error");
-    }, 8000);
+    }, 10000);
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+    return () => clearTimeout(timeout);
   }, [navigate]);
 
   return (
