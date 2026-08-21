@@ -38,16 +38,45 @@ export interface WebinarFormData {
   isPublished: boolean;
 }
 
+export function safeParseDate(dateInput: string | Date | undefined | null): Date | null {
+  if (!dateInput) return null;
+  if (dateInput instanceof Date) {
+    return isNaN(dateInput.getTime()) ? null : dateInput;
+  }
+  
+  let d = new Date(dateInput);
+  if (!isNaN(d.getTime())) return d;
+
+  if (typeof dateInput === "string") {
+    let str = dateInput.trim();
+    if (str.includes(" ") && !str.includes("T")) {
+      str = str.replace(" ", "T");
+    }
+    d = new Date(str);
+    if (!isNaN(d.getTime())) return d;
+
+    // Handle HTML5 datetime-local string format "YYYY-MM-DDTHH:mm" cross-browser
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(str)) {
+      d = new Date(str + ":00");
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+
+  return null;
+}
+
 export function getCalculatedWebinarStatus(
   startDateTime: string,
   endDateTime: string,
   nowDate: Date = new Date()
 ): WebinarStatus {
-  const start = new Date(startDateTime).getTime();
-  const end = new Date(endDateTime).getTime();
-  const current = nowDate.getTime();
+  const startD = safeParseDate(startDateTime);
+  const endD = safeParseDate(endDateTime);
+  if (!startD || !endD) return "upcoming";
 
-  if (isNaN(start) || isNaN(end)) return "upcoming";
+  const start = startD.getTime();
+  const end = endD.getTime();
+  const current = nowDate.getTime();
 
   if (current < start) {
     return "upcoming";
@@ -85,18 +114,19 @@ export function validateWebinarForm(data: WebinarFormData): WebinarValidationErr
     errors.title = "Webinar title is required.";
   }
 
-  if (!data.startDateTime) {
-    errors.startDateTime = "Start date/time is required.";
+  const startD = safeParseDate(data.startDateTime);
+  const endD = safeParseDate(data.endDateTime);
+
+  if (!data.startDateTime || !startD) {
+    errors.startDateTime = "Valid start date/time is required.";
   }
 
-  if (!data.endDateTime) {
-    errors.endDateTime = "End date/time is required.";
+  if (!data.endDateTime || !endD) {
+    errors.endDateTime = "Valid end date/time is required.";
   }
 
-  if (data.startDateTime && data.endDateTime) {
-    const start = new Date(data.startDateTime);
-    const end = new Date(data.endDateTime);
-    if (end <= start) {
+  if (startD && endD) {
+    if (endD <= startD) {
       errors.endDateTime = "End date/time must be after start date/time.";
     }
   }

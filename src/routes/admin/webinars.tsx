@@ -39,6 +39,7 @@ import {
   type WebinarValidationErrors,
   validateWebinarForm,
   hasValidationErrors,
+  safeParseDate,
 } from "@/lib/webinars/types";
 import { toast } from "sonner";
 
@@ -65,8 +66,10 @@ const emptyForm: WebinarFormData = {
 
 function formatDateTime(iso: string): string {
   if (!iso) return "—";
+  const d = safeParseDate(iso);
+  if (!d) return iso;
   try {
-    return new Date(iso).toLocaleString("en-IN", {
+    return d.toLocaleString("en-IN", {
       dateStyle: "medium",
       timeStyle: "short",
     });
@@ -77,8 +80,9 @@ function formatDateTime(iso: string): string {
 
 function toLocalDateTimeInput(iso: string): string {
   if (!iso) return "";
+  const d = safeParseDate(iso);
+  if (!d) return "";
   try {
-    const d = new Date(iso);
     const pad = (n: number) => n.toString().padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   } catch {
@@ -119,9 +123,10 @@ function AdminWebinarsPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (id?: string) => saveWebinar(formData, id),
+    mutationFn: ({ data, id }: { data: WebinarFormData; id?: string }) => saveWebinar(data, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-webinars"] });
+      queryClient.invalidateQueries({ queryKey: ["public-webinars"] });
       toast.success(editingWebinar ? "Webinar updated successfully!" : "Webinar created successfully!");
       setIsDialogOpen(false);
       resetForm();
@@ -135,6 +140,7 @@ function AdminWebinarsPage() {
     mutationFn: (id: string) => deleteWebinar(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-webinars"] });
+      queryClient.invalidateQueries({ queryKey: ["public-webinars"] });
       toast.success("Webinar deleted successfully!");
     },
     onError: () => {
@@ -147,6 +153,7 @@ function AdminWebinarsPage() {
       togglePublishWebinar(id, isPublished),
     onSuccess: (_, { isPublished }) => {
       queryClient.invalidateQueries({ queryKey: ["admin-webinars"] });
+      queryClient.invalidateQueries({ queryKey: ["public-webinars"] });
       toast.success(isPublished ? "Webinar published!" : "Webinar unpublished!");
     },
     onError: () => {
@@ -196,20 +203,23 @@ function AdminWebinarsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Convert local datetime inputs to ISO strings for validation
-    const dataToValidate = {
+    // Safely parse local datetime inputs into ISO strings
+    const startD = safeParseDate(formData.startDateTime);
+    const endD = safeParseDate(formData.endDateTime);
+
+    const dataToSave: WebinarFormData = {
       ...formData,
-      startDateTime: formData.startDateTime ? new Date(formData.startDateTime).toISOString() : "",
-      endDateTime: formData.endDateTime ? new Date(formData.endDateTime).toISOString() : "",
+      startDateTime: startD ? startD.toISOString() : "",
+      endDateTime: endD ? endD.toISOString() : "",
     };
 
-    const validationErrors = validateWebinarForm(dataToValidate);
+    const validationErrors = validateWebinarForm(dataToSave);
     setErrors(validationErrors);
 
     if (hasValidationErrors(validationErrors)) return;
 
-    // Save with ISO strings
-    saveMutation.mutate(editingWebinar?.id);
+    // Save with normalized ISO strings
+    saveMutation.mutate({ data: dataToSave, id: editingWebinar?.id });
   };
 
   // Filtering

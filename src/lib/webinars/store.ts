@@ -1,9 +1,16 @@
 import { supabase } from "@/utils/supabase";
-import { type WebinarItem, type WebinarFormData, getCalculatedWebinarStatus } from "./types";
+import { type WebinarItem, type WebinarFormData, getCalculatedWebinarStatus, safeParseDate } from "./types";
 
 function mapDbToWebinar(db: any): WebinarItem {
-  const start = db.start_date_time || db.startDateTime || new Date().toISOString();
-  const end = db.end_date_time || db.endDateTime || new Date().toISOString();
+  const rawStart = db.start_date_time || db.startDateTime;
+  const rawEnd = db.end_date_time || db.endDateTime;
+
+  const startD = safeParseDate(rawStart);
+  const endD = safeParseDate(rawEnd);
+
+  const start = startD ? startD.toISOString() : new Date().toISOString();
+  const end = endD ? endD.toISOString() : new Date().toISOString();
+
   return {
     id: String(db.id),
     title: db.title || "Untitled Webinar",
@@ -75,6 +82,11 @@ export async function fetchWebinarById(id: string): Promise<WebinarItem | null> 
 export async function saveWebinar(formData: WebinarFormData, existingId?: string): Promise<WebinarItem> {
   const now = new Date().toISOString();
 
+  const startD = safeParseDate(formData.startDateTime);
+  const endD = safeParseDate(formData.endDateTime);
+  const startIso = startD ? startD.toISOString() : formData.startDateTime;
+  const endIso = endD ? endD.toISOString() : formData.endDateTime;
+
   const record: Record<string, any> = {
     title: formData.title,
     description: formData.description,
@@ -82,14 +94,14 @@ export async function saveWebinar(formData: WebinarFormData, existingId?: string
     speaker_name: formData.speakerName || "Micrylis Mentor",
     speaker_designation: formData.speakerDesignation || "Specialist",
     speaker_image: formData.speakerImage || "",
-    start_date_time: formData.startDateTime,
-    end_date_time: formData.endDateTime,
+    start_date_time: startIso,
+    end_date_time: endIso,
     timezone: formData.timezone || "IST (GMT+5:30)",
     registration_url: formData.registrationUrl || "",
     join_url: formData.joinUrl || "",
     recording_url: formData.recordingUrl || "",
     thumbnail: formData.thumbnail || "",
-    status: getCalculatedWebinarStatus(formData.startDateTime, formData.endDateTime),
+    status: getCalculatedWebinarStatus(startIso, endIso),
     is_published: formData.isPublished,
     updated_at: now,
   };

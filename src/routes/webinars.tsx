@@ -23,7 +23,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { WEBINAR_REGISTRATION_URL, FEATURED_WEBINAR } from "@/lib/webinar-config";
 import { fetchWebinars } from "@/lib/webinars/store";
-import type { WebinarItem } from "@/lib/webinars/types";
+import { type WebinarItem, safeParseDate } from "@/lib/webinars/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/webinars")({
@@ -41,8 +41,10 @@ export const Route = createFileRoute("/webinars")({
 
 function formatWebinarDate(iso: string): string {
   if (!iso) return "Upcoming Date";
+  const d = safeParseDate(iso);
+  if (!d) return iso;
   try {
-    return new Date(iso).toLocaleDateString("en-US", {
+    return d.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -54,21 +56,29 @@ function formatWebinarDate(iso: string): string {
 }
 
 function formatWebinarTime(startIso: string, endIso: string): string {
-  if (!startIso) return "6:00 PM – 7:30 PM";
+  if (!startIso) return "";
+  const startD = safeParseDate(startIso);
+  if (!startD) return "";
+
   try {
-    const s = new Date(startIso).toLocaleTimeString("en-US", {
+    const s = startD.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-    const e = new Date(endIso).toLocaleTimeString("en-US", {
+
+    if (!endIso) return s;
+    const endD = safeParseDate(endIso);
+    if (!endD) return s;
+
+    const e = endD.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
     return `${s} – ${e}`;
   } catch {
-    return "6:00 PM – 7:30 PM";
+    return "";
   }
 }
 
@@ -88,7 +98,9 @@ function WebinarsPage() {
   const description = activeWebinar ? activeWebinar.description : FEATURED_WEBINAR.shortDescription;
   const regUrl = activeWebinar?.registrationUrl || WEBINAR_REGISTRATION_URL;
   const dateStr = activeWebinar ? formatWebinarDate(activeWebinar.startDateTime) : FEATURED_WEBINAR.date;
-  const timeStr = activeWebinar ? formatWebinarTime(activeWebinar.startDateTime, activeWebinar.endDateTime) : FEATURED_WEBINAR.time;
+  const timeStr = activeWebinar
+    ? (formatWebinarTime(activeWebinar.startDateTime, activeWebinar.endDateTime) || FEATURED_WEBINAR.time)
+    : FEATURED_WEBINAR.time;
   const timezoneStr = activeWebinar ? activeWebinar.timezone : FEATURED_WEBINAR.timezone;
   const speakerName = activeWebinar ? activeWebinar.speakerName : FEATURED_WEBINAR.speaker.name;
   const speakerRole = activeWebinar ? activeWebinar.speakerDesignation : FEATURED_WEBINAR.speaker.role;
