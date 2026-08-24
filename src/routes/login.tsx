@@ -56,7 +56,7 @@ function LoginPage() {
     // Listen for Google Login success
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        navigate({ to: "/dashboard" });
+        navigate({ to: "/" });
       }
     });
 
@@ -71,7 +71,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/`,
       }
     });
 
@@ -131,7 +131,7 @@ function LoginPage() {
     }
 
     if (data.session) {
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/" });
     }
   }
 
@@ -208,7 +208,7 @@ function LoginPage() {
 
         if (!signInError && signInData?.session) {
           setTimeout(() => {
-            navigate({ to: "/dashboard" });
+            navigate({ to: "/" });
           }, 800);
           return;
         }

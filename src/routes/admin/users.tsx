@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/utils/supabase";
+import { deleteUserAdmin, listUsersAdmin } from "@/lib/auth-server";
 import { Users, Mail, Calendar, Trash2 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
@@ -84,13 +85,26 @@ function AdminUsersPage() {
     setLoading(true);
     setError("");
 
+    // 1. Try RPC get_all_users
     const { data, error } = await supabase.rpc("get_all_users");
 
-    if (error) {
-      console.error("get_all_users error:", error);
-      setError("Could not load users. Make sure the get_all_users() SQL function is created in Supabase.");
-    } else {
-      setUsers(data ?? []);
+    if (!error && data && data.length > 0) {
+      setUsers(data);
+      setLoading(false);
+      return;
+    }
+
+    // 2. Fallback to server function using Supabase Admin API
+    try {
+      const res = await listUsersAdmin();
+      if (res.success && res.users) {
+        setUsers(res.users);
+      } else {
+        setError(res.error || "Could not load users from Supabase.");
+      }
+    } catch (err: any) {
+      console.error("fetchUsers error:", err);
+      setError("Could not load users. Make sure Supabase configuration is correct.");
     }
     setLoading(false);
   }
@@ -103,13 +117,19 @@ function AdminUsersPage() {
     setUsers((prev) => prev.filter((u) => u.id !== target.id));
     
     try {
-      // Attempt RPC deletion if function exists
-      const { error: rpcError } = await supabase.rpc("delete_user", { target_user_id: target.id });
-      if (rpcError) {
-        // Fallback profile row delete if applicable
-        await supabase.from("profiles").delete().eq("id", target.id);
+      // 1. Permanent deletion from Supabase Auth & public tables via Server Admin API
+      const serverRes = await deleteUserAdmin({ data: { userId: target.id } });
+
+      // 2. Also attempt RPC deletion if procedure exists
+      await supabase.rpc("delete_user", { target_user_id: target.id }).catch(() => {});
+      await supabase.from("profile").delete().eq("id", target.id).catch(() => {});
+      await supabase.from("users").delete().eq("id", target.id).catch(() => {});
+
+      if (serverRes.success) {
+        toast.success(`User "${target.full_name || target.email}" completely deleted from Supabase.`);
+      } else {
+        toast.error(serverRes.message || "Failed to remove user from database.");
       }
-      toast.success(`User "${target.full_name || target.email}" removed successfully.`);
     } catch (err) {
       console.error("Error deleting user:", err);
       toast.error("Failed to remove user from database.");

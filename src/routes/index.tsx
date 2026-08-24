@@ -1092,7 +1092,7 @@ function ReviewFormSection({ onSubmitted }: { onSubmitted?: () => void }) {
               </div>
               <h3 className="font-display text-2xl font-semibold text-foreground">Thank You for Your Review!</h3>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Your rating has been saved to Supabase and added to our review section. We appreciate your feedback!
+                Your rating and review have been submitted for admin approval and will appear on the main page once approved!
               </p>
               <button
                 type="button"

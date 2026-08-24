@@ -47,7 +47,7 @@ function AuthCallbackPage() {
           if (typeParam === "recovery") {
             navigate({ to: "/reset-password", replace: true });
           } else {
-            const dest = redirectToParam ? decodeURIComponent(redirectToParam) : "/dashboard";
+            const dest = redirectToParam ? decodeURIComponent(redirectToParam) : "/";
             navigate({ to: dest as any, replace: true });
           }
           return;
@@ -58,7 +58,7 @@ function AuthCallbackPage() {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         (event, session) => {
           if (event === "SIGNED_IN" && session) {
-            navigate({ to: "/dashboard", replace: true });
+            navigate({ to: "/", replace: true });
           } else if (event === "SIGNED_OUT" || (!session && event !== "INITIAL_SESSION")) {
             setErrorMsg("Authentication failed. Please try signing in again.");
             setStatus("error");
@@ -74,7 +74,7 @@ function AuthCallbackPage() {
         return;
       }
       if (session) {
-        navigate({ to: "/dashboard", replace: true });
+        navigate({ to: "/", replace: true });
       }
 
       return () => {

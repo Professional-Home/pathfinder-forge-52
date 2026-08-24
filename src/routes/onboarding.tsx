@@ -264,12 +264,12 @@ function Onboarding() {
       });
     }
 
-    // Redirect to dashboard if onboarding is already completed
+    // Redirect to home if onboarding is already completed
     try {
       const profile = getCookie("mf_profile");
       if (profile) {
         const { domain } = JSON.parse(profile);
-        navigate({ to: "/dashboard" });
+        navigate({ to: "/" });
       }
     } catch { }
   }, []);
@@ -321,7 +321,7 @@ function Onboarding() {
       setCookie("mf_profile", JSON.stringify({ ...answers, completed_at: Date.now() }));
     } catch { }
     setTimeout(() => {
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/" });
     }, 2200);
   }
 

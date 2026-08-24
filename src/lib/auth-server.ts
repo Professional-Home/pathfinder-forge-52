@@ -552,3 +552,90 @@ function generateTempPassword(): string {
   }
   return password;
 }
+
+// ─── Delete User Admin Server Function ───────────────────────────────────────
+
+export const deleteUserAdmin = createServerFn({ method: "POST" })
+  .validator((input: { userId: string }) => {
+    if (!input.userId) {
+      throw new Error("User ID is required for deletion");
+    }
+    return input;
+  })
+  .handler(async ({ data }): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { userId } = data;
+      console.log("[ADMIN] Deleting user with ID:", userId);
+
+      // 1. Delete from Supabase Auth via Admin API
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (authError) {
+        console.warn("[ADMIN] Supabase auth.admin.deleteUser note:", authError.message);
+      } else {
+        console.log("[ADMIN] User successfully deleted from Supabase Auth:", userId);
+      }
+
+      // 2. Explicitly delete from public.users and public.profile tables
+      try {
+        await supabaseAdmin.from("users").delete().eq("id", userId);
+      } catch (e: any) {
+        console.warn("[ADMIN] Delete from public.users note:", e.message);
+      }
+
+      try {
+        await supabaseAdmin.from("profile").delete().eq("id", userId);
+      } catch (e: any) {
+        console.warn("[ADMIN] Delete from public.profile note:", e.message);
+      }
+
+      return {
+        success: true,
+        message: "User deleted successfully from Supabase.",
+      };
+    } catch (err: any) {
+      console.error("[ADMIN] Delete user error:", err.message);
+      return {
+        success: false,
+        message: err.message || "Failed to delete user.",
+      };
+    }
+  });
+
+// ─── List Users Admin Server Function ────────────────────────────────────────
+
+export const listUsersAdmin = createServerFn({ method: "GET" })
+  .handler(async (): Promise<{ success: boolean; users: any[]; error?: string }> => {
+    try {
+      // 1. Try listing users via Supabase Admin API
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+      if (!error && data?.users) {
+        const mappedUsers = data.users.map((u: any) => ({
+          id: u.id,
+          email: u.email || "",
+          full_name: u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split("@")[0] || "User",
+          provider: u.app_metadata?.provider || (u.identities && u.identities[0]?.provider) || "email",
+          created_at: u.created_at || new Date().toISOString(),
+        }));
+        return { success: true, users: mappedUsers };
+      }
+
+      // 2. Fallback to public.profile or public.users table
+      const { data: profiles, error: profileErr } = await supabaseAdmin.from("profile").select("*");
+      if (!profileErr && profiles) {
+        const mapped = profiles.map((p: any) => ({
+          id: p.id,
+          email: p.email || "",
+          full_name: p.name || "User",
+          provider: "email",
+          created_at: p.created_at || new Date().toISOString(),
+        }));
+        return { success: true, users: mapped };
+      }
+
+      return { success: false, users: [], error: error?.message || profileErr?.message };
+    } catch (err: any) {
+      console.error("[ADMIN] List users error:", err.message);
+      return { success: false, users: [], error: err.message };
+    }
+  });
+

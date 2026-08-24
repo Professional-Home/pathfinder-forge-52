@@ -10,6 +10,7 @@ import {
   Calendar,
   FileText,
   Video,
+  Star,
 } from "lucide-react";
 
 export const adminNavItems = [
@@ -19,6 +20,7 @@ export const adminNavItems = [
   { icon: Video, label: "Webinar Management", shortLabel: "Webinars", to: "/admin/webinars" },
   { icon: GraduationCap, label: "Course Enrollments", shortLabel: "Students", to: "/admin/enrollments" },
   { icon: Users, label: "Users", shortLabel: "Users", to: "/admin/users" },
+  { icon: Star, label: "Reviews Moderation", shortLabel: "Reviews", to: "/admin/reviews" },
   { icon: Users, label: "Mentor Management", shortLabel: "Mentors", to: "/admin/mentors" },
   { icon: Calendar, label: "Guidance Management", shortLabel: "Guidance", to: "/admin/guidance" },
 ];

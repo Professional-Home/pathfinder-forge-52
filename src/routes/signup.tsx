@@ -69,7 +69,7 @@ function SignupPage() {
     // Listen for Google Login / Session success
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        navigate({ to: "/dashboard" });
+        navigate({ to: "/" });
       }
     });
 

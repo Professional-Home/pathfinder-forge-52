@@ -41,6 +41,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminWebinarsRouteImport } from './routes/admin/webinars'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminGuidanceRouteImport } from './routes/admin/guidance'
@@ -215,6 +216,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminReviewsRoute = AdminReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMentorsRoute = AdminMentorsRouteImport.update({
   id: '/mentors',
   path: '/mentors',
@@ -307,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -351,6 +358,7 @@ export interface FileRoutesByTo {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -399,6 +407,7 @@ export interface FileRoutesById {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -448,6 +457,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/reviews'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
@@ -492,6 +502,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/reviews'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
@@ -539,6 +550,7 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/reviews'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
@@ -813,6 +825,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/reviews': {
+      id: '/admin/reviews'
+      path: '/reviews'
+      fullPath: '/admin/reviews'
+      preLoaderRoute: typeof AdminReviewsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/mentors': {
       id: '/admin/mentors'
       path: '/mentors'
@@ -933,6 +952,7 @@ interface AdminRouteChildren {
   AdminGuidanceRoute: typeof AdminGuidanceRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMentorsRoute: typeof AdminMentorsRoute
+  AdminReviewsRoute: typeof AdminReviewsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWebinarsRoute: typeof AdminWebinarsRoute
 }
@@ -945,6 +965,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminGuidanceRoute: AdminGuidanceRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMentorsRoute: AdminMentorsRoute,
+  AdminReviewsRoute: AdminReviewsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminWebinarsRoute: AdminWebinarsRoute,
 }

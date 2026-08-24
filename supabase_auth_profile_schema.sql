@@ -114,3 +114,36 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 7. ADMIN USER DELETION & LISTING PROCEDURES
+CREATE OR REPLACE FUNCTION public.delete_user(target_user_id UUID)
+RETURNS void AS $$
+BEGIN
+    DELETE FROM public.profile WHERE id = target_user_id;
+    DELETE FROM public.users WHERE id = target_user_id;
+    DELETE FROM auth.users WHERE id = target_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.get_all_users()
+RETURNS TABLE (
+    id UUID,
+    email TEXT,
+    full_name TEXT,
+    provider TEXT,
+    created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        u.id,
+        u.email::text,
+        COALESCE(p.name, (u.raw_user_meta_data->>'full_name'), u.email::text) AS full_name,
+        COALESCE(u.raw_app_meta_data->>'provider', 'email') AS provider,
+        u.created_at
+    FROM auth.users u
+    LEFT JOIN public.profile p ON p.id = u.id
+    ORDER BY u.created_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+

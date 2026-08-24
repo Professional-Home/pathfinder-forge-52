@@ -26,11 +26,7 @@ export function AdminPageHeader({
           <BreadcrumbList>
             {breadcrumbs.map((crumb, i) => (
               <span key={crumb.label} className="contents">
-                {i > 0 && (
-                  <BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                  </BreadcrumbItem>
-                )}
+                {i > 0 && <BreadcrumbSeparator />}
                 <BreadcrumbItem>
                   {crumb.to && i < breadcrumbs.length - 1 ? (
                     <BreadcrumbLink asChild>

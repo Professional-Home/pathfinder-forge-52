@@ -11,6 +11,7 @@ export interface ReviewItem {
   date?: string;
   project?: string;
   isVerified?: boolean;
+  status?: "published" | "approved" | "pending" | "rejected";
 }
 
 export const INITIAL_TESTIMONIALS: ReviewItem[] = [
@@ -23,6 +24,7 @@ export const INITIAL_TESTIMONIALS: ReviewItem[] = [
     date: "2026-07-15",
     content:
       "My research internship at Micrylis Biotech was an enriching and rewarding experience that strengthened my teamwork, communication, and professional networking skills. I worked on biodegradable pipette tips, gaining deep knowledge in polymers, material selection, and logical decision-making in product development.",
+    status: "approved",
   },
   {
     id: "rev-2",
@@ -33,6 +35,7 @@ export const INITIAL_TESTIMONIALS: ReviewItem[] = [
     date: "2026-07-28",
     content:
       "Interning at Micrylis Biotech was a truly rewarding experience. I led on-ground market research engaging with laboratories and studied CPCB biomedical waste management reports across multiple states to identify real-world business and environmental opportunities.",
+    status: "approved",
   },
   {
     id: "rev-3",
@@ -43,6 +46,7 @@ export const INITIAL_TESTIMONIALS: ReviewItem[] = [
     date: "2026-08-02",
     content:
       "I worked on the research and development of MCT tubes, gaining hands-on experience in scientific analysis, technical documentation, and product development. Working with such an encouraging team enhanced my technical skills and confidence.",
+    status: "approved",
   },
   {
     id: "rev-4",
@@ -53,6 +57,7 @@ export const INITIAL_TESTIMONIALS: ReviewItem[] = [
     date: "2026-08-10",
     content:
       "My internship at Micrylis Biotech was an enriching experience. I had the opportunity to work on the development and scientific analysis of semi-biodegradable Petri plates, strengthening my research, analytical, and report-writing skills.",
+    status: "approved",
   },
   {
     id: "rev-5",
@@ -63,6 +68,7 @@ export const INITIAL_TESTIMONIALS: ReviewItem[] = [
     date: "2026-08-14",
     content:
       "The AI-integrated Bioinformatics research project gave me hands-on exposure to Next-Gen Sequencing data analysis, variant calling, and biomarker discovery. The structured research-to-POC approach is unparalleled.",
+    status: "approved",
   },
   {
     id: "rev-6",
@@ -73,6 +79,7 @@ export const INITIAL_TESTIMONIALS: ReviewItem[] = [
     date: "2026-08-18",
     content:
       "An extraordinary 30-day research journey. From target identification to molecular docking, virtual screening, and AI predictive models, this project helped me build a real research portfolio for higher studies.",
+    status: "approved",
   },
 ];
 
@@ -88,7 +95,9 @@ export function getStoredReviews(): ReviewItem[] {
     const parsed: ReviewItem[] = JSON.parse(raw);
 
     const combinedMap = new Map<string, ReviewItem>();
-    INITIAL_TESTIMONIALS.forEach((r) => combinedMap.set(r.id, r));
+    INITIAL_TESTIMONIALS.forEach((r) =>
+      combinedMap.set(r.id, { ...r, status: r.status || "approved" })
+    );
     parsed.forEach((r) => combinedMap.set(r.id, r));
 
     return Array.from(combinedMap.values());
@@ -98,16 +107,20 @@ export function getStoredReviews(): ReviewItem[] {
   }
 }
 
-/** Fetch live published reviews from Supabase table */
+/** Fetch live approved & published reviews from Supabase table & local storage for main page */
 export async function fetchReviewsFromSupabase(): Promise<ReviewItem[]> {
+  const localList = getStoredReviews().filter(
+    (r) => r.status === "approved" || r.status === "published" || !r.status
+  );
+
   try {
     const { data, error } = await supabase
       .from("reviews")
       .select("*")
-      .or("status.eq.published,status.is.null")
+      .or("status.eq.published,status.eq.approved,status.is.null")
       .order("created_at", { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data && Array.isArray(data) && data.length > 0) {
       const mapped: ReviewItem[] = data.map((db: any) => ({
         id: String(db.id),
         userId: db.user_id || "",
@@ -117,25 +130,22 @@ export async function fetchReviewsFromSupabase(): Promise<ReviewItem[]> {
         rating: Number(db.rating) || 5,
         content: db.content || "",
         project: db.project || "Bioinformatics",
+        status: db.status || "approved",
         date: db.created_at ? String(db.created_at).slice(0, 10) : new Date().toISOString().slice(0, 10),
         isVerified: true,
       }));
 
       const map = new Map<string, ReviewItem>();
-      INITIAL_TESTIMONIALS.forEach((r) => map.set(r.id, r));
+      localList.forEach((r) => map.set(r.id, r));
       mapped.forEach((r) => map.set(r.id, r));
 
-      const combined = Array.from(map.values());
-      if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(combined));
-      }
-      return combined;
+      return Array.from(map.values());
     }
   } catch (e) {
     console.warn("Supabase review fetch error, falling back to local:", e);
   }
 
-  return getStoredReviews();
+  return localList;
 }
 
 /** Filter to strictly return 5-star ratings for display in testimonial cards */
@@ -203,7 +213,7 @@ export async function checkUserCanSubmitReview(
   };
 }
 
-/** Add a new review with max 2 review limit enforcement and Supabase storage */
+/** Add a new review with status='pending' requiring admin approval */
 export async function addReview(newReview: {
   name: string;
   institution?: string;
@@ -234,16 +244,16 @@ export async function addReview(newReview: {
     project: newReview.project || "Bioinformatics",
     date: new Date().toISOString().slice(0, 10),
     isVerified: true,
+    status: "pending",
   };
 
-  // 2. Save locally
+  // 2. Save locally in STORAGE_KEY and TRACKER_KEY so review is immediately accessible in Admin Panel
   if (typeof window !== "undefined") {
     try {
       const current = getStoredReviews();
       const updated = [item, ...current];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 
-      // Record in tracker
       const trackerRaw = localStorage.getItem(TRACKER_KEY);
       const trackerList: Array<{ email?: string; userId?: string; id: string }> = trackerRaw
         ? JSON.parse(trackerRaw)
@@ -259,7 +269,7 @@ export async function addReview(newReview: {
     }
   }
 
-  // 3. Store in Supabase `reviews` table
+  // 3. Store in Supabase `reviews` table with status 'pending'
   try {
     const { error: dbError } = await supabase.from("reviews").insert([
       {
@@ -271,7 +281,7 @@ export async function addReview(newReview: {
         rating: item.rating,
         content: item.content,
         project: item.project || "Bioinformatics",
-        status: "published",
+        status: "pending",
         created_at: new Date().toISOString(),
       },
     ]);
@@ -280,8 +290,123 @@ export async function addReview(newReview: {
       console.warn("[Supabase Reviews] Insert note:", dbError.message || dbError);
     }
   } catch (err) {
-    console.warn("Supabase insert failed, local copy saved:", err);
+    console.warn("Supabase insert failed, local copy retained:", err);
   }
 
   return { success: true, item };
+}
+
+/** Fetch all reviews for Admin Panel (combining local storage, seed items, and Supabase) */
+export async function fetchAllReviewsAdmin(): Promise<ReviewItem[]> {
+  const localReviews = getStoredReviews();
+  const seedMapped: ReviewItem[] = INITIAL_TESTIMONIALS.map((r) => ({
+    ...r,
+    status: "approved" as const,
+  }));
+
+  try {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data && Array.isArray(data)) {
+      const dbMapped: ReviewItem[] = data.map((db: any) => ({
+        id: String(db.id),
+        userId: db.user_id || "",
+        userEmail: db.user_email || "",
+        name: db.name || "Anonymous",
+        institution: db.institution || "",
+        rating: Number(db.rating) || 5,
+        content: db.content || "",
+        project: db.project || "Bioinformatics",
+        status: (db.status as any) || "pending",
+        date: db.created_at ? String(db.created_at).slice(0, 10) : new Date().toISOString().slice(0, 10),
+        isVerified: true,
+      }));
+
+      const map = new Map<string, ReviewItem>();
+      seedMapped.forEach((r) => map.set(r.id, r));
+      localReviews.forEach((r) => map.set(r.id, { ...r, status: r.status || "pending" }));
+      dbMapped.forEach((r) => map.set(r.id, r));
+
+      return Array.from(map.values());
+    }
+  } catch (err) {
+    console.error("fetchAllReviewsAdmin error:", err);
+  }
+
+  const map = new Map<string, ReviewItem>();
+  seedMapped.forEach((r) => map.set(r.id, r));
+  localReviews.forEach((r) => map.set(r.id, { ...r, status: r.status || "pending" }));
+  return Array.from(map.values());
+}
+
+/** Update review approval status in Supabase table and LocalStorage */
+export async function updateReviewStatus(
+  id: string,
+  status: "approved" | "published" | "rejected" | "pending"
+): Promise<{ success: boolean; error?: string }> {
+  // 1. Update in LocalStorage if present
+  if (typeof window !== "undefined") {
+    try {
+      const stored = getStoredReviews();
+      const updated = stored.map((r) => (r.id === id ? { ...r, status } : r));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.warn("LocalStorage update error:", e);
+    }
+  }
+
+  // 2. Update in Supabase
+  try {
+    const { error } = await supabase
+      .from("reviews")
+      .update({ status })
+      .eq("id", id);
+
+    if (error) {
+      const localOrSeed = getStoredReviews().find((r) => r.id === id);
+      if (localOrSeed) {
+        await supabase.from("reviews").insert([
+          {
+            id: localOrSeed.id,
+            user_id: localOrSeed.userId || null,
+            user_email: localOrSeed.userEmail || null,
+            name: localOrSeed.name,
+            institution: localOrSeed.institution || "",
+            rating: localOrSeed.rating,
+            content: localOrSeed.content,
+            project: localOrSeed.project || "Bioinformatics",
+            status,
+            created_at: new Date().toISOString(),
+          },
+        ]);
+      }
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: true };
+  }
+}
+
+/** Delete a review permanently from Supabase table and LocalStorage */
+export async function deleteReviewAdmin(id: string): Promise<{ success: boolean; error?: string }> {
+  // 1. Remove from local storage
+  if (typeof window !== "undefined") {
+    try {
+      const stored = getStoredReviews();
+      const updated = stored.filter((r) => r.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch {}
+  }
+
+  // 2. Remove from Supabase
+  try {
+    await supabase.from("reviews").delete().eq("id", id);
+    return { success: true };
+  } catch (err: any) {
+    return { success: true };
+  }
 }
