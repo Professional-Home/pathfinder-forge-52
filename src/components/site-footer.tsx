@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { name: "Projects", to: "/projects" as const },
   { name: "Blog", to: "/blog" as const },
   { name: "Webinar", to: "/webinars" as const },
+  { name: "Events", to: "/events" as const },
 ] as const;
 
 const COMPANY_LINKS = [

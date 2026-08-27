@@ -11,6 +11,7 @@ import {
   FileText,
   Video,
   Star,
+  Sparkles,
 } from "lucide-react";
 
 export const adminNavItems = [
@@ -18,6 +19,7 @@ export const adminNavItems = [
   { icon: BookOpen, label: "Course Management", shortLabel: "Courses", to: "/admin/courses" },
   { icon: FileText, label: "Blog Management", shortLabel: "Blogs", to: "/admin/blogs" },
   { icon: Video, label: "Webinar Management", shortLabel: "Webinars", to: "/admin/webinars" },
+  { icon: Sparkles, label: "Event Management", shortLabel: "Events", to: "/admin/events" },
   { icon: GraduationCap, label: "Course Enrollments", shortLabel: "Students", to: "/admin/enrollments" },
   { icon: Users, label: "Users", shortLabel: "Users", to: "/admin/users" },
   { icon: Star, label: "Reviews Moderation", shortLabel: "Reviews", to: "/admin/reviews" },

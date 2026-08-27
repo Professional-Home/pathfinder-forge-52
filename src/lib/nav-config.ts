@@ -12,6 +12,7 @@ export const PUBLIC_NAV_LINKS = [
     matchPath: "/projects",
   },
   { name: "Webinar", href: "/webinars", isRoute: true as const, matchPath: "/webinars" },
+  { name: "Events", href: "/events", isRoute: true as const, matchPath: "/events" },
   { name: "Blog", href: "/blog", isRoute: true as const, matchPath: "/blog" },
 ] as const;
 
@@ -25,6 +26,7 @@ export const PUBLIC_EXPLORE_LINKS = [
     matchPath: "/projects",
   },
   { name: "Webinar", href: "/webinars", isRoute: true as const, matchPath: "/webinars" },
+  { name: "Events", href: "/events", isRoute: true as const, matchPath: "/events" },
   { name: "Blog", href: "/blog", isRoute: true as const, matchPath: "/blog" },
 ] as const;
 
