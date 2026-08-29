@@ -27,10 +27,12 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
+import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
+import { Route as EventsIdRouteImport } from './routes/events/$id'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardPaymentsRouteImport } from './routes/dashboard/payments'
 import { Route as DashboardMentorsRouteImport } from './routes/dashboard/mentors'
@@ -148,6 +150,11 @@ const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   path: '/projects/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventsIndexRoute = EventsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EventsRoute,
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -167,6 +174,11 @@ const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
   id: '/projects/$slug',
   path: '/projects/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const EventsIdRoute = EventsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => EventsRoute,
 } as any)
 const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   id: '/settings',
@@ -309,7 +321,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
-  '/events': typeof EventsRoute
+  '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -339,10 +351,12 @@ export interface FileRoutesByFullPath {
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/events/$id': typeof EventsIdRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/events/': typeof EventsIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
@@ -357,7 +371,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
-  '/events': typeof EventsRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -386,10 +399,12 @@ export interface FileRoutesByTo {
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/events/$id': typeof EventsIdRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/blog': typeof BlogIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/events': typeof EventsIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
@@ -407,7 +422,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
-  '/events': typeof EventsRoute
+  '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -437,10 +452,12 @@ export interface FileRoutesById {
   '/dashboard/mentors': typeof DashboardMentorsRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
+  '/events/$id': typeof EventsIdRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/blog/': typeof BlogIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/events/': typeof EventsIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
@@ -489,10 +506,12 @@ export interface FileRouteTypes {
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/events/$id'
     | '/projects/$slug'
     | '/blog/'
     | '/courses/'
     | '/dashboard/'
+    | '/events/'
     | '/projects/'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
@@ -507,7 +526,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/disclaimer'
     | '/employees'
-    | '/events'
     | '/login'
     | '/onboarding'
     | '/privacy-policy'
@@ -536,10 +554,12 @@ export interface FileRouteTypes {
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/events/$id'
     | '/projects/$slug'
     | '/blog'
     | '/courses'
     | '/dashboard'
+    | '/events'
     | '/projects'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
@@ -586,10 +606,12 @@ export interface FileRouteTypes {
     | '/dashboard/mentors'
     | '/dashboard/payments'
     | '/dashboard/settings'
+    | '/events/$id'
     | '/projects/$slug'
     | '/blog/'
     | '/courses/'
     | '/dashboard/'
+    | '/events/'
     | '/projects/'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
@@ -607,7 +629,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   DisclaimerRoute: typeof DisclaimerRoute
   EmployeesRoute: typeof EmployeesRoute
-  EventsRoute: typeof EventsRoute
+  EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
@@ -752,6 +774,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/events/': {
+      id: '/events/'
+      path: '/'
+      fullPath: '/events/'
+      preLoaderRoute: typeof EventsIndexRouteImport
+      parentRoute: typeof EventsRoute
+    }
     '/dashboard/': {
       id: '/dashboard/'
       path: '/'
@@ -779,6 +808,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/$slug'
       preLoaderRoute: typeof ProjectsSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/events/$id': {
+      id: '/events/$id'
+      path: '/$id'
+      fullPath: '/events/$id'
+      preLoaderRoute: typeof EventsIdRouteImport
+      parentRoute: typeof EventsRoute
     }
     '/dashboard/settings': {
       id: '/dashboard/settings'
@@ -1053,6 +1089,19 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
   DashboardRouteChildren,
 )
 
+interface EventsRouteChildren {
+  EventsIdRoute: typeof EventsIdRoute
+  EventsIndexRoute: typeof EventsIndexRoute
+}
+
+const EventsRouteChildren: EventsRouteChildren = {
+  EventsIdRoute: EventsIdRoute,
+  EventsIndexRoute: EventsIndexRoute,
+}
+
+const EventsRouteWithChildren =
+  EventsRoute._addFileChildren(EventsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1061,7 +1110,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   DisclaimerRoute: DisclaimerRoute,
   EmployeesRoute: EmployeesRoute,
-  EventsRoute: EventsRoute,
+  EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,

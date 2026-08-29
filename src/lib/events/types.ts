@@ -5,6 +5,11 @@ export interface WebinarEvent {
   photo: string;
   googleFormLink: string;
   isLocked: boolean;
+  eventDate?: string;
+  location?: string;
+  price?: string;
+  duration?: string;
+  speakerName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,6 +20,11 @@ export interface EventFormData {
   photo: string;
   googleFormLink: string;
   isLocked: boolean;
+  eventDate?: string;
+  location?: string;
+  price?: string;
+  duration?: string;
+  speakerName?: string;
 }
 
 export interface EventValidationErrors {

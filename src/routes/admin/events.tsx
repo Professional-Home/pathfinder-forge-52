@@ -26,6 +26,7 @@ import {
   saveEvent,
   deleteEvent,
   toggleLockEvent,
+  isEventLocked,
 } from "@/lib/events/store";
 import {
   type WebinarEvent,
@@ -46,6 +47,11 @@ const emptyForm: EventFormData = {
   photo: "",
   googleFormLink: "",
   isLocked: false,
+  eventDate: "",
+  location: "",
+  price: "",
+  duration: "",
+  speakerName: "",
 };
 
 function AdminEventsPage() {
@@ -119,6 +125,11 @@ function AdminEventsPage() {
       photo: event.photo,
       googleFormLink: event.googleFormLink,
       isLocked: event.isLocked,
+      eventDate: event.eventDate || "",
+      location: event.location || "",
+      price: event.price || "",
+      duration: event.duration || "",
+      speakerName: event.speakerName || "",
     });
     setErrors({});
     setIsDialogOpen(true);
@@ -231,30 +242,47 @@ function AdminEventsPage() {
 
                       {/* Lock Status Column */}
                       <td className="py-3 px-4">
-                        <button
-                          onClick={() =>
-                            toggleLockMutation.mutate({
-                              id: event.id,
-                              isLocked: !event.isLocked,
-                            })
-                          }
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition cursor-pointer ${
-                            event.isLocked
-                              ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20"
-                              : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20"
-                          }`}
-                          title={event.isLocked ? "Click to unlock" : "Click to lock"}
-                        >
-                          {event.isLocked ? (
-                            <>
-                              <Lock className="h-3 w-3" /> Locked
-                            </>
-                          ) : (
-                            <>
-                              <Unlock className="h-3 w-3" /> Active
-                            </>
-                          )}
-                        </button>
+                        {(() => {
+                          const currentlyLocked = isEventLocked(event);
+                          const isAutoOpened = event.isLocked && event.eventDate && new Date(event.eventDate).getTime() <= Date.now();
+                          const isFutureScheduled = event.isLocked && event.eventDate && new Date(event.eventDate).getTime() > Date.now();
+
+                          return (
+                            <div className="space-y-1">
+                              <button
+                                onClick={() =>
+                                  toggleLockMutation.mutate({
+                                    id: event.id,
+                                    isLocked: !event.isLocked,
+                                  })
+                                }
+                                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition cursor-pointer ${
+                                  currentlyLocked
+                                    ? "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20"
+                                    : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20"
+                                }`}
+                                title={currentlyLocked ? "Click to manually unlock" : "Click to manually lock"}
+                              >
+                                {currentlyLocked ? (
+                                  <>
+                                    <Lock className="h-3 w-3" /> {isFutureScheduled ? "Scheduled" : "Locked"}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Unlock className="h-3 w-3" /> {isAutoOpened ? "Auto-Unlocked" : "Active"}
+                                  </>
+                                )}
+                              </button>
+                              {event.eventDate && (
+                                <div className="text-[10px] text-muted-foreground font-mono">
+                                  {isFutureScheduled
+                                    ? `Opens: ${new Date(event.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                    : `Opened: ${new Date(event.eventDate).toLocaleDateString()}`}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Actions Column */}
@@ -345,6 +373,58 @@ function AdminEventsPage() {
                       rows={4}
                       placeholder="Explain the event curriculum, prerequisites, and registration instructions..."
                     />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="e-date">Event Date & Time</Label>
+                      <Input
+                        id="e-date"
+                        type="datetime-local"
+                        value={formData.eventDate ? formData.eventDate.substring(0, 16) : ""}
+                        onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="e-location">Venue / Location</Label>
+                      <Input
+                        id="e-location"
+                        value={formData.location || ""}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        placeholder="e.g. Online (Google Meet) or Physical Room"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="e-price">Price / Registration Fee</Label>
+                      <Input
+                        id="e-price"
+                        value={formData.price || ""}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        placeholder="e.g. Free or INR 2,000"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="e-duration">Duration</Label>
+                      <Input
+                        id="e-duration"
+                        value={formData.duration || ""}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        placeholder="e.g. 2 Hours, 3 Days"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label htmlFor="e-speaker">Speaker / Mentor Name</Label>
+                      <Input
+                        id="e-speaker"
+                        value={formData.speakerName || ""}
+                        onChange={(e) => setFormData({ ...formData, speakerName: e.target.value })}
+                        placeholder="e.g. Dr. Elena Rostova"
+                      />
+                    </div>
                   </div>
                 </fieldset>
 

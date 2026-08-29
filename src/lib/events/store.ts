@@ -9,6 +9,11 @@ function mapDbToEvent(db: any): WebinarEvent {
     photo: db.photo || "",
     googleFormLink: db.google_form_link || db.googleFormLink || "",
     isLocked: db.is_locked ?? db.isLocked ?? false,
+    eventDate: db.event_date || db.eventDate || undefined,
+    location: db.location || "",
+    price: db.price || "",
+    duration: db.duration || "",
+    speakerName: db.speaker_name || db.speakerName || "",
     createdAt: db.created_at || new Date().toISOString(),
     updatedAt: db.updated_at || new Date().toISOString(),
   };
@@ -60,7 +65,21 @@ export async function fetchEventById(id: string): Promise<WebinarEvent | null> {
 export async function saveEvent(formData: EventFormData, existingId?: string): Promise<WebinarEvent> {
   const now = new Date().toISOString();
 
-  const record: Record<string, any> = {
+  const fullRecord: Record<string, any> = {
+    name: formData.name,
+    description: formData.description,
+    photo: formData.photo,
+    google_form_link: formData.googleFormLink,
+    is_locked: formData.isLocked,
+    event_date: formData.eventDate || null,
+    location: formData.location || "",
+    price: formData.price || "",
+    duration: formData.duration || "",
+    speaker_name: formData.speakerName || "",
+    updated_at: now,
+  };
+
+  const legacyRecord: Record<string, any> = {
     name: formData.name,
     description: formData.description,
     photo: formData.photo,
@@ -72,12 +91,26 @@ export async function saveEvent(formData: EventFormData, existingId?: string): P
   let resultData: any;
 
   if (existingId) {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("webinar_events")
-      .update(record)
+      .update(fullRecord)
       .eq("id", existingId)
       .select()
       .single();
+
+    if (error && (error.code === "PGRST204" || error.message.includes("Could not find the"))) {
+      console.warn(
+        "[Events Store] New database columns not found in remote schema cache. Retrying update with core columns only. Please run the SQL schema migration in Supabase Dashboard SQL Editor."
+      );
+      const fallback = await supabase
+        .from("webinar_events")
+        .update(legacyRecord)
+        .eq("id", existingId)
+        .select()
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.error("[Events Store] Supabase update error:", error);
@@ -85,11 +118,24 @@ export async function saveEvent(formData: EventFormData, existingId?: string): P
     }
     resultData = data;
   } else {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("webinar_events")
-      .insert(record)
+      .insert(fullRecord)
       .select()
       .single();
+
+    if (error && (error.code === "PGRST204" || error.message.includes("Could not find the"))) {
+      console.warn(
+        "[Events Store] New database columns not found in remote schema cache. Retrying insert with core columns only. Please run the SQL schema migration in Supabase Dashboard SQL Editor."
+      );
+      const fallback = await supabase
+        .from("webinar_events")
+        .insert(legacyRecord)
+        .select()
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.error("[Events Store] Supabase insert error:", error);
@@ -137,4 +183,23 @@ export async function toggleLockEvent(id: string, isLocked: boolean): Promise<bo
     console.error("[Events Store] Toggle lock error:", err);
     return false;
   }
+}
+
+/**
+ * Helper function to determine if an event is currently locked.
+ * An event is automatically UNLOCKED if current time is at or past its scheduled eventDate.
+ * Otherwise, it defaults to the manual `isLocked` flag.
+ */
+export function isEventLocked(event: WebinarEvent): boolean {
+  if (event.eventDate) {
+    const openingTime = new Date(event.eventDate).getTime();
+    if (!isNaN(openingTime)) {
+      const now = Date.now();
+      // If current time has reached or passed the scheduled opening date/time, automatically unlock!
+      if (now >= openingTime) {
+        return false;
+      }
+    }
+  }
+  return event.isLocked;
 }

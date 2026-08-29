@@ -1,4 +1,3 @@
--- 1. Create public.webinar_events table if not exists
 CREATE TABLE IF NOT EXISTS public.webinar_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -6,9 +5,21 @@ CREATE TABLE IF NOT EXISTS public.webinar_events (
     photo TEXT DEFAULT '',
     google_form_link TEXT DEFAULT '',
     is_locked BOOLEAN DEFAULT false,
+    event_date TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    location TEXT DEFAULT '',
+    price TEXT DEFAULT '',
+    duration TEXT DEFAULT '',
+    speaker_name TEXT DEFAULT '',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Ensure the columns exist if the table was already created
+ALTER TABLE public.webinar_events ADD COLUMN IF NOT EXISTS event_date TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+ALTER TABLE public.webinar_events ADD COLUMN IF NOT EXISTS location TEXT DEFAULT '';
+ALTER TABLE public.webinar_events ADD COLUMN IF NOT EXISTS price TEXT DEFAULT '';
+ALTER TABLE public.webinar_events ADD COLUMN IF NOT EXISTS duration TEXT DEFAULT '';
+ALTER TABLE public.webinar_events ADD COLUMN IF NOT EXISTS speaker_name TEXT DEFAULT '';
 
 -- 2. Enable Row Level Security (RLS)
 ALTER TABLE public.webinar_events ENABLE ROW LEVEL SECURITY;
