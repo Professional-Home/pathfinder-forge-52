@@ -66,10 +66,10 @@ function PublicCourseCardComponent({
       </div>
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <h3 className="font-display text-lg tracking-tight text-foreground sm:text-xl">
+        <h3 className="line-clamp-2 min-h-[2.5rem] font-display text-lg leading-tight tracking-tight text-foreground sm:min-h-[3.25rem] sm:text-xl">
           {course.name}
         </h3>
-        <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+        <p className="mt-1.5 line-clamp-2 min-h-[2.5rem] text-[13px] leading-relaxed text-muted-foreground">
           {course.shortDescription}
         </p>
 
@@ -89,20 +89,20 @@ function PublicCourseCardComponent({
           </span>
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-auto flex gap-2 pt-4">
           <Link
             to="/projects/$slug"
             params={{ slug: course.slug }}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground px-3 py-2 text-xs font-semibold text-background transition hover:opacity-90 sm:text-[13px]"
+            className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-foreground px-3 py-2 text-center text-xs font-semibold leading-tight text-background transition hover:opacity-90 sm:text-[13px]"
           >
             Learn More
-            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <a
             href={getCourseApplyUrl(course)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex flex-1 items-center justify-center rounded-full border border-border px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-accent sm:text-[13px]"
+            className="inline-flex min-h-9 flex-1 items-center justify-center rounded-full border border-border px-3 py-2 text-center text-xs font-semibold leading-tight text-foreground transition hover:bg-accent sm:text-[13px]"
           >
             Apply
           </a>

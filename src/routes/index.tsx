@@ -418,7 +418,7 @@ function Hero() {
         <motion.div variants={itemVariants} className="col-span-full mt-4 w-full overflow-hidden rounded-2xl border border-border bg-border shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_20px_60px_-30px_rgba(0,0,0,0.15)] sm:mt-8">
           <div className="grid grid-cols-2 gap-px md:grid-cols-5">
             {[
-              { top: "30+", bottom: "Students Learning" },
+              { top: "50+", bottom: "Students Learning" },
               { top: "Online", bottom: "Industry Projects" },
               { top: "AI", bottom: "Integrated Learning" },
               { top: "Research", bottom: "First Approach" },
