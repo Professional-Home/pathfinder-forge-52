@@ -20,23 +20,28 @@ export function getCourseStats(courses: CourseRecord[]) {
   };
 }
 
-export function getCourseApplyUrl(course: {
+export const COMMON_COURSE_APPLY_URL = "https://forms.gle/pg4VPMaLw5awygzJ9";
+
+export const LEGACY_COURSE_APPLY_URLS = [
+  "https://forms.gle/2dHi7iyXxoPFX8aL8",
+  "https://forms.gle/83HAsS9PwXmLXiox6",
+  "https://forms.gle/JiUaRVJYRuFtgtBc6",
+];
+
+export function getCourseApplyUrl(course?: {
   applyUrl?: string;
   apply_url?: string;
   slug?: string;
   name?: string;
   title?: string;
 }): string {
-  if (course.applyUrl) return course.applyUrl;
-  if (course.apply_url) return course.apply_url;
+  const rawUrl = (course?.applyUrl || course?.apply_url || "").trim();
 
-  const id = (course.slug || course.name || course.title || "").toLowerCase();
-  if (id.includes("bioinformatics")) {
-    return "https://forms.gle/2dHi7iyXxoPFX8aL8";
+  // If the course explicitly has an external URL that is NOT one of the legacy course Google Forms, preserve it.
+  if (rawUrl && !LEGACY_COURSE_APPLY_URLS.includes(rawUrl)) {
+    return rawUrl;
   }
-  if (id.includes("drug")) {
-    return "https://forms.gle/83HAsS9PwXmLXiox6";
-  }
-  return "https://forms.gle/JiUaRVJYRuFtgtBc6";
+
+  // All course applications funnel to the common Google Form
+  return COMMON_COURSE_APPLY_URL;
 }
-
