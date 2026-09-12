@@ -56,7 +56,7 @@ const BIOINFORMATICS_DASHBOARD_SEED: DashboardCourse = {
   category: "Biotechnology",
   duration: "30 Days",
   thumbnail: "/Photos/bio-cover.jpeg",
-  applyUrl: "",
+  applyUrl: "https://forms.gle/pg4VPMaLw5awygzJ9",
   status: "published",
 };
 

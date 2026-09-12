@@ -92,7 +92,7 @@ const BIOINFORMATICS_LISTING_SEED: CourseListingItem = {
   difficulty: "intermediate",
   featured: true,
   status: "published",
-  applyUrl: "https://forms.gle/2dHi7iyXxoPFX8aL8",
+  applyUrl: "https://forms.gle/pg4VPMaLw5awygzJ9",
   lastUpdated: new Date().toISOString().slice(0, 10),
 };
 
@@ -120,7 +120,7 @@ const BIOINFORMATICS_FULL_SEED: CourseRecord = {
   featured: true,
   status: "published",
   lastUpdated: new Date().toISOString().slice(0, 10),
-  applyUrl: "https://forms.gle/2dHi7iyXxoPFX8aL8",
+  applyUrl: "https://forms.gle/pg4VPMaLw5awygzJ9",
 };
 
 function mapDbToListing(db: any): CourseListingItem {

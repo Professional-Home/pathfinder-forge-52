@@ -24,7 +24,7 @@ Insert a new row into the `courses` table with the following fields:
 | `certificate` | `Certificate of Completion` |
 | `featured` | `true` |
 | `status` | `published` |
-| `apply_url` | *(Provide the enrollment/apply URL when available)* |
+| `apply_url` | `https://forms.gle/pg4VPMaLw5awygzJ9` |
 | `thumbnail` | *(Upload bioinformatics card image to Supabase Storage and provide URL)* |
 | `cover_image` | *(Upload bioinformatics hero image to Supabase Storage and provide URL)* |
 
