@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CloudinaryUpload } from "@/components/admin/CloudinaryUpload";
+import { RichArticleEditor } from "@/components/admin/RichArticleEditor";
 import { fetchBlogs, saveBlog, deleteBlog } from "@/lib/blogs/store";
 import type { BlogPost, BlogFormData, BlogStatus } from "@/lib/blogs/types";
 
@@ -348,14 +349,11 @@ function AdminBlogsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="content">Full Article Content (Markdown format supported)</Label>
-                  <Textarea
+                  <Label htmlFor="content">Full Article Content</Label>
+                  <RichArticleEditor
                     id="content"
                     value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    rows={8}
-                    placeholder="# Article Title&#10;&#10;Write your article paragraphs here..."
-                    required
+                    onChange={(content) => setFormData({ ...formData, content })}
                   />
                 </div>
 

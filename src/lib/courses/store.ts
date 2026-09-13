@@ -1,5 +1,6 @@
 import type { CourseFormData, CourseRecord, CourseSortOption } from "./types";
 import { supabase } from "@/utils/supabase";
+import { COMMON_COURSE_APPLY_URL, getCourseApplyUrl } from "./data";
 
 const STORAGE_KEY = "micrylis-course-records";
 
@@ -16,7 +17,14 @@ function readStorage(): CourseRecord[] | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as CourseRecord[];
+    const parsed = JSON.parse(raw) as CourseRecord[];
+    if (Array.isArray(parsed)) {
+      return parsed.map((c) => ({
+        ...c,
+        applyUrl: COMMON_COURSE_APPLY_URL,
+      }));
+    }
+    return parsed;
   } catch {
     return null;
   }
@@ -46,7 +54,8 @@ export function getCourseBySlug(slug: string): CourseRecord | undefined {
 }
 
 /** Lightweight columns for listing pages — excludes heavy text fields */
-const LISTING_COLUMNS = "id, slug, title, short_description, thumbnail, cover_image, category, duration, mode, program_fee, difficulty, featured, status, apply_url, updated_at";
+const LISTING_COLUMNS =
+  "id, slug, title, short_description, thumbnail, cover_image, category, duration, mode, program_fee, difficulty, featured, status, apply_url, updated_at";
 
 /** Lightweight course shape for listing/card views */
 export interface CourseListingItem {
@@ -70,7 +79,10 @@ export interface CourseListingItem {
 function getDefaultCourseImages(identifier: string): { thumbnail: string; cover: string } {
   const lower = (identifier || "").toLowerCase();
   if (lower.includes("drug")) {
-    return { thumbnail: "/Photos/ai-drug-discovery-card.jpeg", cover: "/Photos/ai-drug-discovery-hero.jpeg" };
+    return {
+      thumbnail: "/Photos/ai-drug-discovery-card.jpeg",
+      cover: "/Photos/ai-drug-discovery-hero.jpeg",
+    };
   }
   if (lower.includes("bioinformatics")) {
     return { thumbnail: "/Photos/bio-cover.jpeg", cover: "/Photos/bio-inside.jpeg" };
@@ -83,7 +95,8 @@ const BIOINFORMATICS_LISTING_SEED: CourseListingItem = {
   id: "bioinformatics-frontend-seed",
   slug: "bioinformatics",
   name: "Bioinformatics",
-  shortDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  shortDescription:
+    "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
   thumbnail: "/Photos/bio-cover.jpeg",
   category: "Biotechnology",
   duration: "30 Days",
@@ -92,7 +105,7 @@ const BIOINFORMATICS_LISTING_SEED: CourseListingItem = {
   difficulty: "intermediate",
   featured: true,
   status: "published",
-  applyUrl: "https://forms.gle/pg4VPMaLw5awygzJ9",
+  applyUrl: COMMON_COURSE_APPLY_URL,
   lastUpdated: new Date().toISOString().slice(0, 10),
 };
 
@@ -100,8 +113,10 @@ const BIOINFORMATICS_FULL_SEED: CourseRecord = {
   id: "bioinformatics-frontend-seed",
   slug: "bioinformatics",
   name: "Bioinformatics",
-  shortDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
-  fullDescription: "An AI-integrated bioinformatics platform project combining bioinformatics, artificial intelligence, genomics, and biomarker discovery.",
+  shortDescription:
+    "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  fullDescription:
+    "An AI-integrated bioinformatics platform project combining bioinformatics, artificial intelligence, genomics, and biomarker discovery.",
   thumbnail: "/Photos/bio-cover.jpeg",
   coverImage: "/Photos/bio-inside.jpeg",
   duration: "30 Days",
@@ -116,11 +131,12 @@ const BIOINFORMATICS_FULL_SEED: CourseRecord = {
   whoShouldJoin: "",
   faqs: "",
   seoTitle: "Bioinformatics — Micrylis Biotech",
-  seoDescription: "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
+  seoDescription:
+    "A 30-Day Research Project in Bioinformatics, Computational Biology & Genomic Data Analysis",
   featured: true,
   status: "published",
   lastUpdated: new Date().toISOString().slice(0, 10),
-  applyUrl: "https://forms.gle/pg4VPMaLw5awygzJ9",
+  applyUrl: COMMON_COURSE_APPLY_URL,
 };
 
 function mapDbToListing(db: any): CourseListingItem {
@@ -139,8 +155,14 @@ function mapDbToListing(db: any): CourseListingItem {
     difficulty: db.difficulty || "intermediate",
     featured: db.featured ?? true,
     status: db.status || "published",
-    applyUrl: db.apply_url || db.applyUrl || "",
-    lastUpdated: db.updated_at ? String(db.updated_at).slice(0, 10) : new Date().toISOString().slice(0, 10),
+    applyUrl: getCourseApplyUrl({
+      applyUrl: db.apply_url || db.applyUrl,
+      slug: db.slug,
+      title: db.title || db.name,
+    }),
+    lastUpdated: db.updated_at
+      ? String(db.updated_at).slice(0, 10)
+      : new Date().toISOString().slice(0, 10),
   };
 }
 
@@ -153,9 +175,7 @@ export async function fetchCoursesListing(options?: {
   page?: number;
 }): Promise<{ courses: CourseListingItem[]; total: number }> {
   try {
-    let query = supabase
-      .from("courses")
-      .select(LISTING_COLUMNS, { count: "exact" });
+    let query = supabase.from("courses").select(LISTING_COLUMNS, { count: "exact" });
 
     if (options?.status && options.status !== "all") {
       if (options.status === "published") {
@@ -197,7 +217,7 @@ export async function fetchCoursesListing(options?: {
     localCourses = localCourses.filter((c) =>
       options.status === "published"
         ? c.status === "published" || !c.status
-        : c.status === options.status
+        : c.status === options.status,
     );
   }
   if (options?.category && options.category !== "all") {
@@ -223,7 +243,7 @@ export async function fetchCoursesListing(options?: {
       difficulty: c.difficulty,
       featured: c.featured,
       status: c.status || "published",
-      applyUrl: c.applyUrl || "",
+      applyUrl: getCourseApplyUrl(c),
       lastUpdated: c.lastUpdated,
     };
   });
@@ -296,8 +316,14 @@ function mapDbToFull(db: any): CourseRecord {
     seoDescription: db.seo_description || db.short_description || "",
     featured: db.featured ?? true,
     status: db.status || "published",
-    lastUpdated: db.updated_at ? String(db.updated_at).slice(0, 10) : new Date().toISOString().slice(0, 10),
-    applyUrl: db.apply_url || db.applyUrl || "",
+    lastUpdated: db.updated_at
+      ? String(db.updated_at).slice(0, 10)
+      : new Date().toISOString().slice(0, 10),
+    applyUrl: getCourseApplyUrl({
+      applyUrl: db.apply_url || db.applyUrl,
+      slug: db.slug,
+      title: db.title || db.name,
+    }),
   };
 }
 
@@ -343,10 +369,10 @@ async function syncCourseToSupabase(course: CourseRecord) {
         seo_description: course.seoDescription || "",
         status: course.status,
         featured: course.featured,
-        apply_url: course.applyUrl,
+        apply_url: COMMON_COURSE_APPLY_URL,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "slug" }
+      { onConflict: "slug" },
     );
     if (error) {
       console.error("[Supabase Store] Failed to sync course:", error.message || error);

@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { fetchBlogBySlug } from "@/lib/blogs/store";
 import { getOptimizedImageUrl } from "@/utils/cloudinary";
+import { ArticleContentRenderer } from "@/components/blog/ArticleContentRenderer";
 
 export const Route = createFileRoute("/blog/$slug")({
   component: SingleBlogPage,
@@ -108,36 +109,7 @@ function SingleBlogPage() {
           )}
 
           {/* Article Body */}
-          <div className="prose prose-slate dark:prose-invert max-w-none space-y-6 text-foreground text-sm sm:text-base leading-relaxed pt-4">
-            {post.content.split("\n\n").map((paragraph, idx) => {
-              if (paragraph.startsWith("# ")) {
-                return (
-                  <h1 key={idx} className="font-display text-2xl sm:text-3xl font-bold mt-8 mb-4 text-foreground">
-                    {paragraph.replace("# ", "")}
-                  </h1>
-                );
-              }
-              if (paragraph.startsWith("## ")) {
-                return (
-                  <h2 key={idx} className="font-display text-xl sm:text-2xl font-bold mt-6 mb-3 text-foreground">
-                    {paragraph.replace("## ", "")}
-                  </h2>
-                );
-              }
-              if (paragraph.startsWith("### ")) {
-                return (
-                  <h3 key={idx} className="font-display text-lg font-bold mt-4 mb-2 text-foreground">
-                    {paragraph.replace("### ", "")}
-                  </h3>
-                );
-              }
-              return (
-                <p key={idx} className="text-muted-foreground leading-relaxed">
-                  {paragraph}
-                </p>
-              );
-            })}
-          </div>
+          <ArticleContentRenderer content={post.content} className="pt-4" />
 
           {/* Footer Callout */}
           <div className="mt-12 rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8 text-center space-y-4">
