@@ -1,4 +1,5 @@
 import { getAllCourses } from "./store";
+import { COMMON_COURSE_APPLY_URL } from "./data";
 
 export interface DashboardCourse {
   id: string;
@@ -56,7 +57,7 @@ const BIOINFORMATICS_DASHBOARD_SEED: DashboardCourse = {
   category: "Biotechnology",
   duration: "30 Days",
   thumbnail: "/Photos/bio-cover.jpeg",
-  applyUrl: "",
+  applyUrl: COMMON_COURSE_APPLY_URL,
   status: "published",
 };
 
@@ -72,7 +73,7 @@ export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[]
       category: c.category || "General",
       duration: c.duration || "Self-paced",
       thumbnail: getDashboardCourseImage(c.slug || c.title || c.name || ""),
-      applyUrl: c.apply_url || c.applyUrl || "",
+      applyUrl: COMMON_COURSE_APPLY_URL,
       status: c.status || "published",
     }));
 

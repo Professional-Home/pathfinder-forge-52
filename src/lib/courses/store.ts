@@ -17,7 +17,14 @@ function readStorage(): CourseRecord[] | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as CourseRecord[];
+    const parsed = JSON.parse(raw) as CourseRecord[];
+    if (Array.isArray(parsed)) {
+      return parsed.map((c) => ({
+        ...c,
+        applyUrl: COMMON_COURSE_APPLY_URL,
+      }));
+    }
+    return parsed;
   } catch {
     return null;
   }
@@ -236,7 +243,7 @@ export async function fetchCoursesListing(options?: {
       difficulty: c.difficulty,
       featured: c.featured,
       status: c.status || "published",
-      applyUrl: c.applyUrl || "",
+      applyUrl: getCourseApplyUrl(c),
       lastUpdated: c.lastUpdated,
     };
   });
@@ -362,7 +369,7 @@ async function syncCourseToSupabase(course: CourseRecord) {
         seo_description: course.seoDescription || "",
         status: course.status,
         featured: course.featured,
-        apply_url: course.applyUrl,
+        apply_url: COMMON_COURSE_APPLY_URL,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "slug" },

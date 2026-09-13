@@ -22,26 +22,12 @@ export function getCourseStats(courses: CourseRecord[]) {
 
 export const COMMON_COURSE_APPLY_URL = "https://forms.gle/pg4VPMaLw5awygzJ9";
 
-export const LEGACY_COURSE_APPLY_URLS = [
-  "https://forms.gle/2dHi7iyXxoPFX8aL8",
-  "https://forms.gle/83HAsS9PwXmLXiox6",
-  "https://forms.gle/JiUaRVJYRuFtgtBc6",
-];
-
-export function getCourseApplyUrl(course?: {
+export function getCourseApplyUrl(_course?: {
   applyUrl?: string;
   apply_url?: string;
   slug?: string;
   name?: string;
   title?: string;
 }): string {
-  const rawUrl = (course?.applyUrl || course?.apply_url || "").trim();
-
-  // If the course explicitly has an external URL that is NOT one of the legacy course Google Forms, preserve it.
-  if (rawUrl && !LEGACY_COURSE_APPLY_URLS.includes(rawUrl)) {
-    return rawUrl;
-  }
-
-  // All course applications funnel to the common Google Form
   return COMMON_COURSE_APPLY_URL;
 }
