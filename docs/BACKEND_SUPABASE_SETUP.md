@@ -73,7 +73,8 @@ INSERT INTO public.courses (
   mode,
   program_fee,
   status,
-  featured
+  featured,
+  apply_url
 ) VALUES
 (
   'course-bioplastic-innovation',
@@ -87,7 +88,8 @@ INSERT INTO public.courses (
   'Online',
   '₹1999',
   'published',
-  true
+  true,
+  'https://forms.gle/fo6EevAbEipmnyRg8'
 ),
 (
   'course-ai-drug-discovery',
@@ -101,7 +103,8 @@ INSERT INTO public.courses (
   'Online',
   '₹1999',
   'published',
-  true
+  true,
+  'https://forms.gle/kavwpp29u38LkgDB6'
 )
 ON CONFLICT (slug) DO UPDATE SET
   title = EXCLUDED.title,
@@ -112,6 +115,7 @@ ON CONFLICT (slug) DO UPDATE SET
   cover_image = EXCLUDED.cover_image,
   status = EXCLUDED.status,
   featured = EXCLUDED.featured,
+  apply_url = EXCLUDED.apply_url,
   updated_at = now();
 ```
 
