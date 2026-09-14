@@ -1,5 +1,5 @@
 import { getAllCourses } from "./store";
-import { COMMON_COURSE_APPLY_URL } from "./data";
+import { COMMON_COURSE_APPLY_URL, getCourseApplyUrl } from "./data";
 
 export interface DashboardCourse {
   id: string;
@@ -43,7 +43,7 @@ export function getSeedDashboardCourses(): DashboardCourse[] {
       category: c.category,
       duration: c.duration,
       thumbnail: getDashboardCourseImage(c.slug || c.name || ""),
-      applyUrl: c.applyUrl,
+      applyUrl: getCourseApplyUrl(c),
       status: c.status,
     }));
 }
@@ -73,7 +73,7 @@ export function mergeDashboardCourses(supabaseCourses: any[]): DashboardCourse[]
       category: c.category || "General",
       duration: c.duration || "Self-paced",
       thumbnail: getDashboardCourseImage(c.slug || c.title || c.name || ""),
-      applyUrl: COMMON_COURSE_APPLY_URL,
+      applyUrl: getCourseApplyUrl(c),
       status: c.status || "published",
     }));
 

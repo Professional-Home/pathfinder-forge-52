@@ -21,7 +21,7 @@ function readStorage(): CourseRecord[] | null {
     if (Array.isArray(parsed)) {
       return parsed.map((c) => ({
         ...c,
-        applyUrl: COMMON_COURSE_APPLY_URL,
+        applyUrl: getCourseApplyUrl(c),
       }));
     }
     return parsed;
@@ -369,7 +369,7 @@ async function syncCourseToSupabase(course: CourseRecord) {
         seo_description: course.seoDescription || "",
         status: course.status,
         featured: course.featured,
-        apply_url: COMMON_COURSE_APPLY_URL,
+        apply_url: course.applyUrl || getCourseApplyUrl(course),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "slug" },
