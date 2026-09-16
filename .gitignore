@@ -43,5 +43,7 @@ ml-data/colony-dataset/processed_yolo/labels/
 ml-data/colony-dataset/processed_yolo/samples/
 ml-data/colony-training/*
 !ml-data/colony-training/baseline_training_report.json
+!ml-data/colony-training/threshold_optimization_report.json
+!ml-data/colony-training/threshold_optimization_report.md
 *.pt
 *.onnx

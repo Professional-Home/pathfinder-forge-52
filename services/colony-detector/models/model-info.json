@@ -33,8 +33,29 @@
   },
   "operational_defaults": {
     "baseline_confidence_threshold": 0.30,
+    "selected_operating_threshold": 0.35,
     "allowed_confidence_min": 0.20,
     "allowed_confidence_max": 0.90
+  },
+  "phase_5e_threshold_optimization": {
+    "evaluation_date": "2026-09-16",
+    "methodology": "Validation set optimization across 9 thresholds [0.20-0.60]; single-pass locked evaluation on unseen test set",
+    "validation_best_candidate": 0.35,
+    "validation_composite_score": 0.9996,
+    "validation_mae_at_selected": 7.95,
+    "validation_median_ae_at_selected": 3.0,
+    "test_metrics_at_selected": {
+      "threshold": 0.35,
+      "precision": 0.8976,
+      "recall": 0.8589,
+      "mAP50": 0.8326,
+      "mAP50_95": 0.4370,
+      "counting_mae": 9.39,
+      "counting_median_ae": 3.0,
+      "counting_median_pct_error": 4.35,
+      "within_10_ratio": 0.821
+    },
+    "scientific_conclusion": "Thresholds 0.30 and 0.35 represent the optimal operational plateau. High-density undercounting is driven by spatial confluence/overlap rather than threshold filtering."
   },
   "model_artifact": {
     "filename": "best.pt",
