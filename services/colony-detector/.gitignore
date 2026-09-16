@@ -1,0 +1,24 @@
+# Python virtual environment
+.venv/
+env/
+venv/
+
+# Python byte code & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local model weights (DO NOT commit large/proprietary weights)
+models/*.pt
+models/*.onnx
+models/*.engine
+!models/README.md
+
+# Generated outputs
+outputs/*
+!outputs/.gitkeep
+
+# Environment secrets
+.env
+.env.local

@@ -31,6 +31,7 @@ import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
+import { Route as ToolsColonyCounterRouteImport } from './routes/tools/colony-counter'
 import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
 import { Route as EventsIdRouteImport } from './routes/events/$id'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
@@ -169,6 +170,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BlogRoute,
+} as any)
+const ToolsColonyCounterRoute = ToolsColonyCounterRouteImport.update({
+  id: '/tools/colony-counter',
+  path: '/tools/colony-counter',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
   id: '/projects/$slug',
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/events/$id': typeof EventsIdRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/tools/colony-counter': typeof ToolsColonyCounterRoute
   '/blog/': typeof BlogIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -401,6 +408,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/events/$id': typeof EventsIdRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/tools/colony-counter': typeof ToolsColonyCounterRoute
   '/blog': typeof BlogIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
@@ -454,6 +462,7 @@ export interface FileRoutesById {
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/events/$id': typeof EventsIdRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/tools/colony-counter': typeof ToolsColonyCounterRoute
   '/blog/': typeof BlogIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -508,6 +517,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/events/$id'
     | '/projects/$slug'
+    | '/tools/colony-counter'
     | '/blog/'
     | '/courses/'
     | '/dashboard/'
@@ -556,6 +566,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/events/$id'
     | '/projects/$slug'
+    | '/tools/colony-counter'
     | '/blog'
     | '/courses'
     | '/dashboard'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/events/$id'
     | '/projects/$slug'
+    | '/tools/colony-counter'
     | '/blog/'
     | '/courses/'
     | '/dashboard/'
@@ -642,6 +654,7 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
   ProjectsSlugRoute: typeof ProjectsSlugRoute
+  ToolsColonyCounterRoute: typeof ToolsColonyCounterRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
@@ -801,6 +814,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/'
       preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof BlogRoute
+    }
+    '/tools/colony-counter': {
+      id: '/tools/colony-counter'
+      path: '/tools/colony-counter'
+      fullPath: '/tools/colony-counter'
+      preLoaderRoute: typeof ToolsColonyCounterRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/projects/$slug': {
       id: '/projects/$slug'
@@ -1123,6 +1143,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   CoursesSlugRoute: CoursesSlugRoute,
   ProjectsSlugRoute: ProjectsSlugRoute,
+  ToolsColonyCounterRoute: ToolsColonyCounterRoute,
   CoursesIndexRoute: CoursesIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
 }

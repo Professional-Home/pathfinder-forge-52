@@ -1,0 +1,55 @@
+{
+  "model_name": "YOLO11n",
+  "task": "colony detection",
+  "class_index": 0,
+  "class_name": "colony",
+  "source_experiment": "baseline-yolo11n-640",
+  "architecture": "YOLO11n (Ultralytics)",
+  "training_epochs_requested": 100,
+  "training_epochs_completed": 100,
+  "best_epoch": 82,
+  "training_imgsz": 640,
+  "batch_size": 4,
+  "validation_metrics": {
+    "mAP50": 0.9232,
+    "mAP50_95": 0.5098,
+    "precision": 0.9084,
+    "recall": 0.8858
+  },
+  "test_metrics": {
+    "mAP50": 0.8866,
+    "mAP50_95": 0.4570,
+    "precision": 0.8909,
+    "recall": 0.8670
+  },
+  "counting_accuracy": {
+    "mae": 8.39,
+    "median_ae": 3.0,
+    "mean_pct_error": 5.96,
+    "median_pct_error": 4.33,
+    "exact_match_ratio": 0.196,
+    "within_5_ratio": 0.643,
+    "within_10_ratio": 0.786
+  },
+  "operational_defaults": {
+    "baseline_confidence_threshold": 0.30,
+    "allowed_confidence_min": 0.20,
+    "allowed_confidence_max": 0.90
+  },
+  "model_artifact": {
+    "filename": "best.pt",
+    "file_size_bytes": 5478938,
+    "file_size_mb": 5.23,
+    "sha256": "bc993b664da2bde5123b8a5c34726e4a35357434cb0c49cb523185f8c929064d"
+  },
+  "dataset_reference": {
+    "name": "Petri-Dish Bacterial Colony Dataset (Figshare collection)",
+    "total_annotated_plates": 369,
+    "train_plates": 258,
+    "val_plates": 55,
+    "test_plates": 56,
+    "total_boxes": 56862,
+    "leakage_prevention": "Physical plate partition strategy"
+  },
+  "training_date": "2026-09-16"
+}
