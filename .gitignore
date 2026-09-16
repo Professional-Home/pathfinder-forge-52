@@ -34,3 +34,14 @@ dist-ssr
 .env.local
 .env.production
 .env.*.local
+
+# ML datasets and weights
+ml-data/colony-dataset/raw/
+ml-data/colony-dataset/inspection/
+ml-data/colony-dataset/processed_yolo/images/
+ml-data/colony-dataset/processed_yolo/labels/
+ml-data/colony-dataset/processed_yolo/samples/
+ml-data/colony-training/*
+!ml-data/colony-training/baseline_training_report.json
+*.pt
+*.onnx
