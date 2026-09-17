@@ -9,7 +9,7 @@ from typing import List, Optional, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
-from app.schemas import ColonyDetection
+from app.schemas import ColonyDetection, ColonyQualityAssessment
 
 logger = logging.getLogger("colony_detector")
 
@@ -184,3 +184,109 @@ class ColonyDetector:
             draw.text((label_x1 + 4, label_y1 + 3), label_text, fill=text_color, font=font)
 
         return annotated
+
+
+def assess_colony_quality(detections: List[ColonyDetection]) -> ColonyQualityAssessment:
+    """Computes transparent, deterministic plate density and crowding reliability indicators.
+
+    Project-specific operational thresholds:
+    - Low: <50 colonies
+    - Medium: 50-200 colonies
+    - High: 201-400 colonies (Review recommended: elevated crowding risk)
+    - Ultra-High: >400 colonies (Review strongly recommended: confluence / overlap risk)
+    """
+    count = len(detections)
+    if count == 0:
+        return ColonyQualityAssessment(
+            density_level="low",
+            review_recommended=False,
+            warning_message=None,
+            confluence_risk="low",
+            overlap_ratio=0.0,
+            reason="No colonies identified in specimen image.",
+        )
+
+    # Compute pairwise spatial overlap across detected colony bounding boxes
+    overlap_count = 0
+    if count > 1:
+        for i in range(count):
+            d1 = detections[i]
+            area1 = max(0.0, d1.x2 - d1.x1) * max(0.0, d1.y2 - d1.y1)
+            is_overlapping = False
+            for j in range(count):
+                if i == j:
+                    continue
+                d2 = detections[j]
+                xx1 = max(d1.x1, d2.x1)
+                yy1 = max(d1.y1, d2.y1)
+                xx2 = min(d1.x2, d2.x2)
+                yy2 = min(d1.y2, d2.y2)
+                w = max(0.0, xx2 - xx1)
+                h = max(0.0, yy2 - yy1)
+                inter = w * h
+                if inter > 0:
+                    area2 = max(0.0, d2.x2 - d2.x1) * max(0.0, d2.y2 - d2.y1)
+                    union = area1 + area2 - inter
+                    iou = inter / max(union, 1e-6)
+                    # IoU > 0.10 indicates touching/overlapping colony boundaries
+                    if iou > 0.10:
+                        is_overlapping = True
+                        break
+            if is_overlapping:
+                overlap_count += 1
+        overlap_ratio = round(overlap_count / count, 3)
+    else:
+        overlap_ratio = 0.0
+
+    # Deterministic confluence / crowding risk indicator
+    if overlap_ratio >= 0.40 or (count > 100 and overlap_ratio >= 0.25):
+        confluence_risk = "high"
+    elif overlap_ratio >= 0.15 or (count > 50 and overlap_ratio >= 0.10):
+        confluence_risk = "medium"
+    else:
+        confluence_risk = "low"
+
+    # Project-specific operational density tier & warning
+    if count > 400:
+        density_level = "ultra_high"
+        review_recommended = True
+        warning_message = (
+            "Very high-density plate detected. Individual colonies may overlap or form confluent regions. "
+            "Manual verification is strongly recommended."
+        )
+        reason = f"Predicted colony count ({count}) exceeds ultra-high density cutoff (>400)."
+    elif count > 200:
+        density_level = "high"
+        review_recommended = True
+        warning_message = (
+            "High-density plate detected. Automated count may be less reliable in crowded colony regions. "
+            "Manual verification is recommended."
+        )
+        reason = f"Predicted colony count ({count}) exceeds high-density cutoff (>200)."
+    elif count >= 50:
+        density_level = "medium"
+        if confluence_risk == "high":
+            review_recommended = True
+            warning_message = (
+                "Elevated colony crowding detected. Overlapping colony clusters may affect individual count precision. "
+                "Visual verification recommended."
+            )
+            reason = f"Medium density ({count}) with elevated colony overlap ratio ({overlap_ratio:.1%})."
+        else:
+            review_recommended = False
+            warning_message = None
+            reason = f"Plate count ({count}) is within standard operating range (50-200)."
+    else:
+        density_level = "low"
+        review_recommended = False
+        warning_message = None
+        reason = f"Plate count ({count}) is within low-density operating range (<50)."
+
+    return ColonyQualityAssessment(
+        density_level=density_level,
+        review_recommended=review_recommended,
+        warning_message=warning_message,
+        confluence_risk=confluence_risk,
+        overlap_ratio=overlap_ratio,
+        reason=reason,
+    )

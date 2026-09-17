@@ -23,6 +23,37 @@ class ColonyImageMetadata(BaseModel):
     height: int = Field(..., ge=1, description="Image height in pixels")
 
 
+class ColonyQualityAssessment(BaseModel):
+    """Operational plate density, reliability, and confluence quality indicators."""
+
+    density_level: str = Field(
+        ...,
+        description="Project-specific density tier: 'low' (<50), 'medium' (50-200), 'high' (201-400), or 'ultra_high' (>400)",
+    )
+    review_recommended: bool = Field(
+        ...,
+        description="Indicates whether visual confirmation or dilution plate verification is advised",
+    )
+    warning_message: Optional[str] = Field(
+        default=None,
+        description="Scientifically cautious advisory message for high-density or crowded cultures",
+    )
+    confluence_risk: str = Field(
+        default="low",
+        description="Deterministic crowding/confluence risk indicator: 'low', 'medium', or 'high'",
+    )
+    overlap_ratio: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Fraction of detected colony boxes exhibiting spatial overlap with adjacent colonies",
+    )
+    reason: str = Field(
+        ...,
+        description="Transparent explanation of the quality and reliability assessment",
+    )
+
+
 class ColonyDetectionSuccessResponse(BaseModel):
     """Successful colony quantification response matching frontend TypeScript schema."""
 
@@ -37,6 +68,10 @@ class ColonyDetectionSuccessResponse(BaseModel):
     )
     processing_time_ms: int = Field(
         ..., ge=0, description="Total inference and processing latency in milliseconds"
+    )
+    quality: Optional[ColonyQualityAssessment] = Field(
+        default=None,
+        description="Operational plate density, reliability, and confluence quality assessment",
     )
 
 

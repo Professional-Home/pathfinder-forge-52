@@ -8,6 +8,10 @@ import {
   Target,
   BarChart3,
   Layers,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
+  Info,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +30,25 @@ export function ColonyResultsPanel({
   appliedThreshold,
   className,
 }: ColonyResultsPanelProps) {
-  const { count, detections, processing_time_ms, image, annotated_image_url } = response;
+  const { count, detections, processing_time_ms, image, annotated_image_url, quality } = response;
+
+  // Resolve density tier & review recommendation with fallback
+  const densityLevel =
+    quality?.density_level ??
+    (count > 400 ? "ultra_high" : count > 200 ? "high" : count >= 50 ? "medium" : "low");
+
+  const reviewRecommended = quality?.review_recommended ?? count > 200;
+
+  const warningMessage =
+    quality?.warning_message ??
+    (count > 400
+      ? "Very high-density plate detected. Individual colonies may overlap or form confluent regions. Manual verification is strongly recommended."
+      : count > 200
+        ? "High-density plate detected. Automated count may be less reliable in crowded colony regions. Manual verification is recommended."
+        : null);
+
+  const confluenceRisk = quality?.confluence_risk ?? (count > 200 ? "high" : "low");
+  const overlapRatio = quality?.overlap_ratio;
 
   // Calculate statistics from the real detection list
   const stats = React.useMemo(() => {
@@ -53,6 +75,64 @@ export function ColonyResultsPanel({
 
   return (
     <div className={cn("space-y-4", className)}>
+      {/* Density & Confluence Advisory Banner */}
+      {reviewRecommended && warningMessage && (
+        <div
+          className={cn(
+            "rounded-xl border p-4 shadow-xs transition-all",
+            densityLevel === "ultra_high"
+              ? "border-rose-500/40 bg-rose-500/10 text-foreground"
+              : "border-amber-500/40 bg-amber-500/10 text-foreground",
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                densityLevel === "ultra_high"
+                  ? "bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400",
+              )}
+            >
+              {densityLevel === "ultra_high" ? (
+                <AlertTriangle className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
+            </div>
+            <div className="flex-1 space-y-1.5 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-sm">
+                  {densityLevel === "ultra_high"
+                    ? "Ultra-High Density Culture Warning"
+                    : "High-Density Culture Advisory"}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[10px] uppercase font-mono tracking-wider font-semibold",
+                    densityLevel === "ultra_high"
+                      ? "border-rose-500/50 text-rose-600 dark:text-rose-400"
+                      : "border-amber-500/50 text-amber-600 dark:text-amber-400",
+                  )}
+                >
+                  {densityLevel === "ultra_high" ? "Confluence Risk" : "Review Recommended"}
+                </Badge>
+              </div>
+              <p className="text-foreground/90 leading-relaxed">{warningMessage}</p>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                <Info className="h-3 w-3 shrink-0 text-muted-foreground" />
+                <span>
+                  Operational Notice: Automated detection is calibrated for individual colonies. In
+                  confluent lawns or dense clusters, physical boundaries merge. Serial dilution or
+                  manual verification is recommended.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Primary KPI Metrics Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {/* Total Colony Count */}
@@ -142,6 +222,53 @@ export function ColonyResultsPanel({
           <div className="flex items-center justify-between border-b border-border/50 py-1.5">
             <span className="text-muted-foreground">Verified Model Detections</span>
             <span className="font-mono font-medium text-foreground">{detections.length}</span>
+          </div>
+
+          <div className="flex items-center justify-between border-b border-border/50 py-1.5">
+            <span className="text-muted-foreground">Operational Density Tier</span>
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] font-mono",
+                densityLevel === "ultra_high"
+                  ? "border-rose-500/50 text-rose-600 dark:text-rose-400 bg-rose-500/10"
+                  : densityLevel === "high"
+                    ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                    : "border-border text-foreground",
+              )}
+            >
+              {densityLevel === "ultra_high"
+                ? "Ultra-High (>400)"
+                : densityLevel === "high"
+                  ? "High (201-400)"
+                  : densityLevel === "medium"
+                    ? "Medium (50-200)"
+                    : "Low (<50)"}
+            </Badge>
+          </div>
+
+          <div className="flex items-center justify-between border-b border-border/50 py-1.5">
+            <span className="text-muted-foreground">Crowding / Confluence Risk</span>
+            <div className="flex items-center gap-2">
+              {typeof overlapRatio === "number" && (
+                <span className="font-mono text-muted-foreground text-[11px]">
+                  {Math.round(overlapRatio * 100)}% overlapping
+                </span>
+              )}
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] font-mono",
+                  confluenceRisk === "high"
+                    ? "border-rose-500/50 text-rose-600 dark:text-rose-400 bg-rose-500/10"
+                    : confluenceRisk === "medium"
+                      ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                      : "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+                )}
+              >
+                {confluenceRisk.toUpperCase()}
+              </Badge>
+            </div>
           </div>
 
           <div className="flex items-center justify-between border-b border-border/50 py-1.5">

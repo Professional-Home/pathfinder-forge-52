@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.detector import ColonyDetector, ModelNotConfiguredError
+from app.detector import ColonyDetector, ModelNotConfiguredError, assess_colony_quality
 from app.schemas import (
     ColonyDetectionErrorResponse,
     ColonyDetectionSuccessResponse,
@@ -251,7 +251,10 @@ async def detect_colonies(
     public_base = os.getenv("PUBLIC_BASE_URL", str(request.base_url).rstrip("/"))
     annotated_url = f"{public_base}/outputs/{annotated_filename}"
 
-    # 7. Construct and return validated response
+    # 7. Assess colony plate density, crowding, and review indicators
+    quality_assessment = assess_colony_quality(detections)
+
+    # 8. Construct and return validated response
     response_payload = ColonyDetectionSuccessResponse(
         success=True,
         count=len(detections),
@@ -259,6 +262,7 @@ async def detect_colonies(
         image=ColonyImageMetadata(width=width, height=height),
         annotated_image_url=annotated_url,
         processing_time_ms=latency_ms,
+        quality=quality_assessment,
     )
 
     return response_payload

@@ -167,7 +167,13 @@ def test_real_inference_with_model():
         assert data["image"]["height"] == 320
         assert "processing_time_ms" in data
         assert data["processing_time_ms"] >= 0
-        assert "annotated_image_url" in data
+        assert "quality" in data
+        assert data["quality"] is not None
+        assert data["quality"]["density_level"] in ("low", "medium", "high", "ultra_high")
+        assert isinstance(data["quality"]["review_recommended"], bool)
+        assert data["quality"]["confluence_risk"] in ("low", "medium", "high")
+        assert 0.0 <= data["quality"]["overlap_ratio"] <= 1.0
+        assert "reason" in data["quality"]
 
         # Check detection structure if any detections returned
         for det in data["detections"]:
@@ -178,6 +184,64 @@ def test_real_inference_with_model():
             assert det["y1"] <= det["y2"]
 
         print("[PASS] test_real_inference_with_model passed: count =", data["count"], "latency_ms =", data["processing_time_ms"])
+
+
+def test_colony_quality_assessment_tiers():
+    """Unit tests verifying deterministic density tiers, confluence warnings, and overlap logic."""
+    from app.detector import assess_colony_quality
+    from app.schemas import ColonyDetection
+
+    # 1. Low density (<50)
+    low_dets = [
+        ColonyDetection(x1=10, y1=10, x2=20, y2=20, confidence=0.85, class_id=0, class_name="colony")
+        for _ in range(25)
+    ]
+    q_low = assess_colony_quality(low_dets)
+    assert q_low.density_level == "low"
+    assert q_low.review_recommended is False
+    assert q_low.warning_message is None
+
+    # 2. Medium density (50-200) with non-overlapping boxes
+    med_dets = [
+        ColonyDetection(
+            x1=i * 25, y1=10, x2=i * 25 + 10, y2=20, confidence=0.85, class_id=0, class_name="colony"
+        )
+        for i in range(100)
+    ]
+    q_med = assess_colony_quality(med_dets)
+    assert q_med.density_level == "medium"
+    assert q_med.review_recommended is False
+    assert q_med.confluence_risk == "low"
+    assert q_med.overlap_ratio == 0.0
+
+    # 3. High density (201-400)
+    high_dets = [
+        ColonyDetection(x1=10, y1=10, x2=20, y2=20, confidence=0.85, class_id=0, class_name="colony")
+        for _ in range(250)
+    ]
+    q_high = assess_colony_quality(high_dets)
+    assert q_high.density_level == "high"
+    assert q_high.review_recommended is True
+    assert "High-density plate detected" in q_high.warning_message
+
+    # 4. Ultra-high density (>400)
+    ultra_dets = [
+        ColonyDetection(x1=10, y1=10, x2=20, y2=20, confidence=0.85, class_id=0, class_name="colony")
+        for _ in range(450)
+    ]
+    q_ultra = assess_colony_quality(ultra_dets)
+    assert q_ultra.density_level == "ultra_high"
+    assert q_ultra.review_recommended is True
+    assert "Very high-density plate detected" in q_ultra.warning_message
+
+    # 5. Overlap ratio detection: 2 overlapping boxes (IoU > 0.10)
+    d1 = ColonyDetection(x1=10, y1=10, x2=30, y2=30, confidence=0.9, class_id=0, class_name="colony")
+    d2 = ColonyDetection(x1=15, y1=15, x2=35, y2=35, confidence=0.9, class_id=0, class_name="colony")
+    d3 = ColonyDetection(x1=200, y1=200, x2=210, y2=210, confidence=0.9, class_id=0, class_name="colony")
+    q_overlap = assess_colony_quality([d1, d2, d3])
+    assert q_overlap.overlap_ratio > 0.50  # 2 of 3 overlap
+
+    print("[PASS] test_colony_quality_assessment_tiers passed successfully.")
 
 
 if __name__ == "__main__":
@@ -191,4 +255,5 @@ if __name__ == "__main__":
     test_oversized_image()
     test_missing_model_when_analyzing()
     test_real_inference_with_model()
+    test_colony_quality_assessment_tiers()
     print("\n--- All Tests Passed Successfully! ---\n")

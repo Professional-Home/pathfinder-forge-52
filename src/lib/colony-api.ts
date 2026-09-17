@@ -38,6 +38,22 @@ export interface ColonyDetectionError {
   details?: unknown;
 }
 
+/** Operational plate density, reliability, and confluence quality indicators */
+export interface ColonyQualityAssessment {
+  /** Project-specific density tier: low (<50), medium (50-200), high (201-400), or ultra_high (>400) */
+  density_level: "low" | "medium" | "high" | "ultra_high";
+  /** Flag indicating whether manual plate verification or dilution counting is advised */
+  review_recommended: boolean;
+  /** Scientifically cautious advisory message for high-density or crowded plates */
+  warning_message?: string | null;
+  /** Deterministic crowding/confluence risk indicator: low, medium, or high */
+  confluence_risk: "low" | "medium" | "high";
+  /** Fraction of detected colony boxes exhibiting spatial overlap with adjacent colonies (IoU > 0.10) */
+  overlap_ratio: number;
+  /** Transparent explanation of the quality and reliability assessment */
+  reason: string;
+}
+
 /** Successful detection response from the ML service */
 export interface ColonyDetectionSuccessResponse {
   success: true;
@@ -51,6 +67,8 @@ export interface ColonyDetectionSuccessResponse {
   annotated_image_url?: string;
   /** Total backend inference/processing time in milliseconds */
   processing_time_ms: number;
+  /** Operational plate density, reliability, and confluence quality assessment */
+  quality?: ColonyQualityAssessment;
 }
 
 /** Error response format from the ML service */
