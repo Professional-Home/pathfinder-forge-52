@@ -41,6 +41,7 @@ ml-data/colony-dataset/inspection/
 ml-data/colony-dataset/processed_yolo/images/
 ml-data/colony-dataset/processed_yolo/labels/
 ml-data/colony-dataset/processed_yolo/samples/
+ml-data/colony-segmentation-poc/
 ml-data/colony-training/*
 !ml-data/colony-training/baseline_training_report.json
 !ml-data/colony-training/threshold_optimization_report.json
@@ -49,5 +50,9 @@ ml-data/colony-training/*
 !ml-data/colony-training/high_density_experiment_report.md
 !ml-data/colony-training/phase5g_report.json
 !ml-data/colony-training/phase5g_report.md
+!ml-data/colony-training/phase5h_report.json
+!ml-data/colony-training/phase5h_report.md
 *.pt
 *.onnx
+__pycache__/
+*.pyc
