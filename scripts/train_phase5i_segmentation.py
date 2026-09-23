@@ -194,8 +194,9 @@ def evaluate_on_full_validation(seg_model_path: Path) -> Dict[str, Any]:
         s_mask_count = len(s_res[0].masks) if (s_res and s_res[0].masks is not None) else 0
 
         # Error metrics
+        s_count = s_mask_count if s_mask_count > 0 else s_box_count
         p_err = abs(p_count - gt_count)
-        s_err = abs(s_mask_count - gt_count)
+        s_err = abs(s_count - gt_count)
 
         p_pct = (p_err / gt_count * 100.0) if gt_count > 0 else 0.0
         s_pct = (s_err / gt_count * 100.0) if gt_count > 0 else 0.0
