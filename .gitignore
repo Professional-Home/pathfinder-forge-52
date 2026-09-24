@@ -55,6 +55,9 @@ ml-data/colony-training/*
 !ml-data/colony-training/phase5h_report.md
 !ml-data/colony-training/phase5i_report.json
 !ml-data/colony-training/phase5i_report.md
+!ml-data/colony-training/phase5j_report.json
+!ml-data/colony-training/phase5j_report.md
+!ml-data/colony-training/phase5j_complete.json
 *.pt
 *.onnx
 __pycache__/
