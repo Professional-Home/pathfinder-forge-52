@@ -1,0 +1,37 @@
+{
+  "source_a": "ml-data/colony-dataset/processed_yolo/labels/val",
+  "source_a_description": "Original ground-truth bounding-box annotations for the 55-plate validation set",
+  "source_a_total_annotations": 8024,
+  "source_b": "ml-data/colony-segmentation-phase5i/labels/val",
+  "source_b_description": "Phase 5I segmentation validation annotations across the 55-plate validation set",
+  "source_b_total_annotations": 8008,
+  "difference": 16,
+  "reason": "During the Phase 5H proof-of-concept study (scripts/generate_colony_pseudo_masks.py), MobileSAM pseudo-masks were generated for 3 representative validation plates (sp06_img30, sp10_img20, sp13_img04) containing 1,300 candidate bounding boxes. The quality filter rejected 16 low-quality masks (2 in sp06_img30, 13 in sp10_img20, 1 in sp13_img04), accepting 1,284 masks. When the Phase 5I segmentation dataset (ml-data/colony-segmentation-phase5i/labels/val) was assembled, these 3 plates retained their Phase 5H accepted pseudo-masks (1,284 instances) while the remaining 52 plates converted bounding boxes to 4-vertex rectangular polygons (6,724 instances), yielding exactly 8,008 instances (8,024 - 16 = 8,008). Ultralytics validation of YOLO11n-seg during training evaluated against the 8,008 annotations in colony-segmentation-phase5i/labels/val, whereas detector evaluation evaluated against the 8,024 annotations in processed_yolo/labels/val.",
+  "per_plate_breakdown": {
+    "sp06_img30": {
+      "processed_yolo_count": 255,
+      "phase5i_seg_count": 253,
+      "difference": 2,
+      "cause": "2 candidate masks rejected by Phase 5H MobileSAM quality filtering"
+    },
+    "sp10_img20": {
+      "processed_yolo_count": 572,
+      "phase5i_seg_count": 559,
+      "difference": 13,
+      "cause": "13 candidate masks rejected by Phase 5H MobileSAM quality filtering"
+    },
+    "sp13_img04": {
+      "processed_yolo_count": 473,
+      "phase5i_seg_count": 472,
+      "difference": 1,
+      "cause": "1 candidate mask rejected by Phase 5H MobileSAM quality filtering"
+    },
+    "other_52_plates": {
+      "processed_yolo_count": 6724,
+      "phase5i_seg_count": 6724,
+      "difference": 0,
+      "cause": "Exact 1-to-1 match (all boxes converted to 4-vertex rectangles)"
+    }
+  },
+  "status": "RECONCILED"
+}
