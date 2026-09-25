@@ -1,0 +1,10 @@
+{
+  "phase": "5L",
+  "completed_at": "2026-09-25T19:03:56.153005",
+  "total_plates": 55,
+  "status": "COMPLETED",
+  "verified_sha256": "bc993b664da2bde5123b8a5c34726e4a35357434cb0c49cb523185f8c929064d",
+  "candidate_rule": "predicted_count > 400",
+  "candidate_mae": 7.49,
+  "baseline_mae": 9.0
+}
