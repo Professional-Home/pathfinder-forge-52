@@ -1,0 +1,130 @@
+{
+  "phase": "5M",
+  "phase_title": "Independent Calibration & Generalization Validation Data Audit",
+  "timestamp": "2026-09-25T19:17:26.015222",
+  "objective": "Determine whether independent calibration data exists to validate the frozen predicted_count > 400 router, particularly in the 300-500 colony range.",
+  "decision": "OUTCOME_B",
+  "decision_summary": "OUTCOME B \u2014 No suitable independent data EXISTS in the repository.",
+  "production_invariants": {
+    "model_path": "F:\\Project\\pathfinder-forge-52\\services\\colony-detector\\models\\best.pt",
+    "expected_sha256": "bc993b664da2bde5123b8a5c34726e4a35357434cb0c49cb523185f8c929064d",
+    "verified": true,
+    "confidence": 0.3,
+    "imgsz": 640,
+    "class_name": "colony"
+  },
+  "frozen_routing_specification": {
+    "routing_rule": "predicted_count > 400",
+    "model": "YOLO11n (Production)",
+    "confidence": 0.3,
+    "imgsz": 640,
+    "segmentation_model": "YOLO11n-seg (Phase 5I experimental)",
+    "status": "LOCKED",
+    "tuning_prohibited": true
+  },
+  "dataset_audit": {
+    "total_raw_specimens": 369,
+    "train_set_count": 258,
+    "val_set_count": 55,
+    "test_set_count": 56,
+    "sum_of_splits": 369,
+    "unassigned_specimens": 0,
+    "split_overlaps": {
+      "train_val": 0,
+      "train_test": 0,
+      "val_test": 0
+    },
+    "directory_audit": {
+      "ml-data/colony-dataset/processed_yolo/images/train": {
+        "exists": true,
+        "actual_count": 258,
+        "expected_count": 258,
+        "role": "Training set for YOLO11n production detector and Phase 5I segmentation model"
+      },
+      "ml-data/colony-dataset/processed_yolo/images/val": {
+        "exists": true,
+        "actual_count": 55,
+        "expected_count": 55,
+        "role": "Validation set used in Phase 5H, 5I, 5J, 5K, 5L for benchmark and threshold selection"
+      },
+      "ml-data/colony-dataset/processed_yolo/images/test": {
+        "exists": true,
+        "actual_count": 56,
+        "expected_count": 56,
+        "role": "Protected test set held out strictly for final production gating"
+      },
+      "ml-data/colony-segmentation-phase5i/images/train": {
+        "exists": true,
+        "actual_count": 258,
+        "expected_count": 258,
+        "role": "Direct mirror of processed_yolo train for segmentation model training"
+      },
+      "ml-data/colony-segmentation-phase5i/images/val": {
+        "exists": true,
+        "actual_count": 55,
+        "expected_count": 55,
+        "role": "Direct mirror of processed_yolo val for segmentation validation"
+      },
+      "ml-data/colony-segmentation-poc/images/val": {
+        "exists": true,
+        "actual_count": 10,
+        "expected_count": 10,
+        "role": "Phase 5H MobileSAM POC subset of validation images"
+      },
+      "ml-data/colony-training/high_density_eval_samples": {
+        "exists": true,
+        "actual_count": 25,
+        "expected_count": 25,
+        "role": "Phase 5F high-density evaluation subset"
+      },
+      "ml-data/colony-training/phase5h_eval_samples": {
+        "exists": true,
+        "actual_count": 20,
+        "expected_count": 20,
+        "role": "Phase 5H MobileSAM evaluation subset"
+      },
+      "ml-data/colony-training/phase5g_eval_samples": {
+        "exists": true,
+        "actual_count": 7,
+        "expected_count": 7,
+        "role": "Phase 5G evaluation subset"
+      },
+      "ml-data/colony-training/threshold_eval_samples": {
+        "exists": true,
+        "actual_count": 6,
+        "expected_count": 6,
+        "role": "Phase 5E confidence sweep evaluation subset"
+      }
+    },
+    "independent_data_found": false,
+    "eligible_independent_plates": 0
+  },
+  "disqualification_breakdown": {
+    "training_set": {
+      "count": 258,
+      "status": "DISQUALIFIED",
+      "reason": "Direct training leakage; models were fitted on these images."
+    },
+    "validation_set": {
+      "count": 55,
+      "status": "DISQUALIFIED",
+      "reason": "Re-evaluation prohibited; candidate rule was discovered and optimized on this split in Phase 5K/5L."
+    },
+    "protected_test_set": {
+      "count": 56,
+      "status": "DISQUALIFIED_PROTECTED",
+      "reason": "Quarantined for final blind production sign-off. Prohibited from intermediate calibration tuning."
+    },
+    "auxiliary_directories": {
+      "status": "DISQUALIFIED",
+      "reason": "All auxiliary image directories (high_density_eval_samples, phase5h_eval_samples, etc.) are exact subsets or mirrors of train/val."
+    }
+  },
+  "missing_data_requirements": {
+    "required_domain": "Independent bacterial Petri-dish colony images collected under distinct laboratory culture and imaging protocols.",
+    "target_density_regime": "Plates with true colony counts spanning 300 to 500 colonies, specifically targeting the 325-487 void identified in Phase 5L.",
+    "annotation_standard": "Verified ground-truth point coordinates or bounding boxes annotated by certified microbiologists.",
+    "sample_size_target": "Minimum N >= 30 plates in the 300-500 density transition zone to achieve statistical power."
+  },
+  "scientific_integrity_conclusion": "Phase 5M cannot legitimately declare universal router generalization or production deployment readiness without true out-of-distribution calibration data. Fabricating synthetic data or leaking the protected test set is strictly rejected."
+}
