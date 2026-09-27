@@ -2,16 +2,18 @@ import * as React from "react";
 import {
   FlaskConical,
   Clock,
-  Sparkles,
   Gauge,
   ExternalLink,
   Target,
   BarChart3,
-  Layers,
   AlertTriangle,
   AlertCircle,
-  CheckCircle2,
   Info,
+  UserCheck,
+  RotateCcw,
+  CheckCircle2,
+  MinusCircle,
+  PlusCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,14 +25,32 @@ export interface ColonyResultsPanelProps {
   response: ColonyDetectionSuccessResponse;
   appliedThreshold?: number;
   className?: string;
+  /** Human-reviewed colony count derived from AI count - removed + added */
+  reviewedCount?: number;
+  /** Number of AI detections flagged as false positives / removed */
+  removedCount?: number;
+  /** Number of missed colonies manually added by reviewer */
+  addedCount?: number;
+  /** Whether any human corrections exist */
+  hasModifications?: boolean;
+  /** Reset review callback to clear human adjustments */
+  onResetReview?: () => void;
 }
 
 export function ColonyResultsPanel({
   response,
   appliedThreshold,
   className,
+  reviewedCount,
+  removedCount = 0,
+  addedCount = 0,
+  hasModifications = false,
+  onResetReview,
 }: ColonyResultsPanelProps) {
   const { count, detections, processing_time_ms, image, annotated_image_url, quality } = response;
+
+  // Effective reviewed count (defaults to automated AI count if no review in progress)
+  const effectiveReviewedCount = typeof reviewedCount === "number" ? reviewedCount : count;
 
   // Resolve density tier & review recommendation with fallback
   const densityLevel =
@@ -133,20 +153,142 @@ export function ColonyResultsPanel({
         </div>
       )}
 
+      {/* Human-in-the-Loop Manual Review Summary Section */}
+      <Card className="border-border/80 bg-surface-elevated shadow-xs">
+        <CardHeader className="p-4 pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-violet-500" />
+              <CardTitle className="text-sm font-semibold">Human-in-the-Loop Review</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              {hasModifications ? (
+                <>
+                  <Badge
+                    variant="outline"
+                    className="border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-400 font-mono text-[10px]"
+                  >
+                    Human Reviewed
+                  </Badge>
+                  {onResetReview && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onResetReview}
+                      className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                      title="Reset all manual corrections to original AI count"
+                    >
+                      <RotateCcw className="mr-1 h-3 w-3" />
+                      Reset Review
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground">
+                  No manual corrections
+                </Badge>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 pt-2 space-y-3">
+          {/* Metrics comparison grid */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 pt-1">
+            {/* 1. Original AI Count */}
+            <div className="rounded-lg border border-border/60 bg-surface/50 p-2.5">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
+                AI Count
+              </span>
+              <div className="mt-1 font-mono text-xl font-bold text-foreground">{count}</div>
+              <span className="text-[10px] text-muted-foreground">Automated result</span>
+            </div>
+
+            {/* 2. Removed AI False Positives */}
+            <div className="rounded-lg border border-border/60 bg-surface/50 p-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
+                  Removed AI
+                </span>
+                <MinusCircle className="h-3 w-3 text-rose-500/70" />
+              </div>
+              <div className="mt-1 font-mono text-xl font-bold text-rose-500">
+                {removedCount > 0 ? `−${removedCount}` : "0"}
+              </div>
+              <span className="text-[10px] text-muted-foreground">False positives</span>
+            </div>
+
+            {/* 3. Manual Added Missed Colonies */}
+            <div className="rounded-lg border border-border/60 bg-surface/50 p-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
+                  Manual Added
+                </span>
+                <PlusCircle className="h-3 w-3 text-violet-500/70" />
+              </div>
+              <div className="mt-1 font-mono text-xl font-bold text-violet-500">
+                {addedCount > 0 ? `+${addedCount}` : "0"}
+              </div>
+              <span className="text-[10px] text-muted-foreground">Missed colonies</span>
+            </div>
+
+            {/* 4. Reviewed Count */}
+            <div
+              className={cn(
+                "rounded-lg border p-2.5 transition-colors",
+                hasModifications
+                  ? "border-violet-500/50 bg-violet-500/5"
+                  : "border-border/60 bg-surface/50",
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
+                  Reviewed Count
+                </span>
+                <CheckCircle2 className="h-3 w-3 text-researcher" />
+              </div>
+              <div className="mt-1 font-mono text-xl font-bold text-foreground">
+                {effectiveReviewedCount}
+              </div>
+              <span className="text-[10px] text-muted-foreground">
+                {hasModifications ? "Human-reviewed result" : "Matches AI baseline"}
+              </span>
+            </div>
+          </div>
+
+          {/* Concise Review Guidance Notice */}
+          <div className="rounded-lg border border-border/50 bg-surface/30 p-2.5 text-[11px] text-muted-foreground space-y-1">
+            <p>
+              <strong className="text-foreground font-medium">Review Guidance: </strong>
+              Use Select to remove false positives or Add Colony to mark missed colonies.
+            </p>
+            <p className="text-[10px] text-muted-foreground/90">
+              Manual changes affect the Reviewed Count only. The original AI count is preserved.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Primary KPI Metrics Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {/* Total Colony Count */}
+        {/* Effective Colony Count (Reviewed if modified, otherwise AI baseline) */}
         <Card className="border-border/80 bg-surface-elevated shadow-xs">
           <CardContent className="p-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="font-medium">Total Count</span>
+              <span className="font-medium">
+                {hasModifications ? "Reviewed Count" : "Total AI Count"}
+              </span>
               <FlaskConical className="h-4 w-4 text-researcher" />
             </div>
             <div className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
-              {count}
+              {effectiveReviewedCount}
             </div>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {count === 1 ? "Colony identified" : "Colonies identified"}
+              {hasModifications
+                ? `AI baseline: ${count} (${removedCount > 0 ? `−${removedCount}` : ""} ${addedCount > 0 ? `+${addedCount}` : ""})`
+                : count === 1
+                  ? "Colony identified"
+                  : "Colonies identified"}
             </p>
           </CardContent>
         </Card>
@@ -205,7 +347,7 @@ export function ColonyResultsPanel({
         </Card>
       </div>
 
-      {/* Breakdown Card */}
+      {/* Breakdown Card: Quantification Summary */}
       <Card className="border-border/80 bg-surface-elevated shadow-xs">
         <CardHeader className="p-4 pb-2">
           <div className="flex items-center justify-between">
@@ -220,8 +362,30 @@ export function ColonyResultsPanel({
         </CardHeader>
         <CardContent className="p-4 pt-2 text-xs space-y-3">
           <div className="flex items-center justify-between border-b border-border/50 py-1.5">
-            <span className="text-muted-foreground">Verified Model Detections</span>
-            <span className="font-mono font-medium text-foreground">{detections.length}</span>
+            <span className="text-muted-foreground">Automated AI Detection Count</span>
+            <span className="font-mono font-medium text-foreground">{count}</span>
+          </div>
+
+          <div className="flex items-center justify-between border-b border-border/50 py-1.5">
+            <span className="text-muted-foreground">Human-Reviewed Count</span>
+            <span className="font-mono font-medium text-foreground">
+              {effectiveReviewedCount}
+              {hasModifications && (
+                <span className="ml-1.5 text-[11px] text-violet-500 font-normal">
+                  ({removedCount > 0 ? `−${removedCount} removed` : ""}{" "}
+                  {addedCount > 0 ? `+${addedCount} added` : ""})
+                </span>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between border-b border-border/50 py-1.5">
+            <span className="text-muted-foreground">Manual Corrections</span>
+            <span className="font-mono font-medium text-foreground">
+              {hasModifications
+                ? `${removedCount} removed, ${addedCount} added`
+                : "No manual corrections"}
+            </span>
           </div>
 
           <div className="flex items-center justify-between border-b border-border/50 py-1.5">

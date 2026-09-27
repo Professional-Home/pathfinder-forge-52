@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { PetriDishUploader } from "@/components/tools/PetriDishUploader";
 import { ColonyDetectionCanvas } from "@/components/tools/ColonyDetectionCanvas";
 import { ColonyResultsPanel } from "@/components/tools/ColonyResultsPanel";
+import { useColonyReview } from "@/hooks/use-colony-review";
 import {
   detectColonies,
   ColonyDetectionApiError,
@@ -52,6 +53,14 @@ function ColonyCounterPage() {
   );
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [errorDetails, setErrorDetails] = React.useState<string | null>(null);
+
+  // Human-in-the-loop colony review layer (preserves immutable AI baseline)
+  const review = useColonyReview({
+    aiDetections: analysisResult?.detections,
+    aiCount: analysisResult?.count,
+    imageWidth: analysisResult?.image?.width,
+    imageHeight: analysisResult?.image?.height,
+  });
 
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
@@ -412,15 +421,24 @@ function ColonyCounterPage() {
                   {/* Visual Detection Canvas */}
                   <Card className="border-border/80 bg-surface-elevated overflow-hidden shadow-xs">
                     <CardHeader className="p-4 pb-2">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <CardTitle className="text-sm font-semibold flex items-center gap-2">
                           <CheckCircle2 className="h-4 w-4 text-researcher" />
-                          Detection Overlay
+                          Detection & Review Canvas
                         </CardTitle>
-                        <Badge variant="outline" className="text-[11px] font-mono">
-                          {analysisResult.count}{" "}
-                          {analysisResult.count === 1 ? "colony" : "colonies"}
-                        </Badge>
+                        <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                          <Badge variant="outline">
+                            AI: {analysisResult.count}
+                          </Badge>
+                          {review.hasModifications && (
+                            <Badge
+                              variant="outline"
+                              className="border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-400 font-semibold"
+                            >
+                              Reviewed: {review.reviewedCount}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="p-4 pt-2">
@@ -429,6 +447,14 @@ function ColonyCounterPage() {
                         annotatedImageUrl={analysisResult.annotated_image_url}
                         detections={analysisResult.detections}
                         imageMetadata={analysisResult.image}
+                        removedAiIndices={review.removedAiIndices}
+                        manualColonies={review.manualColonies}
+                        activeTool={review.activeTool}
+                        onToggleAiDetection={review.toggleAiDetection}
+                        onAddManualColony={review.addManualColony}
+                        onRemoveManualColony={review.removeManualColony}
+                        onSetActiveTool={review.setActiveTool}
+                        reviewedCount={review.reviewedCount}
                       />
                     </CardContent>
                   </Card>
@@ -437,6 +463,11 @@ function ColonyCounterPage() {
                   <ColonyResultsPanel
                     response={analysisResult}
                     appliedThreshold={confidenceThreshold}
+                    reviewedCount={review.reviewedCount}
+                    removedCount={review.removedCount}
+                    addedCount={review.addedCount}
+                    hasModifications={review.hasModifications}
+                    onResetReview={review.resetReview}
                   />
                 </div>
               )}
