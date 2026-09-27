@@ -3,17 +3,17 @@
 import asyncio
 import logging
 import os
+import re
 import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from app.detector import ColonyDetector, ModelNotConfiguredError, assess_colony_quality
@@ -147,9 +147,35 @@ app = FastAPI(
 
 # ─── CORS Configuration ────────────────────────────────────────────────────────
 
-raw_origins = os.getenv("FRONTEND_ORIGIN", "http://localhost:8080,http://localhost:5173")
-allowed_origins = [orig.strip() for orig in raw_origins.split(",") if orig.strip()]
 
+def get_cors_origins() -> List[str]:
+    """Resolves allowed CORS origins based on environment and explicit configuration (DEP-02).
+
+    In development, defaults to standard local dev ports (8080, 5173, 3000) if not set.
+    In production, strictly requires explicit FRONTEND_ORIGIN configuration and disallows
+    silent localhost fallback and wildcard '*' origins with credentials.
+    """
+    env_mode = os.getenv("ENVIRONMENT", os.getenv("APP_ENV", os.getenv("NODE_ENV", "development"))).lower()
+    is_production = env_mode in ("production", "prod")
+
+    raw_origins = os.getenv("FRONTEND_ORIGIN", "")
+    explicit_origins = [orig.strip() for orig in raw_origins.split(",") if orig.strip()]
+
+    if is_production:
+        production_origins = [orig for orig in explicit_origins if orig != "*"]
+        if not production_origins:
+            logger.warning(
+                "FRONTEND_ORIGIN is not configured in production environment. "
+                "Cross-origin requests from web browsers will be rejected."
+            )
+        return production_origins
+
+    if explicit_origins:
+        return explicit_origins
+    return ["http://localhost:8080", "http://localhost:5173", "http://localhost:3000"]
+
+
+allowed_origins = get_cors_origins()
 logger.info(f"Configuring CORS for allowed origins: {allowed_origins}")
 
 app.add_middleware(
@@ -159,10 +185,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
-
-# ─── Static Files (Annotated Visualization Artifacts) ──────────────────────────
-
-app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")
 
 
 # ─── Error Handling Helper ─────────────────────────────────────────────────────
@@ -220,6 +242,61 @@ async def health_check():
         status="ok",
         model_loaded=model_loaded,
         model_path=model_path,
+    )
+
+
+ARTIFACT_FILENAME_REGEX = re.compile(r"^annotated_[a-f0-9]{12,64}\.jpg$")
+
+
+@app.get(
+    "/outputs/{filename}",
+    response_class=FileResponse,
+    responses={
+        200: {"content": {"image/jpeg": {}}, "description": "Annotated specimen visualization artifact"},
+        404: {"model": ColonyDetectionErrorResponse, "description": "Artifact not found, expired, or invalid"},
+    },
+    tags=["Artifacts"],
+)
+async def get_output_artifact(filename: str):
+    """Serves generated annotated colony specimen artifacts securely (SEC-02).
+
+    Validates artifact filename structure, strictly disallows directory traversal,
+    and returns 404 for non-existent, expired, or invalid artifact requests.
+    """
+    # 1. Strict regex validation disallowing path traversal (../, ..\, null bytes, non-annotated files)
+    if not ARTIFACT_FILENAME_REGEX.match(filename):
+        return make_error_response(
+            status.HTTP_404_NOT_FOUND,
+            "ARTIFACT_NOT_FOUND",
+            "Artifact not found or invalid artifact identifier.",
+        )
+
+    # 2. Strict path containment verification
+    target_path = (OUTPUTS_DIR / filename).resolve()
+    outputs_dir_resolved = OUTPUTS_DIR.resolve()
+
+    try:
+        if target_path.parent != outputs_dir_resolved or not target_path.is_file():
+            return make_error_response(
+                status.HTTP_404_NOT_FOUND,
+                "ARTIFACT_NOT_FOUND",
+                "Artifact not found or has expired.",
+            )
+    except Exception:
+        return make_error_response(
+            status.HTTP_404_NOT_FOUND,
+            "ARTIFACT_NOT_FOUND",
+            "Artifact not found.",
+        )
+
+    return FileResponse(
+        path=target_path,
+        media_type="image/jpeg",
+        filename=filename,
+        headers={
+            "Cache-Control": "private, no-cache, no-store, must-revalidate",
+            "X-Content-Type-Options": "nosniff",
+        },
     )
 
 
@@ -365,7 +442,7 @@ async def detect_colonies(
             )
 
     # 7. Save annotated image visualization artifact
-    annotated_filename = f"annotated_{uuid.uuid4().hex[:12]}.jpg"
+    annotated_filename = f"annotated_{uuid.uuid4().hex}.jpg"
     annotated_filepath = OUTPUTS_DIR / annotated_filename
     try:
         annotated_image.save(annotated_filepath, format="JPEG", quality=90)

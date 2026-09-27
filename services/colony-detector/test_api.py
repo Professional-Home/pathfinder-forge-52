@@ -442,6 +442,87 @@ def test_client_disconnect_prevents_inference():
                 print("[PASS] test_client_disconnect_prevents_inference passed:", data["error"])
 
 
+def test_output_artifact_serving_and_security():
+    """Verifies that GET /outputs/{filename} securely serves valid artifacts and blocks traversal/invalid requests (SEC-02)."""
+    from app.main import OUTPUTS_DIR
+
+    # 1. Create a legitimate test artifact in OUTPUTS_DIR
+    valid_filename = "annotated_0123456789abcdef0123456789abcdef.jpg"
+    test_artifact_path = OUTPUTS_DIR / valid_filename
+    test_artifact_path.write_bytes(b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb")
+
+    try:
+        with TestClient(app) as client:
+            # 2. Valid artifact request returns 200 with proper headers
+            res = client.get(f"/outputs/{valid_filename}")
+            assert res.status_code == 200, f"Expected 200, got {res.status_code}"
+            assert res.headers["content-type"] == "image/jpeg"
+            assert "private" in res.headers.get("cache-control", "")
+            assert res.headers.get("x-content-type-options") == "nosniff"
+
+            # 3. Missing artifact returns 404 with structured error
+            missing_filename = "annotated_ffffffffffffffffffffffffffffffff.jpg"
+            res_missing = client.get(f"/outputs/{missing_filename}")
+            assert res_missing.status_code == 404, f"Expected 404, got {res_missing.status_code}"
+            data_missing = res_missing.json()
+            assert data_missing["success"] is False
+            assert data_missing["error"]["code"] == "ARTIFACT_NOT_FOUND"
+
+            # 4. Path traversal attempts return 404 (SEC-02)
+            traversal_attempts = [
+                "/outputs/..%2fmodels%2fbest.pt",
+                "/outputs/..%5c..%5capp%2fmain.py",
+                "/outputs/secret.txt",
+                "/outputs/annotated_not_hex.jpg",
+                "/outputs/annotated_.jpg",
+            ]
+            for attempt in traversal_attempts:
+                res_bad = client.get(attempt)
+                assert res_bad.status_code == 404, f"Expected 404 for {attempt}, got {res_bad.status_code}"
+                try:
+                    data_bad = res_bad.json()
+                    if "success" in data_bad:
+                        assert data_bad["success"] is False
+                except Exception:
+                    pass
+
+            print("[PASS] test_output_artifact_serving_and_security passed successfully.")
+    finally:
+        test_artifact_path.unlink(missing_ok=True)
+
+
+def test_cors_configuration_resolution():
+    """Verifies that CORS origins are explicitly resolved and prevent silent localhost in production (DEP-02)."""
+    from app.main import get_cors_origins
+
+    # 1. In development, defaults to local dev servers if FRONTEND_ORIGIN is unset
+    with patch.dict("os.environ", {"ENVIRONMENT": "development", "FRONTEND_ORIGIN": ""}):
+        dev_origins = get_cors_origins()
+        assert "http://localhost:8080" in dev_origins
+        assert "http://localhost:5173" in dev_origins
+
+    # 2. In production without FRONTEND_ORIGIN, returns empty list (no silent localhost assumption)
+    with patch.dict("os.environ", {"ENVIRONMENT": "production", "FRONTEND_ORIGIN": ""}):
+        prod_empty_origins = get_cors_origins()
+        assert prod_empty_origins == [], "Production without FRONTEND_ORIGIN must not permit origins"
+
+    # 3. In production with explicit FRONTEND_ORIGIN, returns configured origins
+    with patch.dict(
+        "os.environ",
+        {"ENVIRONMENT": "production", "FRONTEND_ORIGIN": "https://biotech.micrylis.com,https://app.micrylis.com"},
+    ):
+        prod_configured = get_cors_origins()
+        assert prod_configured == ["https://biotech.micrylis.com", "https://app.micrylis.com"]
+
+    # 4. In production with wildcard '*', disallows wildcard
+    with patch.dict("os.environ", {"ENVIRONMENT": "production", "FRONTEND_ORIGIN": "*"}):
+        prod_wildcard = get_cors_origins()
+        assert "*" not in prod_wildcard
+        assert prod_wildcard == []
+
+    print("[PASS] test_cors_configuration_resolution passed successfully.")
+
+
 if __name__ == "__main__":
     print("\n--- Running Colony Detector API Tests ---\n")
     test_health_check_with_model()
@@ -460,4 +541,6 @@ if __name__ == "__main__":
     test_concurrent_health_during_inference()
     test_concurrent_inference_throttled_to_max_2()
     test_client_disconnect_prevents_inference()
+    test_output_artifact_serving_and_security()
+    test_cors_configuration_resolution()
     print("\n--- All Tests Passed Successfully! ---\n")

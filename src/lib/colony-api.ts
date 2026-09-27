@@ -111,14 +111,30 @@ export class ColonyDetectionApiError extends Error {
 /**
  * Returns the fully qualified endpoint URL for colony detection:
  * `${VITE_COLONY_ML_API_URL}/api/v1/detect-colonies`
+ *
+ * In production builds, requires explicit configuration of VITE_COLONY_ML_API_URL
+ * and throws a descriptive ColonyDetectionApiError if unset (DEP-01).
+ * In development, provides a convenient fallback to http://localhost:8000.
  */
 export function getColonyApiUrl(): string {
   const envUrl = import.meta.env.VITE_COLONY_ML_API_URL;
-  const baseUrl = (
-    typeof envUrl === "string" && envUrl.trim() ? envUrl.trim() : "http://localhost:8000"
-  ).replace(/\/+$/, "");
+  const hasEnvUrl = typeof envUrl === "string" && envUrl.trim().length > 0;
 
-  return `${baseUrl}/api/v1/detect-colonies`;
+  if (hasEnvUrl) {
+    const baseUrl = envUrl.trim().replace(/\/+$/, "");
+    return `${baseUrl}/api/v1/detect-colonies`;
+  }
+
+  // In production, do not silently fall back to localhost (DEP-01)
+  if (import.meta.env.PROD) {
+    throw new ColonyDetectionApiError(
+      "Colony detection ML service URL is not configured. Please set the VITE_COLONY_ML_API_URL environment variable in your production deployment.",
+      "CONFIG_ERROR",
+    );
+  }
+
+  // Development convenience fallback
+  return "http://localhost:8000/api/v1/detect-colonies";
 }
 
 // ─── API Client Function ──────────────────────────────────────────────────────
