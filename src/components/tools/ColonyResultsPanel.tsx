@@ -14,10 +14,12 @@ import {
   CheckCircle2,
   MinusCircle,
   PlusCircle,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CfuCalculator } from "@/components/tools/CfuCalculator";
 import { cn } from "@/lib/utils";
 import type { ColonyDetectionSuccessResponse } from "@/lib/colony-api";
 
@@ -138,8 +140,23 @@ export function ColonyResultsPanel({
                 >
                   {densityLevel === "ultra_high" ? "Confluence Risk" : "Review Recommended"}
                 </Badge>
+                {(densityLevel === "ultra_high" || confluenceRisk === "high") && (
+                  <Badge
+                    variant="outline"
+                    className="border-rose-500/50 text-rose-600 dark:text-rose-400 font-mono text-[10px]"
+                  >
+                    Provisional — Potential TNTC
+                  </Badge>
+                )}
               </div>
               <p className="text-foreground/90 leading-relaxed">{warningMessage}</p>
+              {(densityLevel === "ultra_high" || confluenceRisk === "high") && (
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Plate exceeds the recommended countable-density range (30–300 CFU). The
+                  concentration estimate may undercount the true population when colonies are
+                  crowded or confluent.
+                </p>
+              )}
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-1 border-t border-border/40">
                 <Info className="h-3 w-3 shrink-0 text-muted-foreground" />
                 <span>
@@ -345,6 +362,20 @@ export function ColonyResultsPanel({
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Scientific Utilities: Concentration Analysis */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 px-0.5 text-xs text-muted-foreground font-medium">
+          <Sparkles className="h-3.5 w-3.5 text-student" />
+          <span>Scientific Utilities & Concentration Analysis</span>
+        </div>
+        <CfuCalculator
+          aiCount={count}
+          reviewedCount={effectiveReviewedCount}
+          hasModifications={hasModifications}
+          quality={quality}
+        />
       </div>
 
       {/* Breakdown Card: Quantification Summary */}
