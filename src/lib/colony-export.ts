@@ -85,7 +85,7 @@ export function formatRawScientific(val: number | null | undefined): string {
 }
 
 /** Escapes a single CSV cell according to RFC 4180 */
-function escapeCsvCell(cell: unknown): string {
+export function escapeCsvCell(cell: unknown): string {
   if (cell === null || cell === undefined) return "";
   const str = String(cell);
   if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
@@ -95,13 +95,13 @@ function escapeCsvCell(cell: unknown): string {
 }
 
 /** Serializes a 2D matrix of cells into an RFC 4180 compliant CSV string with UTF-8 BOM */
-function serializeCsv(rows: (string | number | boolean | null | undefined)[][]): string {
+export function serializeCsv(rows: (string | number | boolean | null | undefined)[][]): string {
   // \uFEFF is the UTF-8 Byte Order Mark for Excel compatibility
   return "\uFEFF" + rows.map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
 }
 
 /** Triggers a browser-native programmatic file download from a string payload */
-function triggerFileDownload(
+export function triggerFileDownload(
   content: string,
   filename: string,
   mimeType = "text/csv;charset=utf-8;",
@@ -122,10 +122,10 @@ function triggerFileDownload(
 // ─── Summary CSV Export ──────────────────────────────────────────────────────
 
 /**
- * Generates and downloads a single-row Summary CSV of the colony analysis.
+ * Builds the RFC 4180 compliant CSV string for the colony analysis summary.
  * Preserves exact count lineage, provenance, CFU calculations, and plate quality metrics.
  */
-export function exportSummaryCsv(params: SummaryExportParams): void {
+export function buildSummaryCsv(params: SummaryExportParams): string {
   const {
     filename,
     timestamp = new Date().toISOString(),
@@ -224,7 +224,16 @@ export function exportSummaryCsv(params: SummaryExportParams): void {
     "Micrylis Biotech Colony Counter v1.0",
   ];
 
-  const csvString = serializeCsv([headers, dataRow]);
+  return serializeCsv([headers, dataRow]);
+}
+
+/**
+ * Generates and downloads a single-row Summary CSV of the colony analysis.
+ * Preserves exact count lineage, provenance, CFU calculations, and plate quality metrics.
+ */
+export function exportSummaryCsv(params: SummaryExportParams): void {
+  const sampleId = sanitizeFilename(params.filename, "specimen");
+  const csvString = buildSummaryCsv(params);
   const downloadFilename = `${sampleId}-summary.csv`;
   triggerFileDownload(csvString, downloadFilename);
 }
@@ -232,13 +241,11 @@ export function exportSummaryCsv(params: SummaryExportParams): void {
 // ─── Detection-Level CSV Export ──────────────────────────────────────────────
 
 /**
- * Generates and downloads a multi-row CSV containing all individual colony detections
+ * Builds the RFC 4180 compliant multi-row CSV string containing all individual colony detections
  * and manual additions with exact bounding boxes, centers, radius, and confidence.
  */
-export function exportDetectionsCsv(params: DetectionsExportParams): void {
-  const { filename, detections, removedAiIndices = new Set(), manualColonies = [] } = params;
-
-  const sampleId = sanitizeFilename(filename, "specimen");
+export function buildDetectionsCsv(params: DetectionsExportParams): string {
+  const { detections, removedAiIndices = new Set(), manualColonies = [] } = params;
 
   const headers = [
     "detection_id",
@@ -300,7 +307,16 @@ export function exportDetectionsCsv(params: DetectionsExportParams): void {
     ]);
   });
 
-  const csvString = serializeCsv(rows);
+  return serializeCsv(rows);
+}
+
+/**
+ * Generates and downloads a multi-row CSV containing all individual colony detections
+ * and manual additions with exact bounding boxes, centers, radius, and confidence.
+ */
+export function exportDetectionsCsv(params: DetectionsExportParams): void {
+  const sampleId = sanitizeFilename(params.filename, "specimen");
+  const csvString = buildDetectionsCsv(params);
   const downloadFilename = `${sampleId}-detections.csv`;
   triggerFileDownload(csvString, downloadFilename);
 }
