@@ -5,6 +5,12 @@ export default defineConfig({
     port: 8080,
     strictPort: false,
     host: true,
+    warmup: {
+      ssrFiles: [
+        "./src/server.ts",
+        "./src/router.tsx",
+      ],
+    },
   },
   preview: {
     port: 8080,

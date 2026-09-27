@@ -58,6 +58,14 @@ function ColonyCounterPage() {
   const [cfuData, setCfuData] = React.useState<CfuExportData | null>(null);
   const [annotatedReportImageUrl, setAnnotatedReportImageUrl] = React.useState<string | null>(null);
 
+  const handleCalculationChange = React.useCallback((data: CfuExportData | null) => {
+    setCfuData((prev) => {
+      if (!prev && !data) return prev;
+      if (prev && data && JSON.stringify(prev) === JSON.stringify(data)) return prev;
+      return data;
+    });
+  }, []);
+
   // Human-in-the-loop colony review layer (preserves immutable AI baseline)
   const review = useColonyReview({
     aiDetections: analysisResult?.detections,
@@ -481,7 +489,7 @@ function ColonyCounterPage() {
                     manualColonies={review.manualColonies}
                     removedAiIndices={review.removedAiIndices}
                     cfuData={cfuData}
-                    onCalculationChange={setCfuData}
+                    onCalculationChange={handleCalculationChange}
                     onSetAnnotatedReportImage={setAnnotatedReportImageUrl}
                   />
                 </div>

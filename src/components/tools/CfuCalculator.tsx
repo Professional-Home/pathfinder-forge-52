@@ -214,39 +214,52 @@ export function CfuCalculator({
     };
   }, [activeCount, activeVolumeMl, dilutionExponent, exponentError]);
 
+  // Track callback in ref to prevent changes in callback identity from re-triggering emission
+  const onCalculationChangeRef = React.useRef(onCalculationChange);
+  React.useEffect(() => {
+    onCalculationChangeRef.current = onCalculationChange;
+  });
+
+  // Track previous serialized snapshot to avoid emitting duplicate identical snapshots
+  const lastEmittedSnapshotRef = React.useRef<string | null>(null);
+
   // Synchronize calculation state snapshot with parent for export
   React.useEffect(() => {
-    if (!onCalculationChange) return;
+    if (!onCalculationChangeRef.current) return;
 
-    if (calculationResult && activeCount !== null && activeVolumeMl !== null) {
-      onCalculationChange({
-        countSource,
-        activeCount,
-        volumeInput,
-        volumeMl: activeVolumeMl,
-        volumeUnit,
-        dilutionExponent,
-        dilutionFactor: calculationResult.dilutionFactor,
-        cfuPerMl: calculationResult.cfuPerMl,
-        llodCfuPerMl: calculationResult.activeCount === 0 ? calculationResult.llodCfuPerMl : null,
-        isValid: true,
-      });
-    } else {
-      onCalculationChange({
-        countSource,
-        activeCount,
-        volumeInput,
-        volumeMl: activeVolumeMl,
-        volumeUnit,
-        dilutionExponent,
-        dilutionFactor: Math.pow(10, -dilutionExponent),
-        cfuPerMl: null,
-        llodCfuPerMl: null,
-        isValid: false,
-      });
+    const snapshot: CfuExportData =
+      calculationResult && activeCount !== null && activeVolumeMl !== null
+        ? {
+            countSource,
+            activeCount,
+            volumeInput,
+            volumeMl: activeVolumeMl,
+            volumeUnit,
+            dilutionExponent,
+            dilutionFactor: calculationResult.dilutionFactor,
+            cfuPerMl: calculationResult.cfuPerMl,
+            llodCfuPerMl: calculationResult.activeCount === 0 ? calculationResult.llodCfuPerMl : null,
+            isValid: true,
+          }
+        : {
+            countSource,
+            activeCount,
+            volumeInput,
+            volumeMl: activeVolumeMl,
+            volumeUnit,
+            dilutionExponent,
+            dilutionFactor: Math.pow(10, -dilutionExponent),
+            cfuPerMl: null,
+            llodCfuPerMl: null,
+            isValid: false,
+          };
+
+    const serialized = JSON.stringify(snapshot);
+    if (lastEmittedSnapshotRef.current !== serialized) {
+      lastEmittedSnapshotRef.current = serialized;
+      onCalculationChangeRef.current(snapshot);
     }
   }, [
-    onCalculationChange,
     calculationResult,
     activeCount,
     activeVolumeMl,

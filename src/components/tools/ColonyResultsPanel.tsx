@@ -79,10 +79,17 @@ export function ColonyResultsPanel({
   const [internalCfuData, setInternalCfuData] = React.useState<CfuExportData | null>(null);
   const activeCfuData = externalCfuData !== undefined ? externalCfuData : internalCfuData;
 
-  const handleCfuCalculationChange = (data: CfuExportData | null) => {
-    setInternalCfuData(data);
-    onCalculationChange?.(data);
-  };
+  const handleCfuCalculationChange = React.useCallback(
+    (data: CfuExportData | null) => {
+      setInternalCfuData((prev) => {
+        if (!prev && !data) return prev;
+        if (prev && data && JSON.stringify(prev) === JSON.stringify(data)) return prev;
+        return data;
+      });
+      onCalculationChange?.(data);
+    },
+    [onCalculationChange],
+  );
 
   // Effective reviewed count (defaults to automated AI count if no review in progress)
   const effectiveReviewedCount = typeof reviewedCount === "number" ? reviewedCount : count;
