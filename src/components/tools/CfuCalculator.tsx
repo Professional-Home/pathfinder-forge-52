@@ -406,7 +406,7 @@ export function CfuCalculator({
                 min={volumeUnit === "uL" ? "1" : "0.001"}
                 max={volumeUnit === "uL" ? "10000" : "10"}
                 step={volumeUnit === "uL" ? "10" : "0.01"}
-                placeholder={volumeUnit === "uL" ? "Enter volume (e.g. 100)" : "Enter volume (e.g. 0.1)"}
+                placeholder={volumeUnit === "uL" ? "Enter plated volume (µL)" : "Enter plated volume"}
                 value={volumeInput}
                 onChange={(e) => setVolumeInput(e.target.value)}
                 className="h-9 font-mono text-xs"
@@ -503,9 +503,9 @@ export function CfuCalculator({
                 step="1"
                 value={customExponentInput}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  setCustomExponentInput(val);
-                  const parsed = parseInt(val, 10);
+                  const sanitized = e.target.value.replace(/[^0-9]/g, "");
+                  setCustomExponentInput(sanitized);
+                  const parsed = parseInt(sanitized, 10);
                   if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 12) {
                     setDilutionExponent(parsed);
                   }
@@ -531,12 +531,23 @@ export function CfuCalculator({
                 <FlaskConical className="h-4 w-4 text-researcher" />
                 Calculated Concentration
               </span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-mono text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-muted-foreground">
+                <span>
+                  Count Source:{" "}
+                  <strong className="text-foreground">
+                    {countSource === "reviewed"
+                      ? "Reviewed Count"
+                      : countSource === "ai"
+                        ? "AI Count"
+                        : "Custom Lab Count"}
+                  </strong>
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span>
                   Count Used: <strong className="text-foreground">{calculationResult.activeCount}</strong>
                 </span>
                 <span className="text-muted-foreground">·</span>
-                <span className="text-[11px] font-mono text-muted-foreground">
+                <span>
                   Volume: <strong className="text-foreground">{calculationResult.activeVolumeMl} mL</strong>
                 </span>
               </div>
