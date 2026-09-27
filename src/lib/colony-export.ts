@@ -59,7 +59,8 @@ export interface AnnotatedImageParams {
 
 /**
  * Sanitizes an image filename into a clean, filesystem-safe basename without extension.
- * Strips any directory traversal patterns, system paths, or unsafe characters.
+ * Strips any directory traversal patterns, system paths, unsafe characters,
+ * and dangerous leading spreadsheet formula triggers (=, +, -, @, tab, carriage return).
  */
 export function sanitizeFilename(filename?: string | null, fallback = "specimen"): string {
   if (!filename || typeof filename !== "string") return fallback;
@@ -67,8 +68,10 @@ export function sanitizeFilename(filename?: string | null, fallback = "specimen"
   const base = filename.replace(/^.*[\\/]/, "");
   // Remove file extension
   const withoutExt = base.replace(/\.[^/.]+$/, "");
-  // Replace unsafe characters with underscore
-  const sanitized = withoutExt.replace(/[<>:"/\\|?*\x00-\x1F\s]+/g, "_").replace(/^_+|_+$/g, "");
+  // Replace filesystem-unsafe characters, control characters (including tabs and CR), and whitespace with underscore
+  let sanitized = withoutExt.replace(/[<>:"/\\|?*\x00-\x1F\s]+/g, "_");
+  // Strip dangerous leading spreadsheet formula characters (=, +, -, @, \t, \r) and leading/trailing underscores
+  sanitized = sanitized.replace(/^[=+\-@\t\r_]+/, "").replace(/_+$/, "");
   return sanitized || fallback;
 }
 

@@ -22,8 +22,25 @@ def test_health_check_with_model():
         data = response.json()
         assert data["status"] == "ok"
         assert data["model_loaded"] is True
-        assert data["model_path"] is not None
+        assert data["model_path"] == "models/best.pt"
+        assert ":" not in data["model_path"], "No drive letter allowed in model_path (SEC-01)"
+        assert "\\" not in data["model_path"], "No backslashes allowed in model_path (SEC-01)"
+        assert not data["model_path"].startswith("/"), "No absolute Unix path allowed in model_path (SEC-01)"
         print("[PASS] test_health_check_with_model passed:", data)
+
+
+def test_health_check_model_path_leak_prevention():
+    """Verifies GET /health sanitizes absolute host paths to prevent directory leakage (SEC-01)."""
+    from app.main import sanitize_model_path_for_health
+
+    assert (
+        sanitize_model_path_for_health(r"F:\Project\pathfinder-forge-52\services\colony-detector\models\best.pt")
+        == "models/best.pt"
+    )
+    assert sanitize_model_path_for_health(r"C:\Users\Admin\secrets\models\best.pt") == "models/best.pt"
+    assert sanitize_model_path_for_health("/var/app/services/colony-detector/models/best.pt") == "models/best.pt"
+    assert sanitize_model_path_for_health("best.pt") == "models/best.pt"
+    print("[PASS] test_health_check_model_path_leak_prevention passed.")
 
 
 def test_health_check_without_model():
@@ -338,9 +355,97 @@ def test_concurrent_health_during_inference():
         print("[PASS] test_concurrent_health_during_inference passed.")
 
 
+def test_concurrent_inference_throttled_to_max_2():
+    """Verifies that concurrent requests are throttled to a maximum of 2 active detector calls (REL-01)."""
+    import threading
+    import time
+    import app.main as main_mod
+
+    active_inferences = 0
+    max_observed_concurrency = 0
+    lock = threading.Lock()
+
+    def mock_detect(*args, **kwargs):
+        nonlocal active_inferences, max_observed_concurrency
+        with lock:
+            active_inferences += 1
+            if active_inferences > max_observed_concurrency:
+                max_observed_concurrency = active_inferences
+        time.sleep(0.15)
+        try:
+            return ([], 100, 100, 150, Image.new("RGB", (100, 100), color="white"))
+        finally:
+            with lock:
+                active_inferences -= 1
+
+    img = Image.new("RGB", (100, 100), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    img_bytes = buf.getvalue()
+
+    with patch("app.detector.ColonyDetector.detect", side_effect=mock_detect):
+        with TestClient(app) as client:
+            threads = []
+            for _ in range(5):
+                t = threading.Thread(
+                    target=lambda: client.post(
+                        "/api/v1/detect-colonies",
+                        files={"image": ("test.jpg", io.BytesIO(img_bytes), "image/jpeg")},
+                        data={"confidence_threshold": "0.30"},
+                    )
+                )
+                threads.append(t)
+
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+    assert max_observed_concurrency <= 2, f"Expected max concurrency <= 2, observed {max_observed_concurrency}"
+    assert max_observed_concurrency == 2, f"Expected concurrency of 2 under load, observed {max_observed_concurrency}"
+    print(f"[PASS] test_concurrent_inference_throttled_to_max_2 passed: max concurrency was {max_observed_concurrency}")
+
+
+def test_client_disconnect_prevents_inference():
+    """Verifies that a disconnected client request aborts before starting inference (REL-02)."""
+    from unittest.mock import AsyncMock
+    import app.main as main_mod
+
+    img = Image.new("RGB", (100, 100), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    img_bytes = buf.getvalue()
+
+    detect_called = False
+
+    def mock_detect(*args, **kwargs):
+        nonlocal detect_called
+        detect_called = True
+        return ([], 100, 100, 50, Image.new("RGB", (100, 100), color="white"))
+
+    with patch("app.detector.ColonyDetector.detect", side_effect=mock_detect):
+        with patch("starlette.requests.Request.is_disconnected", new_callable=AsyncMock) as mock_disconnected:
+            mock_disconnected.return_value = True
+            with TestClient(app) as client:
+                response = client.post(
+                    "/api/v1/detect-colonies",
+                    files={"image": ("test.jpg", io.BytesIO(img_bytes), "image/jpeg")},
+                    data={"confidence_threshold": "0.30"},
+                )
+
+                assert response.status_code == 499, f"Expected 499, got {response.status_code}"
+                data = response.json()
+                assert data["success"] is False
+                assert data["error"]["code"] == "CLIENT_CLOSED_REQUEST"
+                assert "disconnected" in data["error"]["message"].lower()
+                assert detect_called is False, "Inference must NOT be started if client is disconnected"
+                print("[PASS] test_client_disconnect_prevents_inference passed:", data["error"])
+
+
 if __name__ == "__main__":
     print("\n--- Running Colony Detector API Tests ---\n")
     test_health_check_with_model()
+    test_health_check_model_path_leak_prevention()
     test_health_check_without_model()
     test_missing_image_file()
     test_invalid_confidence_threshold_too_low()
@@ -353,4 +458,6 @@ if __name__ == "__main__":
     test_colony_quality_assessment_tiers()
     test_prune_output_artifacts_retention()
     test_concurrent_health_during_inference()
+    test_concurrent_inference_throttled_to_max_2()
+    test_client_disconnect_prevents_inference()
     print("\n--- All Tests Passed Successfully! ---\n")

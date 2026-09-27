@@ -1,5 +1,6 @@
 """FastAPI Application for AI-Based Petri Dish Colony Counting Tool."""
 
+import asyncio
 import logging
 import os
 import time
@@ -98,6 +99,33 @@ def prune_output_artifacts(
 # Detector instance (singleton)
 detector: Optional[ColonyDetector] = None
 
+# Concurrency limit for CPU-bound YOLO inference (REL-01)
+MAX_CONCURRENT_INFERENCES = 2
+_inference_semaphore: Optional[asyncio.Semaphore] = None
+_semaphore_loop: Optional[asyncio.AbstractEventLoop] = None
+
+
+def get_inference_semaphore() -> asyncio.Semaphore:
+    """Returns the singleton asyncio.Semaphore for throttling concurrent YOLO inferences to max 2 (REL-01)."""
+    global _inference_semaphore, _semaphore_loop
+    current_loop = asyncio.get_running_loop()
+    if _inference_semaphore is None or _semaphore_loop != current_loop:
+        _inference_semaphore = asyncio.Semaphore(MAX_CONCURRENT_INFERENCES)
+        _semaphore_loop = current_loop
+    return _inference_semaphore
+
+
+def sanitize_model_path_for_health(path: Optional[Path | str]) -> Optional[str]:
+    """Sanitizes model path to return a safe relative model identifier without exposing server filesystem hierarchy (SEC-01)."""
+    if not path:
+        return None
+    p = Path(path)
+    filename = p.name or "best.pt"
+    parent_name = p.parent.name
+    if parent_name and parent_name.lower() in ("models", "weights", "checkpoints"):
+        return f"{parent_name}/{filename}"
+    return f"models/{filename}"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -185,7 +213,8 @@ async def generic_exception_handler(request: Request, exc: Exception):
 async def health_check():
     """Health check endpoint reporting API status and model availability."""
     model_loaded = detector.is_ready() if detector else False
-    model_path = str(detector.model_path) if detector else None
+    raw_path = detector.model_path if detector else None
+    model_path = sanitize_model_path_for_health(raw_path)
 
     return HealthResponse(
         status="ok",
@@ -200,6 +229,7 @@ async def health_check():
     responses={
         400: {"model": ColonyDetectionErrorResponse},
         413: {"model": ColonyDetectionErrorResponse},
+        499: {"model": ColonyDetectionErrorResponse},
         503: {"model": ColonyDetectionErrorResponse},
     },
     tags=["Inference"],
@@ -287,34 +317,54 @@ async def detect_colonies(
             "Please install the trained model weights into the models directory to enable inference.",
         )
 
-    # 5. Execute detection inference in worker threadpool to avoid event-loop blocking (P0-1)
-    try:
-        detections, width, height, latency_ms, annotated_image = await run_in_threadpool(
-            detector.detect,
-            image_bytes=contents,
-            confidence_threshold=confidence_threshold,
-        )
-    except ModelNotConfiguredError as e:
+    # 5. Check if client disconnected before acquiring inference semaphore (REL-02)
+    if await request.is_disconnected():
+        logger.warning("Client disconnected prior to acquiring inference semaphore; aborting.")
         return make_error_response(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            "MODEL_NOT_CONFIGURED",
-            str(e),
-        )
-    except ValueError as e:
-        return make_error_response(
-            status.HTTP_400_BAD_REQUEST,
-            "INVALID_IMAGE",
-            f"Unable to process image data: {e}",
-        )
-    except Exception as e:
-        logger.error(f"Detection execution failed: {e}", exc_info=True)
-        return make_error_response(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "INFERENCE_ERROR",
-            "An error occurred during colony model inference.",
+            499,
+            "CLIENT_CLOSED_REQUEST",
+            "Client disconnected before inference could start.",
         )
 
-    # 6. Save annotated image visualization artifact
+    # 6. Execute detection inference with concurrency limit of 2 (REL-01)
+    inference_semaphore = get_inference_semaphore()
+    async with inference_semaphore:
+        # Re-check client disconnect after acquiring semaphore in case request queued (REL-02)
+        if await request.is_disconnected():
+            logger.warning("Client disconnected while waiting for inference semaphore; aborting.")
+            return make_error_response(
+                499,
+                "CLIENT_CLOSED_REQUEST",
+                "Client disconnected before inference could start.",
+            )
+
+        try:
+            detections, width, height, latency_ms, annotated_image = await run_in_threadpool(
+                detector.detect,
+                image_bytes=contents,
+                confidence_threshold=confidence_threshold,
+            )
+        except ModelNotConfiguredError as e:
+            return make_error_response(
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                "MODEL_NOT_CONFIGURED",
+                str(e),
+            )
+        except ValueError as e:
+            return make_error_response(
+                status.HTTP_400_BAD_REQUEST,
+                "INVALID_IMAGE",
+                f"Unable to process image data: {e}",
+            )
+        except Exception as e:
+            logger.error(f"Detection execution failed: {e}", exc_info=True)
+            return make_error_response(
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "INFERENCE_ERROR",
+                "An error occurred during colony model inference.",
+            )
+
+    # 7. Save annotated image visualization artifact
     annotated_filename = f"annotated_{uuid.uuid4().hex[:12]}.jpg"
     annotated_filepath = OUTPUTS_DIR / annotated_filename
     try:
