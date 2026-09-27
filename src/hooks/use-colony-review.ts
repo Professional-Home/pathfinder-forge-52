@@ -75,8 +75,10 @@ export interface UseColonyReviewReturn extends ColonyReviewState {
  * Preserves the original automated AI detections as an immutable baseline,
  * computing a derived Reviewed Count based on user removals and manual additions.
  */
+const EMPTY_DETECTIONS: ColonyDetection[] = [];
+
 export function useColonyReview({
-  aiDetections = [],
+  aiDetections = EMPTY_DETECTIONS,
   aiCount = 0,
   imageWidth = 1024,
   imageHeight = 1024,
