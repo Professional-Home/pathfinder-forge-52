@@ -129,6 +129,10 @@ function ColonyCounterPage() {
           setErrorDetails(
             "The Colony Detection Python ML service is currently offline or unreachable. Please verify that the microservice is running at the configured endpoint (default: http://localhost:8000).",
           );
+        } else if (err.code === "REQUEST_TIMEOUT") {
+          setErrorDetails(
+            "The colony detection request timed out before receiving a response from the ML microservice. The server may be busy or experiencing high latency. Please retry or try a smaller image.",
+          );
         } else if (err.status) {
           setErrorDetails(`Server returned HTTP ${err.status} (${err.code}).`);
         }
@@ -292,7 +296,7 @@ function ColonyCounterPage() {
                       <Button
                         type="button"
                         onClick={handleAnalyze}
-                        disabled={!selectedFile || pageState === "ANALYZING"}
+                        disabled={!selectedFile}
                         className="w-full font-medium text-xs shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         {pageState === "SUCCESS" ? (

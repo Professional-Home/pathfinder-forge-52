@@ -86,6 +86,8 @@ export interface DetectColoniesOptions {
   confidenceThreshold?: number;
   /** Optional AbortSignal to cancel in-flight detection requests */
   signal?: AbortSignal;
+  /** Optional timeout in milliseconds for the detection request (defaults to 45000ms / 45s) */
+  timeoutMs?: number;
 }
 
 // ─── Custom API Error ─────────────────────────────────────────────────────────
@@ -147,7 +149,7 @@ export async function detectColonies(
       ? { confidenceThreshold: optionsOrThreshold }
       : (optionsOrThreshold ?? {});
 
-  const { confidenceThreshold, signal } = options;
+  const { confidenceThreshold, signal, timeoutMs = 45_000 } = options;
 
   if (
     typeof confidenceThreshold === "number" &&
@@ -157,6 +159,33 @@ export async function detectColonies(
       "Confidence threshold must be a number between 0.0 and 1.0.",
       "INVALID_THRESHOLD",
     );
+  }
+
+  // Setup timeout and abort controller (P0-3)
+  const timeoutController = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let isTimedOut = false;
+
+  if (timeoutMs > 0 && Number.isFinite(timeoutMs)) {
+    timeoutId = setTimeout(() => {
+      isTimedOut = true;
+      timeoutController.abort();
+    }, timeoutMs);
+  }
+
+  const handleExternalAbort = () => {
+    timeoutController.abort();
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      if (timeoutId) clearTimeout(timeoutId);
+      throw new ColonyDetectionApiError(
+        "Colony detection request was aborted.",
+        "REQUEST_ABORTED",
+      );
+    }
+    signal.addEventListener("abort", handleExternalAbort, { once: true });
   }
 
   // Prepare multipart form data
@@ -174,11 +203,19 @@ export async function detectColonies(
     response = await fetch(endpoint, {
       method: "POST",
       body: formData,
-      signal,
+      signal: timeoutController.signal,
       // Do NOT set Content-Type header manually; fetch sets boundary automatically for FormData
     });
   } catch (err: unknown) {
-    if (err instanceof DOMException && err.name === "AbortError") {
+    if (isTimedOut) {
+      const timeoutSec = Math.round(timeoutMs / 1000);
+      throw new ColonyDetectionApiError(
+        `Colony detection request timed out after ${timeoutSec} seconds. Please verify the server is responsive and try again.`,
+        "REQUEST_TIMEOUT",
+      );
+    }
+
+    if (signal?.aborted || (err instanceof DOMException && err.name === "AbortError")) {
       throw new ColonyDetectionApiError("Colony detection request was aborted.", "REQUEST_ABORTED");
     }
 
@@ -191,6 +228,13 @@ export async function detectColonies(
       `Network error communicating with ML service: ${errorMsg}`,
       "NETWORK_ERROR",
     );
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    if (signal) {
+      signal.removeEventListener("abort", handleExternalAbort);
+    }
   }
 
   // Parse response body as JSON

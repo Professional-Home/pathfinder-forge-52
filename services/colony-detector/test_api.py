@@ -244,6 +244,100 @@ def test_colony_quality_assessment_tiers():
     print("[PASS] test_colony_quality_assessment_tiers passed successfully.")
 
 
+def test_empty_image_upload():
+    """Verifies empty image upload (0 bytes) returns INVALID_IMAGE (400) (P0-4)."""
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("empty.jpg", io.BytesIO(b""), "image/jpeg")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert data["success"] is False
+        assert data["error"]["code"] == "INVALID_IMAGE"
+        assert "empty" in data["error"]["message"].lower()
+        print("[PASS] test_empty_image_upload passed:", data["error"])
+
+
+def test_prune_output_artifacts_retention():
+    """Verifies output retention policy: age-based eviction, file ceiling, and active file preservation (P0-2)."""
+    import os
+    import time
+    import tempfile
+    from app.main import prune_output_artifacts
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        now = time.time()
+
+        # 1. Create an old artifact (> 3600s old)
+        old_file = tmp_path / "annotated_old12345.jpg"
+        old_file.write_bytes(b"old")
+        os.utime(old_file, (now - 7200, now - 7200))
+
+        # 2. Create recent artifacts
+        recent_files = []
+        for i in range(5):
+            rf = tmp_path / f"annotated_recent_{i}.jpg"
+            rf.write_bytes(b"recent")
+            os.utime(rf, (now - (100 - i * 10), now - (100 - i * 10)))
+            recent_files.append(rf)
+
+        # 3. Create a non-annotated file (should never be touched)
+        safe_file = tmp_path / "model_weights.pt"
+        safe_file.write_bytes(b"model")
+
+        # 4. Active request file to preserve
+        active_file = tmp_path / "annotated_active.jpg"
+        active_file.write_bytes(b"active")
+
+        # Run prune with max_age=3600, max_files=3, preserving active_file
+        prune_output_artifacts(
+            outputs_dir=tmp_path,
+            max_age_seconds=3600,
+            max_files=3,
+            preserve_filename=active_file.name,
+        )
+
+        # Verify old file was evicted
+        assert not old_file.exists(), "Old artifact should have been evicted by age"
+
+        # Verify non-annotated file was NOT touched
+        assert safe_file.exists(), "Non-annotated file must never be deleted"
+
+        # Verify active file was NOT touched
+        assert active_file.exists(), "Active artifact must be preserved"
+
+        # Verify excess recent files were evicted down to max_files=3
+        remaining_annotated = list(tmp_path.glob("annotated_recent_*.jpg"))
+        assert len(remaining_annotated) <= 3, f"Expected <= 3 recent files, found {len(remaining_annotated)}"
+
+        print("[PASS] test_prune_output_artifacts_retention passed successfully.")
+
+
+def test_concurrent_health_during_inference():
+    """Verifies that the /health endpoint remains responsive and returns 200 (P0-1)."""
+    import threading
+
+    with TestClient(app) as client:
+        health_results = []
+
+        def ping_health():
+            res = client.get("/health")
+            health_results.append(res.status_code)
+
+        threads = [threading.Thread(target=ping_health) for _ in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert all(code == 200 for code in health_results)
+        assert len(health_results) == 5
+        print("[PASS] test_concurrent_health_during_inference passed.")
+
+
 if __name__ == "__main__":
     print("\n--- Running Colony Detector API Tests ---\n")
     test_health_check_with_model()
@@ -253,7 +347,10 @@ if __name__ == "__main__":
     test_invalid_confidence_threshold_too_high()
     test_non_image_file()
     test_oversized_image()
+    test_empty_image_upload()
     test_missing_model_when_analyzing()
     test_real_inference_with_model()
     test_colony_quality_assessment_tiers()
+    test_prune_output_artifacts_retention()
+    test_concurrent_health_during_inference()
     print("\n--- All Tests Passed Successfully! ---\n")

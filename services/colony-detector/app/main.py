@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -12,6 +13,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, sta
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 
 from app.detector import ColonyDetector, ModelNotConfiguredError, assess_colony_quality
 from app.schemas import (
@@ -37,8 +39,61 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 OUTPUTS_DIR = BASE_DIR / "outputs"
 OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
+# Upload & Streaming Limits
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB limit
+CHUNK_SIZE_BYTES = 64 * 1024  # 64 KB upload chunk
 ALLOWED_MIME_PREFIXES = ("image/",)
+
+# Retention policy configuration (P0-2)
+MAX_OUTPUT_AGE_SECONDS = int(os.getenv("MAX_OUTPUT_AGE_SECONDS", "3600"))  # Default 1 hour
+MAX_OUTPUT_FILES = int(os.getenv("MAX_OUTPUT_FILES", "500"))  # Default at most 500 files
+
+
+def prune_output_artifacts(
+    outputs_dir: Path,
+    max_age_seconds: int,
+    max_files: int,
+    preserve_filename: Optional[str] = None,
+) -> None:
+    """Safely prunes older annotated JPEG artifacts from outputs_dir to prevent unbounded disk growth.
+
+    Never deletes files outside outputs_dir, never deletes non-annotated files,
+    and preserves the newly created artifact from the active request.
+    """
+    try:
+        if not outputs_dir.exists() or not outputs_dir.is_dir():
+            return
+
+        now = time.time()
+        surviving = []
+
+        # Find only annotated JPEG files directly inside outputs_dir
+        for item in outputs_dir.glob("annotated_*.jpg"):
+            if not item.is_file() or item.name == preserve_filename:
+                continue
+            try:
+                mtime = item.stat().st_mtime
+                if now - mtime > max_age_seconds:
+                    item.unlink(missing_ok=True)
+                    logger.debug(f"Evicted expired artifact: {item.name}")
+                else:
+                    surviving.append((mtime, item))
+            except OSError as e:
+                logger.warning(f"Failed to inspect or evict output file {item.name}: {e}")
+
+        # Enforce max file count by evicting oldest surviving artifacts
+        if len(surviving) > max_files:
+            surviving.sort(key=lambda x: x[0])  # Oldest first
+            excess_count = len(surviving) - max_files
+            for _, path in surviving[:excess_count]:
+                try:
+                    path.unlink(missing_ok=True)
+                    logger.debug(f"Evicted excess artifact: {path.name}")
+                except OSError as e:
+                    logger.warning(f"Failed to evict excess output file {path.name}: {e}")
+    except Exception as e:
+        logger.warning(f"Unexpected error during output directory pruning: {e}")
+
 
 # Detector instance (singleton)
 detector: Optional[ColonyDetector] = None
@@ -175,9 +230,21 @@ async def detect_colonies(
             "The uploaded file is not a recognized image format. Please upload a JPEG, PNG, or WEBP photo.",
         )
 
-    # 3. Read image bytes with 5 MB size limit enforcement
+    # 3. Read image bytes with chunked memory protection and size enforcement (P0-4)
+    chunks = []
+    total_bytes = 0
+    is_oversized = False
+
     try:
-        contents = await image.read()
+        while True:
+            chunk = await image.read(CHUNK_SIZE_BYTES)
+            if not chunk:
+                break
+            total_bytes += len(chunk)
+            if total_bytes > MAX_IMAGE_SIZE_BYTES:
+                is_oversized = True
+                break
+            chunks.append(chunk)
     except Exception as e:
         logger.error(f"Failed to read uploaded file: {e}")
         return make_error_response(
@@ -185,9 +252,14 @@ async def detect_colonies(
             "INVALID_IMAGE",
             "Failed to read the uploaded image file.",
         )
+    finally:
+        try:
+            await image.close()
+        except Exception:
+            pass
 
-    if len(contents) > MAX_IMAGE_SIZE_BYTES:
-        size_mb = round(len(contents) / (1024 * 1024), 2)
+    if is_oversized:
+        size_mb = round(total_bytes / (1024 * 1024), 2)
         return make_error_response(
             status.HTTP_413_CONTENT_TOO_LARGE
             if hasattr(status, "HTTP_413_CONTENT_TOO_LARGE")
@@ -196,12 +268,14 @@ async def detect_colonies(
             f"Image size ({size_mb} MB) exceeds maximum allowed limit of 5 MB.",
         )
 
-    if len(contents) == 0:
+    if total_bytes == 0:
         return make_error_response(
             status.HTTP_400_BAD_REQUEST,
             "INVALID_IMAGE",
             "Uploaded file is empty.",
         )
+
+    contents = b"".join(chunks)
 
     # 4. Check model configuration readiness
     if not detector or not detector.is_ready():
@@ -213,9 +287,10 @@ async def detect_colonies(
             "Please install the trained model weights into the models directory to enable inference.",
         )
 
-    # 5. Execute detection inference
+    # 5. Execute detection inference in worker threadpool to avoid event-loop blocking (P0-1)
     try:
-        detections, width, height, latency_ms, annotated_image = detector.detect(
+        detections, width, height, latency_ms, annotated_image = await run_in_threadpool(
+            detector.detect,
             image_bytes=contents,
             confidence_threshold=confidence_threshold,
         )
@@ -246,6 +321,18 @@ async def detect_colonies(
         annotated_image.save(annotated_filepath, format="JPEG", quality=90)
     except Exception as e:
         logger.warning(f"Could not write annotated image artifact: {e}")
+
+    # Prune older outputs in worker threadpool to prevent unbounded storage growth (P0-2)
+    try:
+        await run_in_threadpool(
+            prune_output_artifacts,
+            outputs_dir=OUTPUTS_DIR,
+            max_age_seconds=MAX_OUTPUT_AGE_SECONDS,
+            max_files=MAX_OUTPUT_FILES,
+            preserve_filename=annotated_filename,
+        )
+    except Exception as e:
+        logger.warning(f"Artifact retention pruning failed: {e}")
 
     # Build public URL for annotated image
     public_base = os.getenv("PUBLIC_BASE_URL", str(request.base_url).rstrip("/"))
