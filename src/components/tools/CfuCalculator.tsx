@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { ColonyQualityAssessment } from "@/lib/colony-api";
+import type { CfuExportData } from "@/lib/colony-export";
 
 export type CountSourceType = "reviewed" | "ai" | "custom";
 export type VolumeUnitType = "mL" | "uL";
@@ -32,6 +33,8 @@ export interface CfuCalculatorProps {
   /** Plate density, confluence, and review recommendation metadata */
   quality?: ColonyQualityAssessment;
   className?: string;
+  /** Optional callback providing an export-ready snapshot of calculator state */
+  onCalculationChange?: (data: CfuExportData | null) => void;
 }
 
 const COMMON_DILUTION_EXPONENTS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -76,6 +79,7 @@ export function CfuCalculator({
   hasModifications = false,
   quality,
   className,
+  onCalculationChange,
 }: CfuCalculatorProps) {
   // Effective reviewed count (defaults to AI count if not reviewed)
   const effectiveReviewedCount = typeof reviewedCount === "number" ? reviewedCount : aiCount;
@@ -209,6 +213,48 @@ export function CfuCalculator({
       dilutionExponent,
     };
   }, [activeCount, activeVolumeMl, dilutionExponent, exponentError]);
+
+  // Synchronize calculation state snapshot with parent for export
+  React.useEffect(() => {
+    if (!onCalculationChange) return;
+
+    if (calculationResult && activeCount !== null && activeVolumeMl !== null) {
+      onCalculationChange({
+        countSource,
+        activeCount,
+        volumeInput,
+        volumeMl: activeVolumeMl,
+        volumeUnit,
+        dilutionExponent,
+        dilutionFactor: calculationResult.dilutionFactor,
+        cfuPerMl: calculationResult.cfuPerMl,
+        llodCfuPerMl: calculationResult.activeCount === 0 ? calculationResult.llodCfuPerMl : null,
+        isValid: true,
+      });
+    } else {
+      onCalculationChange({
+        countSource,
+        activeCount,
+        volumeInput,
+        volumeMl: activeVolumeMl,
+        volumeUnit,
+        dilutionExponent,
+        dilutionFactor: Math.pow(10, -dilutionExponent),
+        cfuPerMl: null,
+        llodCfuPerMl: null,
+        isValid: false,
+      });
+    }
+  }, [
+    onCalculationChange,
+    calculationResult,
+    activeCount,
+    activeVolumeMl,
+    volumeInput,
+    volumeUnit,
+    dilutionExponent,
+    countSource,
+  ]);
 
   // Reset calculator state only (does NOT reset AI baseline, manual review, or canvas)
   const handleResetCalculator = () => {

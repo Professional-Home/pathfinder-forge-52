@@ -20,8 +20,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CfuCalculator } from "@/components/tools/CfuCalculator";
+import { ColonyExportActions } from "@/components/tools/ColonyExportActions";
 import { cn } from "@/lib/utils";
 import type { ColonyDetectionSuccessResponse } from "@/lib/colony-api";
+import type { ManualColony } from "@/hooks/use-colony-review";
+import type { CfuExportData } from "@/lib/colony-export";
 
 export interface ColonyResultsPanelProps {
   response: ColonyDetectionSuccessResponse;
@@ -37,19 +40,49 @@ export interface ColonyResultsPanelProps {
   hasModifications?: boolean;
   /** Reset review callback to clear human adjustments */
   onResetReview?: () => void;
+  /** Uploaded image filename for sanitized export naming */
+  filename?: string | null;
+  /** Source preview image URL for offscreen canvas compositing */
+  originalImageUrl?: string | null;
+  /** Array of human-placed manual colonies */
+  manualColonies?: ManualColony[];
+  /** Set of removed AI detection indices */
+  removedAiIndices?: Set<number>;
+  /** Optional pre-lifted CFU calculation state snapshot */
+  cfuData?: CfuExportData | null;
+  /** Callback fired when CFU calculator state updates */
+  onCalculationChange?: (data: CfuExportData | null) => void;
+  /** Callback to store prepared annotated image data URL for print report */
+  onSetAnnotatedReportImage?: (url: string) => void;
 }
 
 export function ColonyResultsPanel({
   response,
-  appliedThreshold,
+  appliedThreshold = 0.3,
   className,
   reviewedCount,
   removedCount = 0,
   addedCount = 0,
   hasModifications = false,
   onResetReview,
+  filename,
+  originalImageUrl,
+  manualColonies = [],
+  removedAiIndices = new Set(),
+  cfuData: externalCfuData,
+  onCalculationChange,
+  onSetAnnotatedReportImage,
 }: ColonyResultsPanelProps) {
   const { count, detections, processing_time_ms, image, annotated_image_url, quality } = response;
+
+  // Local CFU calculation state if not provided externally
+  const [internalCfuData, setInternalCfuData] = React.useState<CfuExportData | null>(null);
+  const activeCfuData = externalCfuData !== undefined ? externalCfuData : internalCfuData;
+
+  const handleCfuCalculationChange = (data: CfuExportData | null) => {
+    setInternalCfuData(data);
+    onCalculationChange?.(data);
+  };
 
   // Effective reviewed count (defaults to automated AI count if no review in progress)
   const effectiveReviewedCount = typeof reviewedCount === "number" ? reviewedCount : count;
@@ -375,6 +408,7 @@ export function ColonyResultsPanel({
           reviewedCount={effectiveReviewedCount}
           hasModifications={hasModifications}
           quality={quality}
+          onCalculationChange={handleCfuCalculationChange}
         />
       </div>
 
@@ -494,6 +528,21 @@ export function ColonyResultsPanel({
           )}
         </CardContent>
       </Card>
+
+      {/* Export & Lab Reports Action Area */}
+      <ColonyExportActions
+        filename={filename}
+        response={response}
+        appliedThreshold={appliedThreshold}
+        reviewedCount={effectiveReviewedCount}
+        removedCount={removedCount}
+        addedCount={addedCount}
+        manualColonies={manualColonies}
+        removedAiIndices={removedAiIndices}
+        cfuData={activeCfuData}
+        originalImageUrl={originalImageUrl}
+        onSetAnnotatedReportImage={onSetAnnotatedReportImage}
+      />
     </div>
   );
 }

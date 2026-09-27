@@ -20,7 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { PetriDishUploader } from "@/components/tools/PetriDishUploader";
 import { ColonyDetectionCanvas } from "@/components/tools/ColonyDetectionCanvas";
 import { ColonyResultsPanel } from "@/components/tools/ColonyResultsPanel";
+import { ColonyPrintReport } from "@/components/tools/ColonyPrintReport";
 import { useColonyReview } from "@/hooks/use-colony-review";
+import type { CfuExportData } from "@/lib/colony-export";
 import {
   detectColonies,
   ColonyDetectionApiError,
@@ -53,6 +55,8 @@ function ColonyCounterPage() {
   );
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [errorDetails, setErrorDetails] = React.useState<string | null>(null);
+  const [cfuData, setCfuData] = React.useState<CfuExportData | null>(null);
+  const [annotatedReportImageUrl, setAnnotatedReportImageUrl] = React.useState<string | null>(null);
 
   // Human-in-the-loop colony review layer (preserves immutable AI baseline)
   const review = useColonyReview({
@@ -97,6 +101,8 @@ function ColonyCounterPage() {
     setAnalysisResult(null);
     setErrorMessage(null);
     setErrorDetails(null);
+    setCfuData(null);
+    setAnnotatedReportImageUrl(null);
 
     if (file) {
       setPageState("READY");
@@ -173,11 +179,13 @@ function ColonyCounterPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <SiteHeader />
+      <div className="print:hidden">
+        <SiteHeader />
+      </div>
 
       <main className="flex-1">
         {/* Page Header */}
-        <section className="relative overflow-hidden border-b border-border/60 bg-surface/30">
+        <section className="relative overflow-hidden border-b border-border/60 bg-surface/30 print:hidden">
           <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-40">
             <div className="absolute -left-20 top-0 h-72 w-72 rounded-full bg-researcher/10 blur-3xl" />
             <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-student/10 blur-3xl" />
@@ -216,7 +224,7 @@ function ColonyCounterPage() {
         </section>
 
         {/* Main Workspace */}
-        <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 print:hidden">
           <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
             {/* Left Column: Upload & Controls (5 cols on desktop) */}
             <div className="space-y-6 lg:col-span-5">
@@ -468,6 +476,13 @@ function ColonyCounterPage() {
                     addedCount={review.addedCount}
                     hasModifications={review.hasModifications}
                     onResetReview={review.resetReview}
+                    filename={selectedFile?.name}
+                    originalImageUrl={previewUrl || undefined}
+                    manualColonies={review.manualColonies}
+                    removedAiIndices={review.removedAiIndices}
+                    cfuData={cfuData}
+                    onCalculationChange={setCfuData}
+                    onSetAnnotatedReportImage={setAnnotatedReportImageUrl}
                   />
                 </div>
               )}
@@ -493,7 +508,24 @@ function ColonyCounterPage() {
         </section>
       </main>
 
-      <SiteFooter />
+      <div className="print:hidden">
+        <SiteFooter />
+      </div>
+
+      {/* Dedicated Printable PDF Lab Report */}
+      {analysisResult && (
+        <ColonyPrintReport
+          filename={selectedFile?.name}
+          response={analysisResult}
+          appliedThreshold={confidenceThreshold}
+          reviewedCount={review.reviewedCount}
+          removedCount={review.removedCount}
+          addedCount={review.addedCount}
+          hasModifications={review.hasModifications}
+          cfuData={cfuData}
+          annotatedImageUrl={annotatedReportImageUrl || previewUrl || undefined}
+        />
+      )}
     </div>
   );
 }
