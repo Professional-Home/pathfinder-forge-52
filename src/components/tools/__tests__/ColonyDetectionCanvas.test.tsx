@@ -245,4 +245,82 @@ describe("ColonyDetectionCanvas Keyboard Accessibility (Phase 6C-2)", () => {
 
     expect(onToggle).not.toHaveBeenCalled();
   });
+
+  it("renders non-color exclusion indicators (✕ badge and label) on removed AI detections", () => {
+    const removedSet = new Set([0]);
+    render(
+      <ColonyDetectionCanvas
+        originalImageUrl="blob:http://localhost/sample.jpg"
+        detections={mockDetections}
+        imageMetadata={mockImageMetadata}
+        removedAiIndices={removedSet}
+        activeTool="select"
+      />,
+    );
+
+    // Non-color exclusion indicator: '✕' badge
+    expect(screen.getByTestId("ai-excluded-badge-0")).toBeInTheDocument();
+    expect(screen.queryByTestId("ai-excluded-badge-1")).not.toBeInTheDocument();
+
+    // Non-color label cue
+    expect(screen.getByText("EXCLUDED (✕)")).toBeInTheDocument();
+  });
+
+  it("renders distinctive non-color visual markers (reticle crosshairs and + label) for manual colonies", () => {
+    render(
+      <ColonyDetectionCanvas
+        originalImageUrl="blob:http://localhost/sample.jpg"
+        detections={mockDetections}
+        imageMetadata={mockImageMetadata}
+        manualColonies={mockManualColonies}
+        activeTool="select"
+      />,
+    );
+
+    // Non-color label cue for manual colonies
+    expect(screen.getByText("Manual (+)")).toBeInTheDocument();
+
+    const manualColonyG = screen.getByTestId("manual-colony-manual-1");
+    // Verify circular shape and reticle crosshairs lines are present
+    const circles = manualColonyG.querySelectorAll("circle");
+    const lines = manualColonyG.querySelectorAll("line");
+    expect(circles.length).toBeGreaterThanOrEqual(2); // Reticle halo + reticle + center dot
+    expect(lines.length).toBeGreaterThanOrEqual(2); // Crosshair lines
+  });
+
+  it("renders accessible visual legend with all 4 review states and non-color descriptions", () => {
+    render(
+      <ColonyDetectionCanvas
+        originalImageUrl="blob:http://localhost/sample.jpg"
+        detections={mockDetections}
+        imageMetadata={mockImageMetadata}
+        manualColonies={mockManualColonies}
+        activeTool="select"
+        reviewedCount={3}
+      />,
+    );
+
+    const legendRegion = screen.getByRole("region", { name: /Colony review visual legend/i });
+    expect(legendRegion).toBeInTheDocument();
+
+    // 1. AI Active Detection
+    const aiActiveLegend = screen.getByTestId("legend-ai-active");
+    expect(aiActiveLegend).toHaveTextContent("AI Detected");
+    expect(aiActiveLegend).toHaveTextContent("(Solid Box)");
+
+    // 2. AI Excluded
+    const aiExcludedLegend = screen.getByTestId("legend-ai-excluded");
+    expect(aiExcludedLegend).toHaveTextContent("Excluded");
+    expect(aiExcludedLegend).toHaveTextContent("(Dashed + ✕)");
+
+    // 3. Manual
+    const manualLegend = screen.getByTestId("legend-manual");
+    expect(manualLegend).toHaveTextContent("Manual");
+    expect(manualLegend).toHaveTextContent("(Reticle +)");
+
+    // 4. Focus
+    const focusLegend = screen.getByTestId("legend-focus");
+    expect(focusLegend).toHaveTextContent("Focused");
+    expect(focusLegend).toHaveTextContent("(Tab / Ring)");
+  });
 });

@@ -479,6 +479,71 @@ export function ColonyDetectionCanvas({
         </div>
       </div>
 
+      {/* Visual Distinction & Accessibility Legend (Phase 6C-3) */}
+      {viewMode === "overlay" && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2.5 px-3 py-2 rounded-xl bg-surface/60 border border-border/60 text-xs"
+          role="region"
+          aria-label="Colony review visual legend"
+        >
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+            <span className="font-semibold text-foreground text-[11px] uppercase tracking-wider">
+              Legend:
+            </span>
+
+            {/* 1. AI Active Detection */}
+            <div className="flex items-center gap-1.5" data-testid="legend-ai-active">
+              <span
+                className="inline-block h-3.5 w-3.5 rounded-xs border-2 border-emerald-500 bg-emerald-500/20 shadow-xs"
+                aria-hidden="true"
+              />
+              <span className="font-medium text-foreground">AI Detected</span>
+              <span className="text-[10px] text-muted-foreground">(Solid Box)</span>
+            </div>
+
+            {/* 2. AI Excluded / Removed */}
+            <div className="flex items-center gap-1.5" data-testid="legend-ai-excluded">
+              <span
+                className="relative inline-flex items-center justify-center h-3.5 w-3.5 rounded-xs border-2 border-dashed border-rose-500 bg-rose-500/10"
+                aria-hidden="true"
+              >
+                <span className="text-[9px] font-bold text-rose-500 leading-none">✕</span>
+              </span>
+              <span className="font-medium text-foreground">Excluded</span>
+              <span className="text-[10px] text-muted-foreground">(Dashed + ✕)</span>
+            </div>
+
+            {/* 3. Manually Added */}
+            <div className="flex items-center gap-1.5" data-testid="legend-manual">
+              <span
+                className="relative inline-flex items-center justify-center h-3.5 w-3.5 rounded-full border-2 border-violet-500 bg-violet-500/20"
+                aria-hidden="true"
+              >
+                <span className="text-[9px] font-bold text-violet-500 leading-none">+</span>
+              </span>
+              <span className="font-medium text-foreground">Manual</span>
+              <span className="text-[10px] text-muted-foreground">(Reticle +)</span>
+            </div>
+
+            {/* 4. Keyboard Focused */}
+            <div className="flex items-center gap-1.5" data-testid="legend-focus">
+              <span
+                className="inline-block h-3.5 w-3.5 rounded-xs border-2 border-dashed border-blue-600 outline outline-1 outline-white/80"
+                aria-hidden="true"
+              />
+              <span className="font-medium text-foreground">Focused</span>
+              <span className="text-[10px] text-muted-foreground">(Tab / Ring)</span>
+            </div>
+          </div>
+
+          {reviewedCount !== undefined && (
+            <div className="font-mono text-xs text-foreground font-semibold shrink-0">
+              Reviewed: {reviewedCount}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Active tool helper banner for keyboard and screen-reader accessibility (Phase 6C-2) */}
       {viewMode === "overlay" && (
         <div
@@ -591,7 +656,7 @@ export function ColonyDetectionCanvas({
                       fillColor = isHighlighted
                         ? "rgba(239, 68, 68, 0.20)"
                         : "rgba(239, 68, 68, 0.08)";
-                      strokeDasharray = "4 3";
+                      strokeDasharray = "5 3";
                     } else if (isHighlighted) {
                       strokeColor = "#3b82f6"; // blue-500 hover/focus
                       fillColor = "rgba(59, 130, 246, 0.25)";
@@ -609,10 +674,14 @@ export function ColonyDetectionCanvas({
                       det.y1 - labelHeight >= 0 ? det.y1 - labelHeight - 2 : det.y2 + 2;
                     const labelX = Math.max(0, det.x1);
                     const labelText = isRemoved
-                      ? "REMOVED"
+                      ? "EXCLUDED (✕)"
                       : `${det.class_name || "colony"} ${confidencePct}%`;
                     const estLabelWidth =
                       labelText.length * (labelFontSize * 0.65) + labelPaddingX * 2;
+
+                    const badgeSize = Math.max(14, Math.round(baseStrokeWidth * 6));
+                    const badgeRadius = badgeSize / 2;
+                    const badgePadding = Math.round(badgeSize * 0.25);
 
                     return (
                       <g
@@ -648,7 +717,7 @@ export function ColonyDetectionCanvas({
                         className={cn(
                           "transition-opacity focus:outline-none focus-visible:outline-none",
                           activeTool === "select" ? "cursor-pointer" : "",
-                          isRemoved ? "opacity-55" : "opacity-100",
+                          isRemoved ? "opacity-65" : "opacity-100",
                         )}
                         role="button"
                         tabIndex={0}
@@ -665,24 +734,52 @@ export function ColonyDetectionCanvas({
                             : `AI detection #${index + 1} (${confidencePct}%). Press Enter or Space to mark as false positive.`}
                         </title>
 
-                        {/* Visual Keyboard Focus Ring */}
+                        {/* Visual Keyboard Focus Ring with dual-stroke high-contrast halo */}
                         {isFocused && (
-                          <rect
-                            data-testid={`ai-focus-ring-${index}`}
-                            x={det.x1 - Math.max(3, Math.round(baseStrokeWidth * 1.5))}
-                            y={det.y1 - Math.max(3, Math.round(baseStrokeWidth * 1.5))}
-                            width={boxWidth + Math.max(6, Math.round(baseStrokeWidth * 3))}
-                            height={boxHeight + Math.max(6, Math.round(baseStrokeWidth * 3))}
-                            fill="none"
-                            stroke="#2563eb"
-                            strokeWidth={Math.max(2, Math.round(baseStrokeWidth * 1.2))}
-                            strokeDasharray="4 2"
-                            rx={Math.max(3, Math.round(baseStrokeWidth * 1.5))}
-                            className="pointer-events-none"
-                          />
+                          <g className="pointer-events-none">
+                            {/* Outer white halo for contrast against dark agar/specimens */}
+                            <rect
+                              x={det.x1 - Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                              y={det.y1 - Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                              width={boxWidth + Math.max(6, Math.round(baseStrokeWidth * 3))}
+                              height={boxHeight + Math.max(6, Math.round(baseStrokeWidth * 3))}
+                              fill="none"
+                              stroke="#ffffff"
+                              strokeWidth={Math.max(3, Math.round(baseStrokeWidth * 1.8))}
+                              rx={Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                              opacity={0.9}
+                            />
+                            {/* Inner deep blue dashed ring for contrast against bright/white agar */}
+                            <rect
+                              data-testid={`ai-focus-ring-${index}`}
+                              x={det.x1 - Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                              y={det.y1 - Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                              width={boxWidth + Math.max(6, Math.round(baseStrokeWidth * 3))}
+                              height={boxHeight + Math.max(6, Math.round(baseStrokeWidth * 3))}
+                              fill="none"
+                              stroke="#1d4ed8"
+                              strokeWidth={Math.max(2, Math.round(baseStrokeWidth * 1.2))}
+                              strokeDasharray="4 2"
+                              rx={Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                            />
+                          </g>
                         )}
 
-                        {/* Bounding box rectangle */}
+                        {/* Dual-stroke outer contrast halo: guarantees visibility against bright white or transilluminated agar */}
+                        <rect
+                          x={det.x1}
+                          y={det.y1}
+                          width={boxWidth}
+                          height={boxHeight}
+                          fill="none"
+                          stroke="rgba(0, 0, 0, 0.72)"
+                          strokeWidth={strokeW + Math.max(2, Math.round(baseStrokeWidth * 0.7))}
+                          strokeDasharray={strokeDasharray}
+                          rx={Math.max(2, Math.round(baseStrokeWidth))}
+                          className="pointer-events-none"
+                        />
+
+                        {/* Foreground primary bounding box rectangle */}
                         <rect
                           x={det.x1}
                           y={det.y1}
@@ -695,15 +792,69 @@ export function ColonyDetectionCanvas({
                           rx={Math.max(2, Math.round(baseStrokeWidth))}
                         />
 
-                        {/* Optional Confidence or Removed Label Tag */}
+                        {/* Non-color exclusion indicator badge (Phase 6C-3): prominent '✕' badge on removed detections */}
+                        {isRemoved && (
+                          <g
+                            data-testid={`ai-excluded-badge-${index}`}
+                            transform={`translate(${det.x2 - badgeRadius}, ${det.y1 - badgeRadius})`}
+                            className="pointer-events-none"
+                          >
+                            {/* Dark halo behind badge */}
+                            <circle
+                              cx={badgeRadius}
+                              cy={badgeRadius}
+                              r={badgeRadius + 1}
+                              fill="rgba(0, 0, 0, 0.85)"
+                            />
+                            {/* Red badge body */}
+                            <circle
+                              cx={badgeRadius}
+                              cy={badgeRadius}
+                              r={badgeRadius}
+                              fill="#ef4444"
+                              stroke="#ffffff"
+                              strokeWidth={Math.max(1, Math.round(baseStrokeWidth * 0.5))}
+                            />
+                            {/* White '✕' cross icon */}
+                            <line
+                              x1={badgePadding}
+                              y1={badgePadding}
+                              x2={badgeSize - badgePadding}
+                              y2={badgeSize - badgePadding}
+                              stroke="#ffffff"
+                              strokeWidth={Math.max(1.5, Math.round(baseStrokeWidth * 0.6))}
+                              strokeLinecap="round"
+                            />
+                            <line
+                              x1={badgeSize - badgePadding}
+                              y1={badgePadding}
+                              x2={badgePadding}
+                              y2={badgeSize - badgePadding}
+                              stroke="#ffffff"
+                              strokeWidth={Math.max(1.5, Math.round(baseStrokeWidth * 0.6))}
+                              strokeLinecap="round"
+                            />
+                          </g>
+                        )}
+
+                        {/* Optional Confidence or Removed Label Tag with contrast halo */}
                         {showLabels && (
                           <g transform={`translate(${labelX}, ${labelY})`}>
+                            {/* Contrast drop-shadow halo for label */}
+                            <rect
+                              x={-1}
+                              y={-1}
+                              width={estLabelWidth + 2}
+                              height={labelHeight + 2}
+                              rx={Math.max(3, Math.round(labelHeight * 0.25))}
+                              fill="rgba(0, 0, 0, 0.75)"
+                            />
                             <rect
                               width={estLabelWidth}
                               height={labelHeight}
                               rx={Math.max(2, Math.round(labelHeight * 0.2))}
                               fill={strokeColor}
-                              opacity={0.92}
+                              opacity={0.96}
                             />
                             <text
                               x={labelPaddingX}
@@ -732,7 +883,7 @@ export function ColonyDetectionCanvas({
                     : "rgba(139, 92, 246, 0.25)";
                   const strokeW = isHighlighted ? baseStrokeWidth * 1.5 : baseStrokeWidth * 1.2;
 
-                  const labelText = "Manual";
+                  const labelText = "Manual (+)";
                   const estLabelWidth =
                     labelText.length * (labelFontSize * 0.65) + labelPaddingX * 2;
                   const labelY =
@@ -780,22 +931,43 @@ export function ColonyDetectionCanvas({
                     >
                       <title>{`Manual colony #${mIndex + 1}. Press Enter or Space in Select mode to remove.`}</title>
 
-                      {/* Visual Keyboard Focus Ring for Manual Colony */}
+                      {/* Visual Keyboard Focus Ring for Manual Colony with dual-stroke contrast */}
                       {isFocused && (
-                        <circle
-                          data-testid={`manual-focus-ring-${colony.id}`}
-                          cx={colony.x}
-                          cy={colony.y}
-                          r={colony.radius + Math.max(4, Math.round(baseStrokeWidth * 1.5))}
-                          fill="none"
-                          stroke="#2563eb"
-                          strokeWidth={Math.max(2, Math.round(baseStrokeWidth * 1.2))}
-                          strokeDasharray="4 2"
-                          className="pointer-events-none"
-                        />
+                        <g className="pointer-events-none">
+                          <circle
+                            cx={colony.x}
+                            cy={colony.y}
+                            r={colony.radius + Math.max(4, Math.round(baseStrokeWidth * 1.5))}
+                            fill="none"
+                            stroke="#ffffff"
+                            strokeWidth={Math.max(3, Math.round(baseStrokeWidth * 1.8))}
+                            opacity={0.9}
+                          />
+                          <circle
+                            data-testid={`manual-focus-ring-${colony.id}`}
+                            cx={colony.x}
+                            cy={colony.y}
+                            r={colony.radius + Math.max(4, Math.round(baseStrokeWidth * 1.5))}
+                            fill="none"
+                            stroke="#1d4ed8"
+                            strokeWidth={Math.max(2, Math.round(baseStrokeWidth * 1.2))}
+                            strokeDasharray="4 2"
+                          />
+                        </g>
                       )}
 
-                      {/* Circular colony reticle */}
+                      {/* Circular colony reticle outer contrast halo */}
+                      <circle
+                        cx={colony.x}
+                        cy={colony.y}
+                        r={colony.radius}
+                        fill="none"
+                        stroke="rgba(0, 0, 0, 0.72)"
+                        strokeWidth={strokeW + Math.max(2, Math.round(baseStrokeWidth * 0.7))}
+                        className="pointer-events-none"
+                      />
+
+                      {/* Circular colony reticle foreground */}
                       <circle
                         cx={colony.x}
                         cy={colony.y}
@@ -805,7 +977,13 @@ export function ColonyDetectionCanvas({
                         strokeWidth={strokeW}
                       />
 
-                      {/* Center reticle dot */}
+                      {/* Center reticle dot halo + dot */}
+                      <circle
+                        cx={colony.x}
+                        cy={colony.y}
+                        r={Math.max(2, Math.round(baseStrokeWidth * 0.7)) + 1}
+                        fill="rgba(0, 0, 0, 0.85)"
+                      />
                       <circle
                         cx={colony.x}
                         cy={colony.y}
@@ -813,33 +991,57 @@ export function ColonyDetectionCanvas({
                         fill={strokeColor}
                       />
 
-                      {/* Crosshairs reticle */}
+                      {/* Crosshairs reticle with dark background shadow for non-color shape clarity */}
                       <line
-                        x1={colony.x - colony.radius * 0.55}
+                        x1={colony.x - colony.radius * 0.65}
                         y1={colony.y}
-                        x2={colony.x + colony.radius * 0.55}
+                        x2={colony.x + colony.radius * 0.65}
+                        y2={colony.y}
+                        stroke="rgba(0, 0, 0, 0.85)"
+                        strokeWidth={Math.max(2, Math.round(baseStrokeWidth * 0.8))}
+                      />
+                      <line
+                        x1={colony.x - colony.radius * 0.65}
+                        y1={colony.y}
+                        x2={colony.x + colony.radius * 0.65}
                         y2={colony.y}
                         stroke={strokeColor}
                         strokeWidth={Math.max(1, Math.round(baseStrokeWidth * 0.6))}
                       />
                       <line
                         x1={colony.x}
-                        y1={colony.y - colony.radius * 0.55}
+                        y1={colony.y - colony.radius * 0.65}
                         x2={colony.x}
-                        y2={colony.y + colony.radius * 0.55}
+                        y2={colony.y + colony.radius * 0.65}
+                        stroke="rgba(0, 0, 0, 0.85)"
+                        strokeWidth={Math.max(2, Math.round(baseStrokeWidth * 0.8))}
+                      />
+                      <line
+                        x1={colony.x}
+                        y1={colony.y - colony.radius * 0.65}
+                        x2={colony.x}
+                        y2={colony.y + colony.radius * 0.65}
                         stroke={strokeColor}
                         strokeWidth={Math.max(1, Math.round(baseStrokeWidth * 0.6))}
                       />
 
-                      {/* Manual Label Tag */}
+                      {/* Manual Label Tag with contrast halo */}
                       {showLabels && (
                         <g transform={`translate(${labelX}, ${labelY})`}>
+                          <rect
+                            x={-1}
+                            y={-1}
+                            width={estLabelWidth + 2}
+                            height={labelHeight + 2}
+                            rx={Math.max(3, Math.round(labelHeight * 0.25))}
+                            fill="rgba(0, 0, 0, 0.75)"
+                          />
                           <rect
                             width={estLabelWidth}
                             height={labelHeight}
                             rx={Math.max(2, Math.round(labelHeight * 0.2))}
                             fill={strokeColor}
-                            opacity={0.92}
+                            opacity={0.96}
                           />
                           <text
                             x={labelPaddingX}
