@@ -12,6 +12,8 @@ export interface ColonyPrintReportProps {
   hasModifications?: boolean;
   cfuData?: CfuExportData | null;
   annotatedImageUrl?: string | null;
+  /** Whether the analyzed image is a synthetic demonstration plate */
+  isDemoPlate?: boolean;
 }
 
 export function ColonyPrintReport({
@@ -24,6 +26,7 @@ export function ColonyPrintReport({
   hasModifications = false,
   cfuData,
   annotatedImageUrl,
+  isDemoPlate = false,
 }: ColonyPrintReportProps) {
   const { count: aiCount, image, processing_time_ms, quality } = response;
   const effectiveReviewedCount = typeof reviewedCount === "number" ? reviewedCount : aiCount;
@@ -142,6 +145,13 @@ export function ColonyPrintReport({
           </div>
         </div>
       </div>
+
+      {/* Demonstration Record Banner */}
+      {isDemoPlate && (
+        <div className="avoid-break rounded border border-amber-300 bg-amber-50 p-2 text-[10px] text-amber-900 mb-3">
+          <strong>DEMONSTRATION RECORD:</strong> Synthetic culture plate image used for software evaluation. Detections and quantification are generated via real YOLO11n inference on a synthetic test plate. Not a clinical or diagnostic specimen.
+        </div>
+      )}
 
       {/* C & D. Quantification & Concentration Results Grid */}
       <div className="avoid-break grid grid-cols-2 gap-3 mb-4">

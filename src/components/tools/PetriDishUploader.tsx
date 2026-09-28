@@ -9,8 +9,10 @@ import {
   Sparkles,
   Loader2,
   CheckCircle2,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   preprocessSpecimenImage,
@@ -30,6 +32,7 @@ export interface PetriDishUploaderProps {
   ) => void;
   disabled?: boolean;
   className?: string;
+  isDemo?: boolean;
 }
 
 const ALLOWED_MIME_TYPES = [
@@ -49,6 +52,7 @@ export function PetriDishUploader({
   onFileSelect,
   disabled = false,
   className,
+  isDemo = false,
 }: PetriDishUploaderProps) {
   const [dragActive, setDragActive] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -321,11 +325,26 @@ export function PetriDishUploader({
               <div className="flex items-center gap-2 truncate pr-2">
                 <Sparkles className="h-3.5 w-3.5 shrink-0 text-researcher" />
                 <span className="truncate font-medium text-foreground">{selectedFile.name}</span>
+                {isDemo && (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] py-0 px-1.5 font-normal shrink-0"
+                  >
+                    Demo Plate
+                  </Badge>
+                )}
               </div>
               <span className="font-mono text-muted-foreground text-[11px]">
                 {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
               </span>
             </div>
+
+            {isDemo && (
+              <p className="text-[11px] text-amber-600/90 dark:text-amber-400/90 flex items-center gap-1.5 pt-0.5">
+                <Info className="h-3.5 w-3.5 shrink-0" />
+                Synthetic demonstration image. Real production YOLO inference will run upon analysis.
+              </p>
+            )}
 
             {/* Scientific & UX distinction: Original user file vs optimized upload payload */}
             {activeOptimization && (

@@ -18,6 +18,11 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PetriDishUploader } from "@/components/tools/PetriDishUploader";
+import {
+  ColonyDemoPlates,
+  fetchDemoPlateFile,
+  type DemoPlateItem,
+} from "@/components/tools/ColonyDemoPlates";
 import { ColonyDetectionCanvas } from "@/components/tools/ColonyDetectionCanvas";
 import { ColonyResultsPanel } from "@/components/tools/ColonyResultsPanel";
 import { ColonyPrintReport } from "@/components/tools/ColonyPrintReport";
@@ -60,6 +65,8 @@ function ColonyCounterPage() {
   const [errorDetails, setErrorDetails] = React.useState<string | null>(null);
   const [cfuData, setCfuData] = React.useState<CfuExportData | null>(null);
   const [annotatedReportImageUrl, setAnnotatedReportImageUrl] = React.useState<string | null>(null);
+  const [activeDemo, setActiveDemo] = React.useState<DemoPlateItem | null>(null);
+  const [loadingDemoId, setLoadingDemoId] = React.useState<string | null>(null);
 
   const handleCalculationChange = React.useCallback((data: CfuExportData | null) => {
     setCfuData((prev) => {
@@ -113,6 +120,12 @@ function ColonyCounterPage() {
       abortControllerRef.current = null;
     }
 
+    if (!file) {
+      setActiveDemo(null);
+    } else if (activeDemo && file.name !== activeDemo.filename) {
+      setActiveDemo(null);
+    }
+
     setSelectedFile(file);
     setUploadPayload(payload ?? file);
     setOptimizationInfo(optimization ?? null);
@@ -126,6 +139,21 @@ function ColonyCounterPage() {
       setPageState("READY");
     } else {
       setPageState("EMPTY");
+    }
+  };
+
+  const handleSelectDemo = async (demo: DemoPlateItem) => {
+    if (pageState === "ANALYZING") return;
+    setLoadingDemoId(demo.id);
+    try {
+      const file = await fetchDemoPlateFile(demo);
+      setActiveDemo(demo);
+      handleFileSelect(file, file, null);
+    } catch (err: unknown) {
+      console.error("Failed to load demo plate file:", err);
+      setErrorMessage("Unable to load demo image file. Please try again.");
+    } finally {
+      setLoadingDemoId(null);
     }
   };
 
@@ -265,9 +293,18 @@ function ColonyCounterPage() {
                     optimizationInfo={optimizationInfo}
                     onFileSelect={handleFileSelect}
                     disabled={pageState === "ANALYZING"}
+                    isDemo={!!activeDemo}
                   />
                 </CardContent>
               </Card>
+
+              {/* Try a Demo Plate Card */}
+              <ColonyDemoPlates
+                onSelectDemo={handleSelectDemo}
+                selectedDemoId={activeDemo?.id}
+                loadingDemoId={loadingDemoId}
+                disabled={pageState === "ANALYZING"}
+              />
 
               {/* Analysis Parameters Card */}
               <Card className="border-border/80 bg-surface-elevated shadow-xs">
@@ -507,6 +544,7 @@ function ColonyCounterPage() {
                     cfuData={cfuData}
                     onCalculationChange={handleCalculationChange}
                     onSetAnnotatedReportImage={setAnnotatedReportImageUrl}
+                    isDemoPlate={!!activeDemo}
                   />
                 </div>
               )}
@@ -548,6 +586,7 @@ function ColonyCounterPage() {
           hasModifications={review.hasModifications}
           cfuData={cfuData}
           annotatedImageUrl={annotatedReportImageUrl || previewUrl || undefined}
+          isDemoPlate={!!activeDemo}
         />
       )}
     </div>

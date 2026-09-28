@@ -1,0 +1,231 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import * as React from "react";
+import {
+  ColonyDemoPlates,
+  DEMO_PLATES,
+  fetchDemoPlateFile,
+  type DemoPlateItem,
+} from "../ColonyDemoPlates";
+import { PetriDishUploader } from "../PetriDishUploader";
+
+describe("ColonyDemoPlates Component", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("renders the demo section with title, quick-start badge, and disclaimer", () => {
+    const onSelectDemo = vi.fn();
+    render(<ColonyDemoPlates onSelectDemo={onSelectDemo} />);
+
+    expect(screen.getByText("Try a Demo Plate")).toBeInTheDocument();
+    expect(screen.getByText("Quick Start")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Demo images are provided for software demonstration only and are not real specimen results.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("renders all 3 demo plates with correct labels, descriptions, and accessible names", () => {
+    const onSelectDemo = vi.fn();
+    render(<ColonyDemoPlates onSelectDemo={onSelectDemo} />);
+
+    expect(screen.getByText("Demo Plate A — Low Density")).toBeInTheDocument();
+    expect(screen.getByText("Demo Plate B — Medium Density")).toBeInTheDocument();
+    expect(screen.getByText("Demo Plate C — High Density")).toBeInTheDocument();
+
+    // Density badges
+    expect(screen.getByText("Low Density")).toBeInTheDocument();
+    expect(screen.getByText("Medium Density")).toBeInTheDocument();
+    expect(screen.getByText("High Density")).toBeInTheDocument();
+
+    // Verify accessible action buttons
+    const btnA = screen.getByRole("button", { name: "Use Demo Plate A — Low Density" });
+    const btnB = screen.getByRole("button", { name: "Use Demo Plate B — Medium Density" });
+    const btnC = screen.getByRole("button", { name: "Use Demo Plate C — High Density" });
+
+    expect(btnA).toBeInTheDocument();
+    expect(btnB).toBeInTheDocument();
+    expect(btnC).toBeInTheDocument();
+  });
+
+  it("renders static thumbnail image references without embedding binary data in tests", () => {
+    const onSelectDemo = vi.fn();
+    render(<ColonyDemoPlates onSelectDemo={onSelectDemo} />);
+
+    const imgA = screen.getByAltText("Demo Plate A — Low Density");
+    const imgB = screen.getByAltText("Demo Plate B — Medium Density");
+    const imgC = screen.getByAltText("Demo Plate C — High Density");
+
+    expect(imgA).toHaveAttribute("src", "/demo-plates/demo-plate-a-low-density.jpg");
+    expect(imgB).toHaveAttribute("src", "/demo-plates/demo-plate-b-medium-density.jpg");
+    expect(imgC).toHaveAttribute("src", "/demo-plates/demo-plate-c-high-density.jpg");
+  });
+
+  it("calls onSelectDemo with demo plate payload on click", () => {
+    const onSelectDemo = vi.fn();
+    render(<ColonyDemoPlates onSelectDemo={onSelectDemo} />);
+
+    const btnB = screen.getByRole("button", { name: "Use Demo Plate B — Medium Density" });
+    fireEvent.click(btnB);
+
+    expect(onSelectDemo).toHaveBeenCalledTimes(1);
+    expect(onSelectDemo).toHaveBeenCalledWith(DEMO_PLATES[1]);
+  });
+
+  it("supports keyboard activation via Enter and Space keys", () => {
+    const onSelectDemo = vi.fn();
+    render(<ColonyDemoPlates onSelectDemo={onSelectDemo} />);
+
+    const btnA = screen.getByRole("button", { name: "Use Demo Plate A — Low Density" });
+    btnA.focus();
+    expect(document.activeElement).toBe(btnA);
+
+    // Standard button element triggers click on Enter/Space
+    fireEvent.keyDown(btnA, { key: "Enter", code: "Enter" });
+    fireEvent.click(btnA);
+
+    expect(onSelectDemo).toHaveBeenCalledWith(DEMO_PLATES[0]);
+  });
+
+  it("indicates active selected plate and shows Selected status", () => {
+    const onSelectDemo = vi.fn();
+    render(<ColonyDemoPlates onSelectDemo={onSelectDemo} selectedDemoId="demo-a" />);
+
+    const btnA = screen.getByRole("button", { name: "Use Demo Plate A — Low Density" });
+    expect(btnA).toHaveTextContent("Selected");
+
+    const btnB = screen.getByRole("button", { name: "Use Demo Plate B — Medium Density" });
+    expect(btnB).toHaveTextContent("Use Demo");
+  });
+
+  it("disables all demo buttons when disabled prop is true", () => {
+    const onSelectDemo = vi.fn();
+    render(<ColonyDemoPlates onSelectDemo={onSelectDemo} disabled={true} />);
+
+    const btnA = screen.getByRole("button", { name: "Use Demo Plate A — Low Density" });
+    const btnB = screen.getByRole("button", { name: "Use Demo Plate B — Medium Density" });
+    const btnC = screen.getByRole("button", { name: "Use Demo Plate C — High Density" });
+
+    expect(btnA).toBeDisabled();
+    expect(btnB).toBeDisabled();
+    expect(btnC).toBeDisabled();
+  });
+});
+
+describe("fetchDemoPlateFile Helper", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("loads demo asset from static URL and returns a File object", async () => {
+    const mockBlob = new Blob(["fake-image-bytes"], { type: "image/jpeg" });
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      statusText: "OK",
+      blob: () => Promise.resolve(mockBlob),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    const demoItem: DemoPlateItem = DEMO_PLATES[0];
+    const file = await fetchDemoPlateFile(demoItem);
+
+    expect(mockFetch).toHaveBeenCalledWith("/demo-plates/demo-plate-a-low-density.jpg");
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toBe("demo-plate-a-low-density.jpg");
+    expect(file.type).toBe("image/jpeg");
+  });
+
+  it("throws an error when static asset fetch fails", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      statusText: "Not Found",
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await expect(fetchDemoPlateFile(DEMO_PLATES[0])).rejects.toThrow(
+      "Failed to load demo plate Demo Plate A — Low Density: Not Found",
+    );
+  });
+});
+
+describe("Demo Plate UI Integration with PetriDishUploader", () => {
+  it("displays synthetic demo badge and note when isDemo is true", () => {
+    const demoFile = new File(["demo-plate-data"], "demo-plate-a-low-density.jpg", {
+      type: "image/jpeg",
+    });
+    const handleFileSelect = vi.fn();
+
+    render(
+      <PetriDishUploader
+        selectedFile={demoFile}
+        onFileSelect={handleFileSelect}
+        isDemo={true}
+      />,
+    );
+
+    expect(screen.getByText("demo-plate-a-low-density.jpg")).toBeInTheDocument();
+    expect(screen.getByText("Demo Plate")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Synthetic demonstration image. Real production YOLO inference will run upon analysis.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("preserves standard user upload UI without demo badges when isDemo is false", () => {
+    const userFile = new File(["user-specimen-data"], "lab_dish_sample.jpg", {
+      type: "image/jpeg",
+    });
+    const handleFileSelect = vi.fn();
+
+    render(
+      <PetriDishUploader
+        selectedFile={userFile}
+        onFileSelect={handleFileSelect}
+        isDemo={false}
+      />,
+    );
+
+    expect(screen.getByText("lab_dish_sample.jpg")).toBeInTheDocument();
+    expect(screen.queryByText("Demo Plate")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "Synthetic demonstration image. Real production YOLO inference will run upon analysis.",
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("resets to empty state when removing the demo image", () => {
+    const demoFile = new File(["demo-plate-data"], "demo-plate-a-low-density.jpg", {
+      type: "image/jpeg",
+    });
+    const handleFileSelect = vi.fn();
+
+    const { rerender } = render(
+      <PetriDishUploader
+        selectedFile={demoFile}
+        onFileSelect={handleFileSelect}
+        isDemo={true}
+      />,
+    );
+
+    const removeBtn = screen.getByRole("button", { name: "Remove image" });
+    fireEvent.click(removeBtn);
+
+    expect(handleFileSelect).toHaveBeenCalledWith(null, null, null);
+
+    // Rerender as cleared
+    rerender(
+      <PetriDishUploader
+        selectedFile={null}
+        onFileSelect={handleFileSelect}
+        isDemo={false}
+      />,
+    );
+
+    expect(screen.getByText("Upload Petri Dish Image")).toBeInTheDocument();
+    expect(screen.queryByText("demo-plate-a-low-density.jpg")).not.toBeInTheDocument();
+  });
+});
