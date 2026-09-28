@@ -67,6 +67,8 @@ export function ColonyDetectionCanvas({
   );
   const [hoveredAiIndex, setHoveredAiIndex] = React.useState<number | null>(null);
   const [hoveredManualId, setHoveredManualId] = React.useState<string | null>(null);
+  const [focusedAiIndex, setFocusedAiIndex] = React.useState<number | null>(null);
+  const [focusedManualId, setFocusedManualId] = React.useState<string | null>(null);
 
   // Zoom and Pan states
   const [zoom, setZoom] = React.useState<number>(1);
@@ -477,6 +479,38 @@ export function ColonyDetectionCanvas({
         </div>
       </div>
 
+      {/* Active tool helper banner for keyboard and screen-reader accessibility (Phase 6C-2) */}
+      {viewMode === "overlay" && (
+        <div
+          className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface/50 border border-border/50 text-[11px] text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-1.5">
+            {activeTool === "add" ? (
+              <>
+                <Plus className="h-3.5 w-3.5 text-violet-500" />
+                <span>
+                  <strong>Add Colony Mode:</strong> Click or tap anywhere on the agar image to place a manual colony marker.
+                </span>
+              </>
+            ) : (
+              <>
+                <MousePointer className="h-3.5 w-3.5 text-primary" />
+                <span>
+                  <strong>Select Mode:</strong> Tab to colony detections and press <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">Enter</kbd> or <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">Space</kbd> to toggle false-positive removal.
+                </span>
+              </>
+            )}
+          </div>
+          {reviewedCount !== undefined && (
+            <span className="font-mono text-foreground font-medium shrink-0">
+              Reviewed: {reviewedCount}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Main Image Viewport Container */}
       <div
         ref={containerRef}
@@ -532,7 +566,8 @@ export function ColonyDetectionCanvas({
                   "pointer-events-auto absolute inset-0 h-full w-full",
                   activeTool === "add" ? "cursor-crosshair" : "",
                 )}
-                aria-label={`Visual overlay with ${detections.length} AI detections and ${manualColonies.length} manual colonies`}
+                role="region"
+                aria-label={`Petri dish detection overlay. ${detections.length} AI detections, ${manualColonies.length} manual colonies.${activeTool === "add" ? " Add Colony tool is active: click or tap the agar image to place a colony marker." : " Select tool is active: use Tab to inspect detections, Enter or Space to toggle."}`}
               >
                 {/* 1. AI Detections Layer */}
                 {hasDetections &&
@@ -540,6 +575,8 @@ export function ColonyDetectionCanvas({
                   detections.map((det, index) => {
                     const isRemoved = removedAiIndices?.has(index) ?? false;
                     const isHovered = hoveredAiIndex === index;
+                    const isFocused = focusedAiIndex === index;
+                    const isHighlighted = isHovered || isFocused;
                     const boxWidth = Math.max(1, det.x2 - det.x1);
                     const boxHeight = Math.max(1, det.y2 - det.y1);
                     const confidencePct = Math.round(det.confidence * 100);
@@ -551,12 +588,12 @@ export function ColonyDetectionCanvas({
 
                     if (isRemoved) {
                       strokeColor = "#ef4444"; // red-500
-                      fillColor = isHovered
+                      fillColor = isHighlighted
                         ? "rgba(239, 68, 68, 0.20)"
                         : "rgba(239, 68, 68, 0.08)";
                       strokeDasharray = "4 3";
-                    } else if (isHovered) {
-                      strokeColor = "#3b82f6"; // blue-500 hover
+                    } else if (isHighlighted) {
+                      strokeColor = "#3b82f6"; // blue-500 hover/focus
                       fillColor = "rgba(59, 130, 246, 0.25)";
                       strokeDasharray = undefined;
                     } else {
@@ -565,7 +602,7 @@ export function ColonyDetectionCanvas({
                       strokeDasharray = undefined;
                     }
 
-                    const strokeW = isHovered ? baseStrokeWidth * 1.5 : baseStrokeWidth;
+                    const strokeW = isHighlighted ? baseStrokeWidth * 1.5 : baseStrokeWidth;
 
                     // Label coordinates
                     const labelY =
@@ -580,8 +617,20 @@ export function ColonyDetectionCanvas({
                     return (
                       <g
                         key={`ai-colony-det-${index}`}
+                        data-testid={`ai-colony-det-${index}`}
                         onMouseEnter={() => setHoveredAiIndex(index)}
                         onMouseLeave={() => setHoveredAiIndex(null)}
+                        onFocus={() => setFocusedAiIndex(index)}
+                        onBlur={() => setFocusedAiIndex(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (activeTool === "select") {
+                              onToggleAiDetection?.(index);
+                            }
+                          }
+                        }}
                         onClick={(e) => {
                           // Only handle click when Select tool is active
                           if (activeTool === "select") {
@@ -597,23 +646,41 @@ export function ColonyDetectionCanvas({
                           // In Add mode, let event propagate to handleSvgClick so colonies can be placed
                         }}
                         className={cn(
-                          "transition-opacity",
+                          "transition-opacity focus:outline-none focus-visible:outline-none",
                           activeTool === "select" ? "cursor-pointer" : "",
                           isRemoved ? "opacity-55" : "opacity-100",
                         )}
                         role="button"
                         tabIndex={0}
+                        aria-pressed={!isRemoved}
                         aria-label={
                           isRemoved
-                            ? `Removed AI colony detection ${index + 1}. Click to restore.`
-                            : `AI colony detection ${index + 1}, confidence ${confidencePct}%. Click to mark as removed.`
+                            ? `Colony detection ${index + 1}: removed (${confidencePct}% confidence). Press Enter or Space to restore.`
+                            : `Colony detection ${index + 1}: active (${confidencePct}% confidence). Press Enter or Space to remove.`
                         }
                       >
                         <title>
                           {isRemoved
-                            ? `AI detection #${index + 1} marked as removed. Click in Select mode to restore.`
-                            : `AI detection #${index + 1} (${confidencePct}%). Click in Select mode to mark as false positive.`}
+                            ? `AI detection #${index + 1} marked as removed. Press Enter or Space to restore.`
+                            : `AI detection #${index + 1} (${confidencePct}%). Press Enter or Space to mark as false positive.`}
                         </title>
+
+                        {/* Visual Keyboard Focus Ring */}
+                        {isFocused && (
+                          <rect
+                            data-testid={`ai-focus-ring-${index}`}
+                            x={det.x1 - Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                            y={det.y1 - Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                            width={boxWidth + Math.max(6, Math.round(baseStrokeWidth * 3))}
+                            height={boxHeight + Math.max(6, Math.round(baseStrokeWidth * 3))}
+                            fill="none"
+                            stroke="#2563eb"
+                            strokeWidth={Math.max(2, Math.round(baseStrokeWidth * 1.2))}
+                            strokeDasharray="4 2"
+                            rx={Math.max(3, Math.round(baseStrokeWidth * 1.5))}
+                            className="pointer-events-none"
+                          />
+                        )}
 
                         {/* Bounding box rectangle */}
                         <rect
@@ -657,11 +724,13 @@ export function ColonyDetectionCanvas({
                 {/* 2. Manual Colonies Layer */}
                 {manualColonies.map((colony, mIndex) => {
                   const isHovered = hoveredManualId === colony.id;
-                  const strokeColor = isHovered ? "#f43f5e" : "#8b5cf6"; // rose on hover for removal cue, violet default
-                  const fillColor = isHovered
+                  const isFocused = focusedManualId === colony.id;
+                  const isHighlighted = isHovered || isFocused;
+                  const strokeColor = isHighlighted ? "#f43f5e" : "#8b5cf6"; // rose on hover/focus for removal cue, violet default
+                  const fillColor = isHighlighted
                     ? "rgba(244, 63, 94, 0.30)"
                     : "rgba(139, 92, 246, 0.25)";
-                  const strokeW = isHovered ? baseStrokeWidth * 1.5 : baseStrokeWidth * 1.2;
+                  const strokeW = isHighlighted ? baseStrokeWidth * 1.5 : baseStrokeWidth * 1.2;
 
                   const labelText = "Manual";
                   const estLabelWidth =
@@ -675,8 +744,20 @@ export function ColonyDetectionCanvas({
                   return (
                     <g
                       key={`manual-colony-${colony.id}`}
+                      data-testid={`manual-colony-${colony.id}`}
                       onMouseEnter={() => setHoveredManualId(colony.id)}
                       onMouseLeave={() => setHoveredManualId(null)}
+                      onFocus={() => setFocusedManualId(colony.id)}
+                      onBlur={() => setFocusedManualId(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (activeTool === "select") {
+                            onRemoveManualColony?.(colony.id);
+                          }
+                        }
+                      }}
                       onClick={(e) => {
                         if (activeTool === "select") {
                           e.stopPropagation();
@@ -690,14 +771,29 @@ export function ColonyDetectionCanvas({
                         }
                       }}
                       className={cn(
-                        "transition-opacity",
+                        "transition-opacity focus:outline-none focus-visible:outline-none",
                         activeTool === "select" ? "cursor-pointer" : "",
                       )}
                       role="button"
                       tabIndex={0}
-                      aria-label={`Manual colony marker #${mIndex + 1}. Click in Select mode to remove.`}
+                      aria-label={`Manual colony marker #${mIndex + 1} at coordinates ${colony.x}, ${colony.y}. Press Enter or Space to remove.`}
                     >
-                      <title>{`Manual colony #${mIndex + 1}. Click in Select mode to remove.`}</title>
+                      <title>{`Manual colony #${mIndex + 1}. Press Enter or Space in Select mode to remove.`}</title>
+
+                      {/* Visual Keyboard Focus Ring for Manual Colony */}
+                      {isFocused && (
+                        <circle
+                          data-testid={`manual-focus-ring-${colony.id}`}
+                          cx={colony.x}
+                          cy={colony.y}
+                          r={colony.radius + Math.max(4, Math.round(baseStrokeWidth * 1.5))}
+                          fill="none"
+                          stroke="#2563eb"
+                          strokeWidth={Math.max(2, Math.round(baseStrokeWidth * 1.2))}
+                          strokeDasharray="4 2"
+                          className="pointer-events-none"
+                        />
+                      )}
 
                       {/* Circular colony reticle */}
                       <circle
