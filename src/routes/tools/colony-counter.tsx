@@ -156,6 +156,10 @@ function ColonyCounterPage() {
           setErrorDetails(
             "The colony detection request timed out before receiving a response from the ML microservice. The server may be busy or experiencing high latency. Please retry or try a smaller image.",
           );
+        } else if (err.code === "RATE_LIMIT_EXCEEDED") {
+          setErrorDetails(
+            "Colony analysis requests are throttled to protect shared laboratory compute resources. Please wait a moment before analyzing your next plate.",
+          );
         } else if (err.status) {
           setErrorDetails(`Server returned HTTP ${err.status} (${err.code}).`);
         }

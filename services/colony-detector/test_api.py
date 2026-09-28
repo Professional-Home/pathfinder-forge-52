@@ -7,11 +7,21 @@ from pathlib import Path
 # Add project directory to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from unittest.mock import patch
+import pytest
+from unittest.mock import MagicMock, patch
 from PIL import Image
 from starlette.testclient import TestClient
 
-from app.main import app
+from app.main import app, limiter
+from app.limiter import TokenBucketLimiter, create_rate_limiter_from_env, get_client_ip
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Ensures each test has a fresh, clean rate limiter state."""
+    limiter.reset()
+    yield
+    limiter.reset()
 
 
 def test_health_check_with_model():
@@ -920,6 +930,365 @@ def test_prf01_extreme_dimension_decompression_ceiling_rejected():
     print("[PASS] test_prf01_extreme_dimension_decompression_ceiling_rejected passed.")
 
 
+def _make_test_jpeg_bytes(width=100, height=100):
+    img = Image.new("RGB", (width, height), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    return buf.getvalue()
+
+
+def test_sec04_requests_under_limit_accepted():
+    """Verifies that requests well under the rate limit succeed normally (SEC-04 A)."""
+    limiter.reset()
+    jpeg_data = _make_test_jpeg_bytes()
+
+    with TestClient(app, client=("10.10.1.1", 1234)) as client:
+        for i in range(3):
+            response = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("test.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert response.status_code == 200, f"Request {i+1} under limit failed: {response.text}"
+            data = response.json()
+            assert data["success"] is True
+    print("[PASS] test_sec04_requests_under_limit_accepted passed.")
+
+
+def test_sec04_request_exactly_at_limit_deterministic():
+    """Verifies deterministic behavior up to and including the exact rate limit (SEC-04 B)."""
+    from app import main
+
+    test_limiter = TokenBucketLimiter(requests=3, window_seconds=60, burst=3)
+    orig_limiter = main.limiter
+    main.limiter = test_limiter
+    jpeg_data = _make_test_jpeg_bytes()
+
+    try:
+        with TestClient(app, client=("10.10.2.1", 1234)) as client:
+            for i in range(3):
+                response = client.post(
+                    "/api/v1/detect-colonies",
+                    files={"image": (f"test_{i}.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                    data={"confidence_threshold": "0.30"},
+                )
+                assert response.status_code == 200, f"Request {i+1} at limit failed: {response.text}"
+                assert response.json()["success"] is True
+            # Exactly 0 tokens should remain now
+            assert test_limiter.get_tokens("10.10.2.1") < 1.0
+    finally:
+        main.limiter = orig_limiter
+    print("[PASS] test_sec04_request_exactly_at_limit_deterministic passed.")
+
+
+def test_sec04_request_exceeding_limit_returns_429():
+    """Verifies exceeding rate limit returns 429, RATE_LIMIT_EXCEEDED, and Retry-After header (SEC-04 C)."""
+    from app import main
+
+    test_limiter = TokenBucketLimiter(requests=2, window_seconds=60, burst=2)
+    orig_limiter = main.limiter
+    main.limiter = test_limiter
+    jpeg_data = _make_test_jpeg_bytes()
+
+    try:
+        with TestClient(app, client=("10.10.3.1", 1234)) as client:
+            # First 2 requests succeed
+            for i in range(2):
+                res = client.post(
+                    "/api/v1/detect-colonies",
+                    files={"image": (f"test_{i}.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                    data={"confidence_threshold": "0.30"},
+                )
+                assert res.status_code == 200
+
+            # 3rd request exceeds limit
+            response = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("test_exceed.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert response.status_code == 429, f"Expected 429, got {response.status_code}: {response.text}"
+            data = response.json()
+            assert data["success"] is False
+            assert data["error"]["code"] == "RATE_LIMIT_EXCEEDED"
+            assert "Retry-After" in response.headers
+            retry_after = int(response.headers["Retry-After"])
+            assert retry_after > 0
+            assert "wait" in data["error"]["message"].lower()
+            assert data["error"]["details"]["retry_after_seconds"] == retry_after
+    finally:
+        main.limiter = orig_limiter
+    print("[PASS] test_sec04_request_exceeding_limit_returns_429 passed.")
+
+
+def test_sec04_rate_limited_requests_do_not_invoke_inference():
+    """Verifies that rate-limited requests are blocked before image decoding or YOLO inference (SEC-04 D)."""
+    from app import main
+    from app.detector import ColonyDetector
+
+    test_limiter = TokenBucketLimiter(requests=1, window_seconds=60, burst=1)
+    orig_limiter = main.limiter
+    main.limiter = test_limiter
+    jpeg_data = _make_test_jpeg_bytes()
+
+    call_count = 0
+    orig_detect = ColonyDetector.detect
+
+    def spy_detect(self, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        return orig_detect(self, *args, **kwargs)
+
+    try:
+        with patch.object(ColonyDetector, "detect", spy_detect):
+            with TestClient(app, client=("10.10.4.1", 1234)) as client:
+                # 1st request -> executes detector.detect
+                res1 = client.post(
+                    "/api/v1/detect-colonies",
+                    files={"image": ("allowed.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                    data={"confidence_threshold": "0.30"},
+                )
+                assert res1.status_code == 200
+                assert call_count == 1
+
+                # 2nd and 3rd requests -> throttled with 429
+                res2 = client.post(
+                    "/api/v1/detect-colonies",
+                    files={"image": ("blocked1.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                    data={"confidence_threshold": "0.30"},
+                )
+                assert res2.status_code == 429
+
+                res3 = client.post(
+                    "/api/v1/detect-colonies",
+                    files={"image": ("blocked2.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                    data={"confidence_threshold": "0.30"},
+                )
+                assert res3.status_code == 429
+
+                # detector.detect MUST NOT have been called for throttled requests
+                assert call_count == 1, (
+                    f"ColonyDetector.detect was called {call_count} times, expected exactly 1"
+                )
+    finally:
+        main.limiter = orig_limiter
+    print("[PASS] test_sec04_rate_limited_requests_do_not_invoke_inference passed.")
+
+
+def test_sec04_different_client_identities_independent_limits():
+    """Verifies that separate client IP addresses have isolated rate limit buckets (SEC-04 E)."""
+    from app import main
+
+    test_limiter = TokenBucketLimiter(requests=2, window_seconds=60, burst=2)
+    orig_limiter = main.limiter
+    main.limiter = test_limiter
+    jpeg_data = _make_test_jpeg_bytes()
+
+    try:
+        # Client Alpha exhausts its limit
+        with TestClient(app, client=("192.168.1.100", 1000)) as client_a:
+            r1 = client_a.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("a1.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert r1.status_code == 200
+            r2 = client_a.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("a2.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert r2.status_code == 200
+            r3 = client_a.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("a3.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert r3.status_code == 429, "Client Alpha must be throttled"
+
+        # Client Beta sends a request from a different IP -> must be accepted
+        with TestClient(app, client=("192.168.1.200", 2000)) as client_b:
+            rb1 = client_b.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("b1.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert rb1.status_code == 200, f"Client Beta should not be throttled: {rb1.text}"
+            assert rb1.json()["success"] is True
+    finally:
+        main.limiter = orig_limiter
+    print("[PASS] test_sec04_different_client_identities_independent_limits passed.")
+
+
+def test_sec04_window_recovery_after_period():
+    """Verifies that tokens replenish and requests become allowed again after time advances (SEC-04 F)."""
+    from app import main
+
+    clock = [1000.0]
+    test_limiter = TokenBucketLimiter(
+        requests=2,
+        window_seconds=10,
+        burst=2,
+        time_func=lambda: clock[0],
+    )
+    orig_limiter = main.limiter
+    main.limiter = test_limiter
+    jpeg_data = _make_test_jpeg_bytes()
+
+    try:
+        with TestClient(app, client=("10.10.5.1", 1234)) as client:
+            # 2 requests succeed at t=1000
+            res1 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("t1.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert res1.status_code == 200
+            res2 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("t2.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert res2.status_code == 200
+
+            # 3rd request throttled at t=1000
+            res3 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("t3.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert res3.status_code == 429
+            retry_after = int(res3.headers["Retry-After"])
+            assert retry_after == 5  # 1 token needed at rate 0.2 tok/s = 5s
+
+            # Advance clock by 5 seconds (1 token replenished)
+            clock[0] += 5.0
+            res4 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("t4.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert res4.status_code == 200, "Request after 5s recovery must be accepted"
+
+            # Advance clock by 10 seconds (full bucket replenished)
+            clock[0] += 10.0
+            res5 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("t5.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert res5.status_code == 200
+            res6 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("t6.jpg", io.BytesIO(jpeg_data), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert res6.status_code == 200
+    finally:
+        main.limiter = orig_limiter
+    print("[PASS] test_sec04_window_recovery_after_period passed.")
+
+
+def test_sec04_concurrency_semaphore_still_caps_inference_at_2():
+    """Verifies that the asyncio concurrency semaphore of 2 remains fully active alongside rate limiting (SEC-04 G)."""
+    import asyncio
+    from app.main import MAX_CONCURRENT_INFERENCES, get_inference_semaphore
+
+    assert MAX_CONCURRENT_INFERENCES == 2
+
+    async def _check_semaphore():
+        sem = get_inference_semaphore()
+        assert isinstance(sem, asyncio.Semaphore)
+        assert sem._value == 2
+
+    asyncio.run(_check_semaphore())
+    print("[PASS] test_sec04_concurrency_semaphore_still_caps_inference_at_2 passed.")
+
+
+def test_sec04_existing_error_behavior_preserved():
+    """Verifies existing error responses (413, 400, 499) remain unchanged under rate limiting (SEC-04 H)."""
+    limiter.reset()
+
+    with TestClient(app, client=("10.10.6.1", 1234)) as client:
+        # 1. 400 on invalid confidence
+        res_conf = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("test.jpg", io.BytesIO(_make_test_jpeg_bytes()), "image/jpeg")},
+            data={"confidence_threshold": "0.99"},
+        )
+        assert res_conf.status_code == 400
+        assert res_conf.json()["error"]["code"] == "INVALID_CONFIDENCE_THRESHOLD"
+
+        # 2. 400 on non-image MIME
+        res_mime = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("data.txt", io.BytesIO(b"not image"), "text/plain")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert res_mime.status_code == 400
+        assert res_mime.json()["error"]["code"] == "INVALID_IMAGE"
+
+        # 3. 413 on oversized file (>5 MB)
+        oversized = io.BytesIO(b"X" * (5 * 1024 * 1024 + 10))
+        res_size = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("large.jpg", oversized, "image/jpeg")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert res_size.status_code == 413
+        assert res_size.json()["error"]["code"] == "IMAGE_TOO_LARGE"
+
+    print("[PASS] test_sec04_existing_error_behavior_preserved passed.")
+
+
+def test_sec04_env_var_configuration_overrides():
+    """Verifies rate limiter policy can be customized via environment variables (SEC-04 I)."""
+    env_overrides = {
+        "COLONY_RATE_LIMIT_REQUESTS": "25",
+        "COLONY_RATE_LIMIT_WINDOW_SECONDS": "120",
+        "COLONY_RATE_LIMIT_BURST": "30",
+        "COLONY_RATE_LIMIT_ENABLED": "true",
+        "COLONY_TRUSTED_PROXIES": "10.0.0.1, 10.0.0.2",
+    }
+    with patch.dict("os.environ", env_overrides):
+        custom_limiter = create_rate_limiter_from_env()
+        assert custom_limiter.requests == 25
+        assert custom_limiter.window_seconds == 120
+        assert custom_limiter.capacity == 30.0
+        assert abs(custom_limiter.rate - (25.0 / 120.0)) < 1e-6
+        assert custom_limiter.enabled is True
+        assert "10.0.0.1" in custom_limiter.trusted_proxies
+        assert "10.0.0.2" in custom_limiter.trusted_proxies
+    print("[PASS] test_sec04_env_var_configuration_overrides passed.")
+
+
+def test_sec04_trusted_proxy_and_anti_spoofing():
+    """Verifies X-Forwarded-For is ignored from untrusted direct IPs, but accepted from trusted proxies."""
+    from starlette.requests import Request
+
+    # Case 1: Untrusted direct connection (no trusted proxies configured)
+    scope1 = {
+        "type": "http",
+        "client": ("198.51.100.5", 54321),
+        "headers": [(b"x-forwarded-for", b"203.0.113.195")],
+    }
+    req1 = Request(scope1)
+    # Must use direct socket IP, ignoring spoofed X-Forwarded-For
+    assert get_client_ip(req1, trusted_proxies=[]) == "198.51.100.5"
+
+    # Case 2: Direct connection from verified reverse proxy (e.g. 10.0.0.1)
+    scope2 = {
+        "type": "http",
+        "client": ("10.0.0.1", 54321),
+        "headers": [(b"x-forwarded-for", b"203.0.113.195, 10.0.0.1")],
+    }
+    req2 = Request(scope2)
+    # Must extract client IP from X-Forwarded-For
+    assert get_client_ip(req2, trusted_proxies=["10.0.0.1"]) == "203.0.113.195"
+
+    print("[PASS] test_sec04_trusted_proxy_and_anti_spoofing passed.")
+
+
 if __name__ == "__main__":
     print("\n--- Running Colony Detector API Tests ---\n")
     test_health_check_with_model()
@@ -957,4 +1326,15 @@ if __name__ == "__main__":
     test_prf01_end_to_end_high_res_inference()
     test_prf01_output_dimensions_and_coordinate_consistency()
     test_prf01_extreme_dimension_decompression_ceiling_rejected()
+    # SEC-04 rate limiting focused test additions
+    test_sec04_requests_under_limit_accepted()
+    test_sec04_request_exactly_at_limit_deterministic()
+    test_sec04_request_exceeding_limit_returns_429()
+    test_sec04_rate_limited_requests_do_not_invoke_inference()
+    test_sec04_different_client_identities_independent_limits()
+    test_sec04_window_recovery_after_period()
+    test_sec04_concurrency_semaphore_still_caps_inference_at_2()
+    test_sec04_existing_error_behavior_preserved()
+    test_sec04_env_var_configuration_overrides()
+    test_sec04_trusted_proxy_and_anti_spoofing()
     print("\n--- All Tests Passed Successfully! ---\n")

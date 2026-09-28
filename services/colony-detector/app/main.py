@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from app.detector import ColonyDetector, ModelNotConfiguredError, assess_colony_quality
+from app.limiter import TokenBucketLimiter, create_rate_limiter_from_env, get_client_ip
 from app.schemas import (
     ColonyDetectionErrorResponse,
     ColonyDetectionSuccessResponse,
@@ -104,6 +105,9 @@ MAX_CONCURRENT_INFERENCES = 2
 _inference_semaphore: Optional[asyncio.Semaphore] = None
 _semaphore_loop: Optional[asyncio.AbstractEventLoop] = None
 
+# Rate limiter instance for inference endpoint throttling (SEC-04)
+limiter: TokenBucketLimiter = create_rate_limiter_from_env()
+
 
 def get_inference_semaphore() -> asyncio.Semaphore:
     """Returns the singleton asyncio.Semaphore for throttling concurrent YOLO inferences to max 2 (REL-01)."""
@@ -156,11 +160,12 @@ def get_upload_file_size(upload_file: UploadFile) -> int:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initializes the ColonyDetector on application startup."""
-    global detector
+    """Initializes the ColonyDetector and RateLimiter on application startup."""
+    global detector, limiter
     model_path = os.getenv("COLONY_MODEL_PATH", "models/best.pt")
     logger.info(f"Starting Colony Detector microservice. Model path configured as: {model_path}")
     detector = ColonyDetector(model_path=model_path)
+    app.state.limiter = limiter
     yield
     logger.info("Colony Detector microservice shutting down.")
 
@@ -217,13 +222,19 @@ app.add_middleware(
 # ─── Error Handling Helper ─────────────────────────────────────────────────────
 
 
-def make_error_response(status_code: int, code: str, message: str, details: Optional[object] = None):
+def make_error_response(
+    status_code: int,
+    code: str,
+    message: str,
+    details: Optional[object] = None,
+    headers: Optional[dict] = None,
+):
     """Creates a structured JSON error response matching frontend ColonyDetectionErrorResponse."""
     payload = ColonyDetectionErrorResponse(
         success=False,
         error=ColonyErrorDetail(code=code, message=message, details=details),
     )
-    return JSONResponse(status_code=status_code, content=payload.model_dump())
+    return JSONResponse(status_code=status_code, content=payload.model_dump(), headers=headers)
 
 
 @app.exception_handler(HTTPException)
@@ -333,6 +344,7 @@ async def get_output_artifact(filename: str):
     responses={
         400: {"model": ColonyDetectionErrorResponse},
         413: {"model": ColonyDetectionErrorResponse},
+        429: {"model": ColonyDetectionErrorResponse},
         499: {"model": ColonyDetectionErrorResponse},
         503: {"model": ColonyDetectionErrorResponse},
     },
@@ -347,7 +359,24 @@ async def detect_colonies(
 ):
     """Analyzes an uploaded Petri-dish specimen image and returns colony bounding boxes and count."""
     try:
-        # 1. Validate confidence threshold bounds
+        # 1. Rate limiting check (SEC-04)
+        client_ip = get_client_ip(request, trusted_proxies=limiter.trusted_proxies)
+        is_allowed, retry_after = limiter.check_rate_limit(client_ip)
+        if not is_allowed:
+            logger.warning(
+                f"[RateLimit] Rate limit exceeded for client {client_ip}. Retry-After: {retry_after}s"
+            )
+            return make_error_response(
+                status.HTTP_429_TOO_MANY_REQUESTS
+                if hasattr(status, "HTTP_429_TOO_MANY_REQUESTS")
+                else 429,
+                "RATE_LIMIT_EXCEEDED",
+                f"Rate limit exceeded. Too many colony detection requests from this client. Please wait {retry_after} seconds before trying again.",
+                details={"retry_after_seconds": retry_after},
+                headers={"Retry-After": str(retry_after)},
+            )
+
+        # 2. Validate confidence threshold bounds
         if confidence_threshold is None or not (0.20 <= confidence_threshold <= 0.90):
             return make_error_response(
                 status.HTTP_400_BAD_REQUEST,
@@ -355,7 +384,7 @@ async def detect_colonies(
                 "Confidence threshold must be a number between 0.20 and 0.90.",
             )
 
-        # 2. Validate MIME type
+        # 3. Validate MIME type
         content_type = (image.content_type or "").lower()
         if not any(content_type.startswith(prefix) for prefix in ALLOWED_MIME_PREFIXES):
             logger.warning(f"Rejected non-image upload with content-type: {content_type}")
@@ -365,7 +394,7 @@ async def detect_colonies(
                 "The uploaded file is not a recognized image format. Please upload a JPEG, PNG, or WEBP photo.",
             )
 
-        # 3. Size validation & empty check without buffering into heap RAM (REL-03)
+        # 4. Size validation & empty check without buffering into heap RAM (REL-03)
         file_size = get_upload_file_size(image)
 
         if file_size > MAX_IMAGE_SIZE_BYTES:
@@ -385,7 +414,7 @@ async def detect_colonies(
                 "Uploaded file is empty.",
             )
 
-        # 4. Check model configuration readiness
+        # 5. Check model configuration readiness
         if not detector or not detector.is_ready():
             logger.error("Colony detection requested but model weights (best.pt) are not loaded.")
             return make_error_response(
@@ -395,7 +424,7 @@ async def detect_colonies(
                 "Please install the trained model weights into the models directory to enable inference.",
             )
 
-        # 5. Check if client disconnected before acquiring inference semaphore (REL-02)
+        # 6. Check if client disconnected before acquiring inference semaphore (REL-02)
         if await request.is_disconnected():
             logger.warning("Client disconnected prior to acquiring inference semaphore; aborting.")
             return make_error_response(
@@ -404,7 +433,7 @@ async def detect_colonies(
                 "Client disconnected before inference could start.",
             )
 
-        # 6. Execute detection inference with concurrency limit of 2 (REL-01)
+        # 7. Execute detection inference with concurrency limit of 2 (REL-01)
         inference_semaphore = get_inference_semaphore()
         async with inference_semaphore:
             # Re-check client disconnect after acquiring semaphore in case request queued (REL-02)
@@ -448,7 +477,7 @@ async def detect_colonies(
                     "An error occurred during colony model inference.",
                 )
 
-        # 7. Save annotated image visualization artifact
+        # 8. Save annotated image visualization artifact
         annotated_filename = f"annotated_{uuid.uuid4().hex}.jpg"
         annotated_filepath = OUTPUTS_DIR / annotated_filename
         try:
@@ -472,10 +501,10 @@ async def detect_colonies(
         public_base = os.getenv("PUBLIC_BASE_URL", str(request.base_url).rstrip("/"))
         annotated_url = f"{public_base}/outputs/{annotated_filename}"
 
-        # 8. Assess colony plate density, crowding, and review indicators
+        # 9. Assess colony plate density, crowding, and review indicators
         quality_assessment = assess_colony_quality(detections)
 
-        # 9. Construct and return validated response
+        # 10. Construct and return validated response
         response_payload = ColonyDetectionSuccessResponse(
             success=True,
             count=len(detections),
