@@ -65,4 +65,26 @@ if (typeof window !== "undefined") {
   }) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 
   HTMLCanvasElement.prototype.toDataURL = vi.fn(() => "data:image/png;base64,mockPngDataUrl");
+
+  if (!HTMLCanvasElement.prototype.toBlob) {
+    HTMLCanvasElement.prototype.toBlob = vi.fn(function (
+      this: HTMLCanvasElement,
+      callback: (blob: Blob | null) => void,
+      type = "image/jpeg",
+      _quality?: number,
+    ) {
+      const blob = new Blob(["mock-jpeg-data"], { type });
+      callback(blob);
+    }) as unknown as typeof HTMLCanvasElement.prototype.toBlob;
+  }
+
+  if (typeof globalThis.createImageBitmap !== "function") {
+    globalThis.createImageBitmap = vi.fn(async () => {
+      return {
+        width: 1024,
+        height: 768,
+        close: vi.fn(),
+      } as unknown as ImageBitmap;
+    });
+  }
 }

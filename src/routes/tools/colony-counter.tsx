@@ -47,6 +47,9 @@ type PageState = "EMPTY" | "READY" | "ANALYZING" | "SUCCESS" | "ERROR";
 
 function ColonyCounterPage() {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [uploadPayload, setUploadPayload] = React.useState<File | null>(null);
+  const [optimizationInfo, setOptimizationInfo] =
+    React.useState<import("@/lib/colony-image-preprocessor").ImageOptimizationSuccess | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [confidenceThreshold, setConfidenceThreshold] = React.useState<number>(0.3);
   const [pageState, setPageState] = React.useState<PageState>("EMPTY");
@@ -78,18 +81,19 @@ function ColonyCounterPage() {
 
   // Manage in-memory preview object URL
   React.useEffect(() => {
-    if (!selectedFile) {
+    const fileForPreview = uploadPayload || selectedFile;
+    if (!fileForPreview) {
       setPreviewUrl(null);
       return;
     }
 
-    const url = URL.createObjectURL(selectedFile);
+    const url = URL.createObjectURL(fileForPreview);
     setPreviewUrl(url);
 
     return () => {
       URL.revokeObjectURL(url);
     };
-  }, [selectedFile]);
+  }, [selectedFile, uploadPayload]);
 
   // Clean up any in-flight requests on unmount
   React.useEffect(() => {
@@ -98,7 +102,11 @@ function ColonyCounterPage() {
     };
   }, []);
 
-  const handleFileSelect = (file: File | null) => {
+  const handleFileSelect = (
+    file: File | null,
+    payload?: File | null,
+    optimization?: import("@/lib/colony-image-preprocessor").ImageOptimizationSuccess | null,
+  ) => {
     // Abort active analysis if any
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -106,6 +114,8 @@ function ColonyCounterPage() {
     }
 
     setSelectedFile(file);
+    setUploadPayload(payload ?? file);
+    setOptimizationInfo(optimization ?? null);
     setAnalysisResult(null);
     setErrorMessage(null);
     setErrorDetails(null);
@@ -120,7 +130,8 @@ function ColonyCounterPage() {
   };
 
   const handleAnalyze = async () => {
-    if (!selectedFile || pageState === "ANALYZING") return;
+    const fileToUpload = uploadPayload || selectedFile;
+    if (!fileToUpload || pageState === "ANALYZING") return;
 
     setPageState("ANALYZING");
     setErrorMessage(null);
@@ -130,7 +141,7 @@ function ColonyCounterPage() {
     abortControllerRef.current = controller;
 
     try {
-      const response = await detectColonies(selectedFile, {
+      const response = await detectColonies(fileToUpload, {
         confidenceThreshold,
         signal: controller.signal,
       });
@@ -251,6 +262,7 @@ function ColonyCounterPage() {
                 <CardContent className="p-5 pt-2">
                   <PetriDishUploader
                     selectedFile={selectedFile}
+                    optimizationInfo={optimizationInfo}
                     onFileSelect={handleFileSelect}
                     disabled={pageState === "ANALYZING"}
                   />

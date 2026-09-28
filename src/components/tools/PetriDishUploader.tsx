@@ -1,16 +1,37 @@
 import * as React from "react";
-import { Upload, Camera, Trash2, RefreshCw, AlertCircle, FileImage, Sparkles } from "lucide-react";
+import {
+  Upload,
+  Camera,
+  Trash2,
+  RefreshCw,
+  AlertCircle,
+  FileImage,
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  preprocessSpecimenImage,
+  MAX_UPLOAD_SIZE_BYTES,
+  USER_OPTIMIZATION_SUCCESS_MESSAGE,
+  USER_OPTIMIZATION_FAILURE_MESSAGE,
+  type ImageOptimizationSuccess,
+} from "@/lib/colony-image-preprocessor";
 
 export interface PetriDishUploaderProps {
   selectedFile: File | null;
-  onFileSelect: (file: File | null) => void;
+  optimizationInfo?: ImageOptimizationSuccess | null;
+  onFileSelect: (
+    originalFile: File | null,
+    uploadPayload?: File | null,
+    optimizationInfo?: ImageOptimizationSuccess | null,
+  ) => void;
   disabled?: boolean;
   className?: string;
 }
 
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/jpg",
@@ -24,6 +45,7 @@ const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".tif", "
 
 export function PetriDishUploader({
   selectedFile,
+  optimizationInfo,
   onFileSelect,
   disabled = false,
   className,
@@ -31,40 +53,44 @@ export function PetriDishUploader({
   const [dragActive, setDragActive] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [isPreprocessing, setIsPreprocessing] = React.useState<boolean>(false);
+  const [internalOptimizationResult, setInternalOptimizationResult] =
+    React.useState<ImageOptimizationSuccess | null>(null);
+
+  const activeOptimization =
+    optimizationInfo !== undefined ? optimizationInfo : internalOptimizationResult;
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
+  const prevSelectedFileRef = React.useRef(selectedFile);
 
   // Manage object URL lifecycle in memory (avoid memory leaks)
   React.useEffect(() => {
-    if (!selectedFile) {
+    if (!selectedFile && prevSelectedFileRef.current) {
+      setInternalOptimizationResult(null);
+      setPreviewUrl(null);
+    }
+    prevSelectedFileRef.current = selectedFile;
+
+    const fileToPreview = activeOptimization?.uploadFile || selectedFile;
+    if (!fileToPreview) {
       setPreviewUrl(null);
       return;
     }
 
-    const objectUrl = URL.createObjectURL(selectedFile);
+    const objectUrl = URL.createObjectURL(fileToPreview);
     setPreviewUrl(objectUrl);
 
     return () => {
       URL.revokeObjectURL(objectUrl);
     };
-  }, [selectedFile]);
+  }, [selectedFile, activeOptimization]);
 
-  const validateFile = (file: File): { valid: boolean; error?: string } => {
+  const validateFormat = (file: File): { valid: boolean; error?: string } => {
     if (!file) {
       return { valid: false, error: "No file was selected." };
     }
 
-    // 1. File size check (5 MB limit)
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-      return {
-        valid: false,
-        error: `File size (${sizeMb} MB) exceeds the maximum allowed limit of 5 MB.`,
-      };
-    }
-
-    // 2. MIME type & extension check
     const fileType = (file.type || "").toLowerCase();
     const fileName = (file.name || "").toLowerCase();
     const hasValidExt = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
@@ -81,16 +107,40 @@ export function PetriDishUploader({
     return { valid: true };
   };
 
-  const handleFileProcess = (file: File) => {
+  const handleFileProcess = async (file: File) => {
     setErrorMessage(null);
-    const validation = validateFile(file);
+    setInternalOptimizationResult(null);
 
+    const validation = validateFormat(file);
     if (!validation.valid) {
       setErrorMessage(validation.error ?? "Invalid file selected.");
       return;
     }
 
-    onFileSelect(file);
+    // 1. Normal path: If already <= 5 MB, upload directly without browser recompression
+    if (file.size <= MAX_UPLOAD_SIZE_BYTES) {
+      setInternalOptimizationResult(null);
+      onFileSelect(file, file, null);
+      return;
+    }
+
+    // 2. High-resolution / Mobile camera path (> 5 MB): preprocess in browser
+    setIsPreprocessing(true);
+    try {
+      const result = await preprocessSpecimenImage(file);
+      if (result.success) {
+        setInternalOptimizationResult(result);
+        onFileSelect(file, result.uploadFile, result);
+      } else {
+        setErrorMessage(result.error || USER_OPTIMIZATION_FAILURE_MESSAGE);
+        onFileSelect(null, null, null);
+      }
+    } catch {
+      setErrorMessage(USER_OPTIMIZATION_FAILURE_MESSAGE);
+      onFileSelect(null, null, null);
+    } finally {
+      setIsPreprocessing(false);
+    }
   };
 
   const handleNativeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +155,7 @@ export function PetriDishUploader({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!disabled) setDragActive(true);
+    if (!disabled && !isPreprocessing) setDragActive(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -119,7 +169,7 @@ export function PetriDishUploader({
     e.stopPropagation();
     setDragActive(false);
 
-    if (disabled) return;
+    if (disabled || isPreprocessing) return;
 
     const file = e.dataTransfer.files?.[0];
     if (file) {
@@ -129,7 +179,8 @@ export function PetriDishUploader({
 
   const handleClear = () => {
     setErrorMessage(null);
-    onFileSelect(null);
+    setInternalOptimizationResult(null);
+    onFileSelect(null, null, null);
   };
 
   return (
@@ -140,7 +191,7 @@ export function PetriDishUploader({
         type="file"
         accept="image/jpeg,image/png,image/webp,image/*"
         onChange={handleNativeInputChange}
-        disabled={disabled}
+        disabled={disabled || isPreprocessing}
         className="hidden"
         aria-label="Upload Petri dish image file"
       />
@@ -151,7 +202,7 @@ export function PetriDishUploader({
         accept="image/*"
         capture="environment"
         onChange={handleNativeInputChange}
-        disabled={disabled}
+        disabled={disabled || isPreprocessing}
         className="hidden"
         aria-label="Capture Petri dish image using mobile camera"
       />
@@ -167,50 +218,67 @@ export function PetriDishUploader({
             dragActive
               ? "border-researcher bg-researcher-soft/40 shadow-inner"
               : "border-border/80 bg-surface/50 hover:border-researcher/60 hover:bg-surface-elevated",
-            disabled && "pointer-events-none opacity-60",
+            (disabled || isPreprocessing) && "pointer-events-none opacity-60",
           )}
         >
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border/80 bg-surface-elevated text-researcher shadow-sm">
-            <Upload className="h-6 w-6" aria-hidden="true" />
-          </div>
+          {isPreprocessing ? (
+            <div className="py-6 flex flex-col items-center justify-center space-y-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-researcher-soft text-researcher shadow-sm animate-pulse">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                Optimizing large image for upload...
+              </p>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                Scaling high-resolution mobile photograph in browser memory.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border/80 bg-surface-elevated text-researcher shadow-sm">
+                <Upload className="h-6 w-6" aria-hidden="true" />
+              </div>
 
-          <h3 className="font-display text-base font-semibold text-foreground">
-            Upload Petri Dish Image
-          </h3>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground leading-relaxed">
-            Drag & drop a culture plate photo here, or use the buttons below to browse your files or
-            take a photo.
-          </p>
+              <h3 className="font-display text-base font-semibold text-foreground">
+                Upload Petri Dish Image
+              </h3>
+              <p className="mt-1 max-w-sm text-xs text-muted-foreground leading-relaxed">
+                Drag & drop a culture plate photo here, or use the buttons below to browse your files
+                or take a photo.
+              </p>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={disabled}
-              onClick={() => fileInputRef.current?.click()}
-              className="border-border/80 hover:border-researcher hover:text-researcher"
-            >
-              <FileImage className="mr-1.5 h-4 w-4" />
-              Browse Files
-            </Button>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={disabled || isPreprocessing}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-border/80 hover:border-researcher hover:text-researcher"
+                >
+                  <FileImage className="mr-1.5 h-4 w-4" />
+                  Browse Files
+                </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={disabled}
-              onClick={() => cameraInputRef.current?.click()}
-              className="border-border/80 hover:border-student hover:text-student"
-            >
-              <Camera className="mr-1.5 h-4 w-4" />
-              Mobile Camera
-            </Button>
-          </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={disabled || isPreprocessing}
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="border-border/80 hover:border-student hover:text-student"
+                >
+                  <Camera className="mr-1.5 h-4 w-4" />
+                  Mobile Camera
+                </Button>
+              </div>
 
-          <p className="mt-4 text-[11px] text-muted-foreground/80">
-            JPG, PNG, or WEBP up to 5 MB. Image remains private in browser memory.
-          </p>
+              <p className="mt-4 text-[11px] text-muted-foreground/80">
+                JPG, PNG, or WEBP up to 5 MB (larger camera images are automatically optimized in
+                browser).
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border/80 bg-surface-elevated shadow-sm">
@@ -226,7 +294,7 @@ export function PetriDishUploader({
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={disabled}
+                disabled={disabled || isPreprocessing}
                 onClick={() => fileInputRef.current?.click()}
                 className="h-8 rounded-lg bg-background/90 text-xs backdrop-blur-sm hover:bg-background shadow-sm"
               >
@@ -238,7 +306,7 @@ export function PetriDishUploader({
                 type="button"
                 variant="destructive"
                 size="sm"
-                disabled={disabled}
+                disabled={disabled || isPreprocessing}
                 onClick={handleClear}
                 className="h-8 rounded-lg text-xs shadow-sm"
                 aria-label="Remove image"
@@ -248,14 +316,39 @@ export function PetriDishUploader({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between border-t border-border/60 px-4 py-3 text-xs">
-            <div className="flex items-center gap-2 truncate pr-2">
-              <Sparkles className="h-3.5 w-3.5 shrink-0 text-researcher" />
-              <span className="truncate font-medium text-foreground">{selectedFile.name}</span>
+          <div className="border-t border-border/60 px-4 py-3 space-y-2 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 truncate pr-2">
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-researcher" />
+                <span className="truncate font-medium text-foreground">{selectedFile.name}</span>
+              </div>
+              <span className="font-mono text-muted-foreground text-[11px]">
+                {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+              </span>
             </div>
-            <span className="font-mono text-muted-foreground text-[11px]">
-              {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-            </span>
+
+            {/* Scientific & UX distinction: Original user file vs optimized upload payload */}
+            {activeOptimization && (
+              <div
+                data-testid="optimization-feedback"
+                className="rounded-lg bg-surface/80 border border-researcher/30 p-2.5 text-[11px] space-y-1.5"
+              >
+                <div className="flex items-center gap-1.5 font-medium text-researcher">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <span>{USER_OPTIMIZATION_SUCCESS_MESSAGE}</span>
+                </div>
+                <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-x-2">
+                  <span>Upload payload: {activeOptimization.uploadFile.name}</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {(activeOptimization.uploadFile.size / (1024 * 1024)).toFixed(2)} MB
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground/80 italic">
+                  Original local file is unchanged. Specimen safely downscaled to max 2048px for
+                  analysis.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
