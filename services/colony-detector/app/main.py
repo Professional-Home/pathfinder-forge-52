@@ -127,6 +127,33 @@ def sanitize_model_path_for_health(path: Optional[Path | str]) -> Optional[str]:
     return f"models/{filename}"
 
 
+def get_upload_file_size(upload_file: UploadFile) -> int:
+    """Determines the exact byte size of an UploadFile without loading it into heap memory.
+
+    Uses upload_file.size attribute if present, or queries the underlying spooled file pointer.
+    Guarantees the file read pointer is restored to offset 0.
+    """
+    size = getattr(upload_file, "size", None)
+    if isinstance(size, int) and size >= 0:
+        if upload_file.file is not None and hasattr(upload_file.file, "seek"):
+            try:
+                upload_file.file.seek(0)
+            except Exception:
+                pass
+        return size
+
+    if upload_file.file is not None and hasattr(upload_file.file, "seek") and hasattr(upload_file.file, "tell"):
+        try:
+            upload_file.file.seek(0, os.SEEK_END)
+            total = upload_file.file.tell()
+            upload_file.file.seek(0, os.SEEK_SET)
+            return total
+        except Exception as e:
+            logger.warning(f"Could not determine upload file size via seek/tell: {e}")
+
+    return 0
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initializes the ColonyDetector on application startup."""
@@ -319,164 +346,145 @@ async def detect_colonies(
     ),
 ):
     """Analyzes an uploaded Petri-dish specimen image and returns colony bounding boxes and count."""
-    # 1. Validate confidence threshold bounds
-    if confidence_threshold is None or not (0.20 <= confidence_threshold <= 0.90):
-        return make_error_response(
-            status.HTTP_400_BAD_REQUEST,
-            "INVALID_CONFIDENCE_THRESHOLD",
-            "Confidence threshold must be a number between 0.20 and 0.90.",
-        )
-
-    # 2. Validate MIME type
-    content_type = (image.content_type or "").lower()
-    if not any(content_type.startswith(prefix) for prefix in ALLOWED_MIME_PREFIXES):
-        logger.warning(f"Rejected non-image upload with content-type: {content_type}")
-        return make_error_response(
-            status.HTTP_400_BAD_REQUEST,
-            "INVALID_IMAGE",
-            "The uploaded file is not a recognized image format. Please upload a JPEG, PNG, or WEBP photo.",
-        )
-
-    # 3. Read image bytes with chunked memory protection and size enforcement (P0-4)
-    chunks = []
-    total_bytes = 0
-    is_oversized = False
-
     try:
-        while True:
-            chunk = await image.read(CHUNK_SIZE_BYTES)
-            if not chunk:
-                break
-            total_bytes += len(chunk)
-            if total_bytes > MAX_IMAGE_SIZE_BYTES:
-                is_oversized = True
-                break
-            chunks.append(chunk)
-    except Exception as e:
-        logger.error(f"Failed to read uploaded file: {e}")
-        return make_error_response(
-            status.HTTP_400_BAD_REQUEST,
-            "INVALID_IMAGE",
-            "Failed to read the uploaded image file.",
-        )
-    finally:
-        try:
-            await image.close()
-        except Exception:
-            pass
+        # 1. Validate confidence threshold bounds
+        if confidence_threshold is None or not (0.20 <= confidence_threshold <= 0.90):
+            return make_error_response(
+                status.HTTP_400_BAD_REQUEST,
+                "INVALID_CONFIDENCE_THRESHOLD",
+                "Confidence threshold must be a number between 0.20 and 0.90.",
+            )
 
-    if is_oversized:
-        size_mb = round(total_bytes / (1024 * 1024), 2)
-        return make_error_response(
-            status.HTTP_413_CONTENT_TOO_LARGE
-            if hasattr(status, "HTTP_413_CONTENT_TOO_LARGE")
-            else 413,
-            "IMAGE_TOO_LARGE",
-            f"Image size ({size_mb} MB) exceeds maximum allowed limit of 5 MB.",
-        )
+        # 2. Validate MIME type
+        content_type = (image.content_type or "").lower()
+        if not any(content_type.startswith(prefix) for prefix in ALLOWED_MIME_PREFIXES):
+            logger.warning(f"Rejected non-image upload with content-type: {content_type}")
+            return make_error_response(
+                status.HTTP_400_BAD_REQUEST,
+                "INVALID_IMAGE",
+                "The uploaded file is not a recognized image format. Please upload a JPEG, PNG, or WEBP photo.",
+            )
 
-    if total_bytes == 0:
-        return make_error_response(
-            status.HTTP_400_BAD_REQUEST,
-            "INVALID_IMAGE",
-            "Uploaded file is empty.",
-        )
+        # 3. Size validation & empty check without buffering into heap RAM (REL-03)
+        file_size = get_upload_file_size(image)
 
-    contents = b"".join(chunks)
+        if file_size > MAX_IMAGE_SIZE_BYTES:
+            size_mb = round(file_size / (1024 * 1024), 2)
+            return make_error_response(
+                status.HTTP_413_CONTENT_TOO_LARGE
+                if hasattr(status, "HTTP_413_CONTENT_TOO_LARGE")
+                else 413,
+                "IMAGE_TOO_LARGE",
+                f"Image size ({size_mb} MB) exceeds maximum allowed limit of 5 MB.",
+            )
 
-    # 4. Check model configuration readiness
-    if not detector or not detector.is_ready():
-        logger.error("Colony detection requested but model weights (best.pt) are not loaded.")
-        return make_error_response(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            "MODEL_NOT_CONFIGURED",
-            "The trained colony detection model (best.pt) is not configured or not found. "
-            "Please install the trained model weights into the models directory to enable inference.",
-        )
+        if file_size == 0:
+            return make_error_response(
+                status.HTTP_400_BAD_REQUEST,
+                "INVALID_IMAGE",
+                "Uploaded file is empty.",
+            )
 
-    # 5. Check if client disconnected before acquiring inference semaphore (REL-02)
-    if await request.is_disconnected():
-        logger.warning("Client disconnected prior to acquiring inference semaphore; aborting.")
-        return make_error_response(
-            499,
-            "CLIENT_CLOSED_REQUEST",
-            "Client disconnected before inference could start.",
-        )
+        # 4. Check model configuration readiness
+        if not detector or not detector.is_ready():
+            logger.error("Colony detection requested but model weights (best.pt) are not loaded.")
+            return make_error_response(
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                "MODEL_NOT_CONFIGURED",
+                "The trained colony detection model (best.pt) is not configured or not found. "
+                "Please install the trained model weights into the models directory to enable inference.",
+            )
 
-    # 6. Execute detection inference with concurrency limit of 2 (REL-01)
-    inference_semaphore = get_inference_semaphore()
-    async with inference_semaphore:
-        # Re-check client disconnect after acquiring semaphore in case request queued (REL-02)
+        # 5. Check if client disconnected before acquiring inference semaphore (REL-02)
         if await request.is_disconnected():
-            logger.warning("Client disconnected while waiting for inference semaphore; aborting.")
+            logger.warning("Client disconnected prior to acquiring inference semaphore; aborting.")
             return make_error_response(
                 499,
                 "CLIENT_CLOSED_REQUEST",
                 "Client disconnected before inference could start.",
             )
 
+        # 6. Execute detection inference with concurrency limit of 2 (REL-01)
+        inference_semaphore = get_inference_semaphore()
+        async with inference_semaphore:
+            # Re-check client disconnect after acquiring semaphore in case request queued (REL-02)
+            if await request.is_disconnected():
+                logger.warning("Client disconnected while waiting for inference semaphore; aborting.")
+                return make_error_response(
+                    499,
+                    "CLIENT_CLOSED_REQUEST",
+                    "Client disconnected before inference could start.",
+                )
+
+            try:
+                # Pass spooled temporary file directly to avoid allocating in-memory byte buffers (REL-03)
+                detections, width, height, latency_ms, annotated_image = await run_in_threadpool(
+                    detector.detect,
+                    image_input=image.file,
+                    confidence_threshold=confidence_threshold,
+                )
+            except ModelNotConfiguredError as e:
+                return make_error_response(
+                    status.HTTP_503_SERVICE_UNAVAILABLE,
+                    "MODEL_NOT_CONFIGURED",
+                    str(e),
+                )
+            except ValueError as e:
+                return make_error_response(
+                    status.HTTP_400_BAD_REQUEST,
+                    "INVALID_IMAGE",
+                    f"Unable to process image data: {e}",
+                )
+            except Exception as e:
+                logger.error(f"Detection execution failed: {e}", exc_info=True)
+                return make_error_response(
+                    status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    "INFERENCE_ERROR",
+                    "An error occurred during colony model inference.",
+                )
+
+        # 7. Save annotated image visualization artifact
+        annotated_filename = f"annotated_{uuid.uuid4().hex}.jpg"
+        annotated_filepath = OUTPUTS_DIR / annotated_filename
         try:
-            detections, width, height, latency_ms, annotated_image = await run_in_threadpool(
-                detector.detect,
-                image_bytes=contents,
-                confidence_threshold=confidence_threshold,
-            )
-        except ModelNotConfiguredError as e:
-            return make_error_response(
-                status.HTTP_503_SERVICE_UNAVAILABLE,
-                "MODEL_NOT_CONFIGURED",
-                str(e),
-            )
-        except ValueError as e:
-            return make_error_response(
-                status.HTTP_400_BAD_REQUEST,
-                "INVALID_IMAGE",
-                f"Unable to process image data: {e}",
+            annotated_image.save(annotated_filepath, format="JPEG", quality=90)
+        except Exception as e:
+            logger.warning(f"Could not write annotated image artifact: {e}")
+
+        # Prune older outputs in worker threadpool to prevent unbounded storage growth (P0-2)
+        try:
+            await run_in_threadpool(
+                prune_output_artifacts,
+                outputs_dir=OUTPUTS_DIR,
+                max_age_seconds=MAX_OUTPUT_AGE_SECONDS,
+                max_files=MAX_OUTPUT_FILES,
+                preserve_filename=annotated_filename,
             )
         except Exception as e:
-            logger.error(f"Detection execution failed: {e}", exc_info=True)
-            return make_error_response(
-                status.HTTP_500_INTERNAL_SERVER_ERROR,
-                "INFERENCE_ERROR",
-                "An error occurred during colony model inference.",
-            )
+            logger.warning(f"Artifact retention pruning failed: {e}")
 
-    # 7. Save annotated image visualization artifact
-    annotated_filename = f"annotated_{uuid.uuid4().hex}.jpg"
-    annotated_filepath = OUTPUTS_DIR / annotated_filename
-    try:
-        annotated_image.save(annotated_filepath, format="JPEG", quality=90)
-    except Exception as e:
-        logger.warning(f"Could not write annotated image artifact: {e}")
+        # Build public URL for annotated image
+        public_base = os.getenv("PUBLIC_BASE_URL", str(request.base_url).rstrip("/"))
+        annotated_url = f"{public_base}/outputs/{annotated_filename}"
 
-    # Prune older outputs in worker threadpool to prevent unbounded storage growth (P0-2)
-    try:
-        await run_in_threadpool(
-            prune_output_artifacts,
-            outputs_dir=OUTPUTS_DIR,
-            max_age_seconds=MAX_OUTPUT_AGE_SECONDS,
-            max_files=MAX_OUTPUT_FILES,
-            preserve_filename=annotated_filename,
+        # 8. Assess colony plate density, crowding, and review indicators
+        quality_assessment = assess_colony_quality(detections)
+
+        # 9. Construct and return validated response
+        response_payload = ColonyDetectionSuccessResponse(
+            success=True,
+            count=len(detections),
+            detections=detections,
+            image=ColonyImageMetadata(width=width, height=height),
+            annotated_image_url=annotated_url,
+            processing_time_ms=latency_ms,
+            quality=quality_assessment,
         )
-    except Exception as e:
-        logger.warning(f"Artifact retention pruning failed: {e}")
 
-    # Build public URL for annotated image
-    public_base = os.getenv("PUBLIC_BASE_URL", str(request.base_url).rstrip("/"))
-    annotated_url = f"{public_base}/outputs/{annotated_filename}"
-
-    # 7. Assess colony plate density, crowding, and review indicators
-    quality_assessment = assess_colony_quality(detections)
-
-    # 8. Construct and return validated response
-    response_payload = ColonyDetectionSuccessResponse(
-        success=True,
-        count=len(detections),
-        detections=detections,
-        image=ColonyImageMetadata(width=width, height=height),
-        annotated_image_url=annotated_url,
-        processing_time_ms=latency_ms,
-        quality=quality_assessment,
-    )
-
-    return response_payload
+        return response_payload
+    finally:
+        # Guarantee closure and unlinking of spooled temporary files across all exit paths (REL-03)
+        try:
+            await image.close()
+        except Exception:
+            pass

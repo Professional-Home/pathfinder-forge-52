@@ -5,7 +5,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -66,10 +66,14 @@ class ColonyDetector:
 
     def detect(
         self,
-        image_bytes: bytes,
+        image_input: Optional[Union[bytes, BinaryIO, Any]] = None,
         confidence_threshold: float = 0.30,
+        image_bytes: Optional[bytes] = None,
     ) -> Tuple[List[ColonyDetection], int, int, int, Image.Image]:
         """Runs colony detection and returns bounding boxes, dimensions, latency, and annotated image.
+
+        Supports both raw image bytes and binary file streams (e.g. SpooledTemporaryFile)
+        to prevent unnecessary memory buffering of large uploads (REL-03).
 
         Raises:
             ModelNotConfiguredError: If no trained model is available.
@@ -82,8 +86,17 @@ class ColonyDetector:
             )
 
         # 1. Decode specimen image safely with Pillow
+        raw_source = image_input if image_input is not None else image_bytes
+        if raw_source is None:
+            raise ValueError("No image data provided for colony detection.")
+
         try:
-            image = Image.open(io.BytesIO(image_bytes))
+            if isinstance(raw_source, (bytes, bytearray)):
+                image = Image.open(io.BytesIO(raw_source))
+            else:
+                if hasattr(raw_source, "seek"):
+                    raw_source.seek(0)
+                image = Image.open(raw_source)
             # Normalize to standard RGB (handles CMYK, RGBA, Grayscale, etc.)
             image = image.convert("RGB")
         except Exception as e:

@@ -523,6 +523,201 @@ def test_cors_configuration_resolution():
     print("[PASS] test_cors_configuration_resolution passed successfully.")
 
 
+def test_rel03_zero_byte_upload_rejected():
+    """Verifies that 0-byte uploads are rejected with 400 INVALID_IMAGE and never reach detector (REL-03 A)."""
+    with patch("app.detector.ColonyDetector.detect") as mock_detect:
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("zero.jpg", io.BytesIO(b""), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert response.status_code == 400
+            data = response.json()
+            assert data["success"] is False
+            assert data["error"]["code"] == "INVALID_IMAGE"
+            assert "empty" in data["error"]["message"].lower()
+            mock_detect.assert_not_called()
+    print("[PASS] test_rel03_zero_byte_upload_rejected passed.")
+
+
+def test_rel03_under_limit_upload_accepted():
+    """Verifies that valid images under the 5 MB limit are accepted and processed (REL-03 B)."""
+    img = Image.new("RGB", (200, 200), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("under_limit.jpg", buf, "image/jpeg")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        data = response.json()
+        assert data["success"] is True
+        assert data["image"]["width"] == 200
+        assert data["image"]["height"] == 200
+    print("[PASS] test_rel03_under_limit_upload_accepted passed.")
+
+
+def test_rel03_exactly_at_limit_upload_deterministic():
+    """Verifies deterministic boundary behavior: exactly 5 MB accepted, 5 MB + 1 byte rejected (REL-03 C)."""
+    limit_bytes = 5 * 1024 * 1024  # 5,242,880 bytes
+
+    # 1. Create a valid JPEG and pad to exactly 5,242,880 bytes
+    img = Image.new("RGB", (100, 100), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    raw_jpeg = buf.getvalue()
+    assert len(raw_jpeg) < limit_bytes
+    exact_limit_payload = raw_jpeg + b"\x00" * (limit_bytes - len(raw_jpeg))
+    assert len(exact_limit_payload) == limit_bytes
+
+    with TestClient(app) as client:
+        # At exactly 5 MB, request is accepted (not 413)
+        res_exact = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("exact_5mb.jpg", io.BytesIO(exact_limit_payload), "image/jpeg")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert res_exact.status_code == 200, f"Expected 200 at limit, got {res_exact.status_code}: {res_exact.text}"
+        data_exact = res_exact.json()
+        assert data_exact["success"] is True
+
+        # At exactly 5 MB + 1 byte, request is rejected with 413 IMAGE_TOO_LARGE
+        over_one_byte_payload = exact_limit_payload + b"x"
+        assert len(over_one_byte_payload) == limit_bytes + 1
+
+        res_over = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("over_1byte.jpg", io.BytesIO(over_one_byte_payload), "image/jpeg")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert res_over.status_code == 413, f"Expected 413 at limit+1, got {res_over.status_code}"
+        data_over = res_over.json()
+        assert data_over["success"] is False
+        assert data_over["error"]["code"] == "IMAGE_TOO_LARGE"
+        assert "5.0 mb" in data_over["error"]["message"].lower()
+
+    print("[PASS] test_rel03_exactly_at_limit_upload_deterministic passed.")
+
+
+def test_rel03_over_limit_upload_rejected_before_inference():
+    """Verifies that oversized uploads (> 5 MB) are rejected before detector is called (REL-03 D)."""
+    oversized = b"x" * (5 * 1024 * 1024 + 1024)  # 5 MB + 1 KB
+
+    with patch("app.detector.ColonyDetector.detect") as mock_detect:
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("oversized.jpg", io.BytesIO(oversized), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert response.status_code == 413
+            data = response.json()
+            assert data["success"] is False
+            assert data["error"]["code"] == "IMAGE_TOO_LARGE"
+            mock_detect.assert_not_called()
+
+    print("[PASS] test_rel03_over_limit_upload_rejected_before_inference passed.")
+
+
+def test_rel03_large_multipart_disk_spooling():
+    """Verifies that uploads > 1 MB roll over to disk (SpooledTemporaryFile) rather than buffering in RAM (REL-03 E)."""
+    # Create an image ~1.5 MB (> Starlette's 1 MB spool_max_size threshold)
+    img = Image.new("RGB", (1000, 1000), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=95)
+    large_bytes = buf.getvalue()
+    # Pad to ensure it exceeds 1.5 MB
+    if len(large_bytes) < 1500000:
+        large_bytes = large_bytes + b"\x00" * (1500000 - len(large_bytes))
+    assert len(large_bytes) > 1024 * 1024, "Payload must exceed Starlette 1 MB spool threshold"
+
+    spooled_file_inspected = {}
+
+    from app.detector import ColonyDetector
+    original_detect = ColonyDetector.detect
+
+    def spy_detect(self, *args, **kwargs):
+        image_input = kwargs.get("image_input") or (args[0] if args else None)
+        spooled_file_inspected["is_file_like"] = hasattr(image_input, "read") and hasattr(image_input, "seek")
+        spooled_file_inspected["is_spooled"] = "SpooledTemporaryFile" in type(image_input).__name__
+        spooled_file_inspected["rolled_over"] = getattr(image_input, "_rolled", False)
+        return original_detect(self, *args, **kwargs)
+
+    with patch.object(ColonyDetector, "detect", spy_detect):
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("spooled_dish.jpg", io.BytesIO(large_bytes), "image/jpeg")},
+                data={"confidence_threshold": "0.30"},
+            )
+            assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+
+    assert spooled_file_inspected.get("is_file_like") is True, "Image input passed to detector must be a file stream"
+    assert spooled_file_inspected.get("is_spooled") is True, "Image input must be SpooledTemporaryFile"
+    assert spooled_file_inspected.get("rolled_over") is True, "Payload > 1 MB must roll over to disk temporary file"
+    print("[PASS] test_rel03_large_multipart_disk_spooling passed:", spooled_file_inspected)
+
+
+def test_rel03_cleanup_on_all_execution_paths():
+    """Verifies that temporary files are closed and unlinked across success, failure, abort, and disconnect paths (REL-03 F)."""
+    from unittest.mock import AsyncMock
+    captured_files = []
+
+    from app.main import get_upload_file_size as orig_get_size
+
+    def spy_get_size(upload_file):
+        captured_files.append(upload_file)
+        return orig_get_size(upload_file)
+
+    with patch("app.main.get_upload_file_size", side_effect=spy_get_size):
+        with TestClient(app) as client:
+            # 1. Success path
+            img = Image.new("RGB", (100, 100), color="white")
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG")
+            res1 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("ok.jpg", io.BytesIO(buf.getvalue()), "image/jpeg")},
+            )
+            assert res1.status_code == 200
+            assert captured_files[-1].file.closed is True, "Success path must close SpooledTemporaryFile"
+
+            # 2. Oversized path (413)
+            oversized_data = b"x" * (5 * 1024 * 1024 + 1024)
+            res2 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("huge.jpg", io.BytesIO(oversized_data), "image/jpeg")},
+            )
+            assert res2.status_code == 413
+            assert captured_files[-1].file.closed is True, "Oversized path must close SpooledTemporaryFile"
+
+            # 3. Corrupt image data (400)
+            corrupt_data = b"not-a-valid-jpeg-image-header" * 50
+            res3 = client.post(
+                "/api/v1/detect-colonies",
+                files={"image": ("corrupt.jpg", io.BytesIO(corrupt_data), "image/jpeg")},
+            )
+            assert res3.status_code == 400
+            assert captured_files[-1].file.closed is True, "Corrupt image path must close SpooledTemporaryFile"
+
+            # 4. Disconnect path (499)
+            with patch("starlette.requests.Request.is_disconnected", new_callable=AsyncMock) as mock_disc:
+                mock_disc.return_value = True
+                res4 = client.post(
+                    "/api/v1/detect-colonies",
+                    files={"image": ("disc.jpg", io.BytesIO(buf.getvalue()), "image/jpeg")},
+                )
+                assert res4.status_code == 499
+                assert captured_files[-1].file.closed is True, "Disconnect path must close SpooledTemporaryFile"
+
+    print("[PASS] test_rel03_cleanup_on_all_execution_paths passed successfully.")
+
+
 if __name__ == "__main__":
     print("\n--- Running Colony Detector API Tests ---\n")
     test_health_check_with_model()
@@ -543,4 +738,11 @@ if __name__ == "__main__":
     test_client_disconnect_prevents_inference()
     test_output_artifact_serving_and_security()
     test_cors_configuration_resolution()
+    # REL-03 focused test additions
+    test_rel03_zero_byte_upload_rejected()
+    test_rel03_under_limit_upload_accepted()
+    test_rel03_exactly_at_limit_upload_deterministic()
+    test_rel03_over_limit_upload_rejected_before_inference()
+    test_rel03_large_multipart_disk_spooling()
+    test_rel03_cleanup_on_all_execution_paths()
     print("\n--- All Tests Passed Successfully! ---\n")
