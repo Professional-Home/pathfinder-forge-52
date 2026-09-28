@@ -7,11 +7,108 @@ import time
 from pathlib import Path
 from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from app.schemas import ColonyDetection, ColonyQualityAssessment
 
 logger = logging.getLogger("colony_detector")
+
+# Maximum source dimension for input images before normalization (PRF-01)
+# High-resolution mobile phone and lab camera captures (e.g. 6000x4000, 8000x6000) produce excessive
+# uncompressed raster memory (e.g. 144 MB for 48 MP) without improving YOLO11n detection accuracy,
+# since YOLO operates at imgsz=640.
+# A maximum dimension of 2048 px provides 3.2x oversampling relative to YOLO's 640 receptive field,
+# preserves fine punctate colony morphology (sub-millimeter colonies on a 90mm plate have >10px diameter),
+# matches 2K Retina display resolution for browser review,
+# and caps uncompressed RGB bitmap RAM to ~12.5 MB.
+DEFAULT_MAX_SOURCE_DIMENSION = 2048
+MAX_SOURCE_DIMENSION = int(os.getenv("COLONY_MAX_IMAGE_DIMENSION", str(DEFAULT_MAX_SOURCE_DIMENSION)))
+
+# Extreme dimension ceiling for decompression bomb prevention (PRF-01)
+# Images exceeding 10,000 px in either axis are rejected before full raster allocation.
+MAX_ALLOWED_RAW_DIMENSION = int(os.getenv("COLONY_MAX_RAW_DIMENSION", "10000"))
+
+
+class DetectionResult(tuple):
+    """5-tuple compatible return object enriched with source resolution metadata (PRF-01).
+
+    Unpacks identically as (detections, width, height, elapsed_ms, annotated_image)
+    for 100% backward compatibility, while exposing original resolution attributes.
+    """
+
+    def __new__(
+        cls,
+        detections: List[ColonyDetection],
+        width: int,
+        height: int,
+        latency_ms: int,
+        annotated_image: Image.Image,
+        original_width: Optional[int] = None,
+        original_height: Optional[int] = None,
+        was_downscaled: bool = False,
+    ):
+        return super().__new__(
+            cls, (detections, width, height, latency_ms, annotated_image)
+        )
+
+    def __init__(
+        self,
+        detections: List[ColonyDetection],
+        width: int,
+        height: int,
+        latency_ms: int,
+        annotated_image: Image.Image,
+        original_width: Optional[int] = None,
+        original_height: Optional[int] = None,
+        was_downscaled: bool = False,
+    ):
+        self.original_width = original_width or width
+        self.original_height = original_height or height
+        self.was_downscaled = was_downscaled
+
+
+def preprocess_specimen_image(
+    image: Image.Image,
+    max_dimension: int = MAX_SOURCE_DIMENSION,
+) -> Tuple[Image.Image, int, int, bool]:
+    """Normalizes high-resolution specimen images to safe operational dimensions (PRF-01).
+
+    1. Preserves EXIF orientation so rotated mobile camera images are upright.
+    2. Converts to standard RGB color space.
+    3. If dimensions exceed max_dimension, downscales using high-fidelity LANCZOS resampling,
+       preserving the original aspect ratio.
+    4. If dimensions are already within max_dimension, leaves the image unchanged (never upscales).
+
+    Returns:
+        Tuple of (processed_image, raw_width, raw_height, was_downscaled)
+    """
+    # 1. Honor EXIF orientation tag if present (crucial for mobile camera captures)
+    try:
+        transposed = ImageOps.exif_transpose(image)
+        if transposed is not None:
+            image = transposed
+    except Exception as e:
+        logger.warning(f"Could not apply EXIF orientation transpose: {e}")
+
+    # 2. Normalize color mode to RGB
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+
+    raw_width, raw_height = image.size
+
+    # 3. Only downscale if image exceeds max_dimension; never upscale small images
+    if max(raw_width, raw_height) > max_dimension:
+        scale = max_dimension / max(raw_width, raw_height)
+        target_w = max(1, round(raw_width * scale))
+        target_h = max(1, round(raw_height * scale))
+        logger.info(
+            f"[Preprocessing] Downscaling high-resolution input from {raw_width}x{raw_height} "
+            f"to {target_w}x{target_h} (max_dim={max_dimension}, scale={scale:.4f})"
+        )
+        normalized_image = image.resize((target_w, target_h), resample=Image.Resampling.LANCZOS)
+        return normalized_image, raw_width, raw_height, True
+
+    return image, raw_width, raw_height, False
 
 
 class ModelNotConfiguredError(Exception):
@@ -21,9 +118,16 @@ class ModelNotConfiguredError(Exception):
 class ColonyDetector:
     """Manages YOLO colony detection model lifecycle and specimen inference."""
 
-    def __init__(self, model_path: Optional[str] = None):
+    def __init__(
+        self,
+        model_path: Optional[str] = None,
+        max_dimension: int = MAX_SOURCE_DIMENSION,
+        max_raw_dimension: int = MAX_ALLOWED_RAW_DIMENSION,
+    ):
         raw_path = model_path or os.getenv("COLONY_MODEL_PATH", "models/best.pt")
         self.model_path = Path(raw_path)
+        self.max_dimension = max_dimension
+        self.max_raw_dimension = max_raw_dimension
 
         # Resolve relative to project root or current working dir if relative
         if not self.model_path.is_absolute():
@@ -69,15 +173,16 @@ class ColonyDetector:
         image_input: Optional[Union[bytes, BinaryIO, Any]] = None,
         confidence_threshold: float = 0.30,
         image_bytes: Optional[bytes] = None,
-    ) -> Tuple[List[ColonyDetection], int, int, int, Image.Image]:
+    ) -> DetectionResult:
         """Runs colony detection and returns bounding boxes, dimensions, latency, and annotated image.
 
         Supports both raw image bytes and binary file streams (e.g. SpooledTemporaryFile)
         to prevent unnecessary memory buffering of large uploads (REL-03).
+        Safely normalizes high-resolution source dimensions before YOLO inference (PRF-01).
 
         Raises:
             ModelNotConfiguredError: If no trained model is available.
-            ValueError: If image decoding fails.
+            ValueError: If image decoding fails or dimensions exceed decompression ceiling.
         """
         if not self.is_ready():
             raise ModelNotConfiguredError(
@@ -92,28 +197,42 @@ class ColonyDetector:
 
         try:
             if isinstance(raw_source, (bytes, bytearray)):
-                image = Image.open(io.BytesIO(raw_source))
+                raw_image = Image.open(io.BytesIO(raw_source))
             else:
                 if hasattr(raw_source, "seek"):
                     raw_source.seek(0)
-                image = Image.open(raw_source)
-            # Normalize to standard RGB (handles CMYK, RGBA, Grayscale, etc.)
-            image = image.convert("RGB")
+                raw_image = Image.open(raw_source)
+
+            # Check raw header dimensions before raster allocation (defense against decompression bombs)
+            raw_w, raw_h = raw_image.size
+            if max(raw_w, raw_h) > self.max_raw_dimension:
+                raise ValueError(
+                    f"Image dimensions ({raw_w}x{raw_h}) exceed maximum allowed dimension of {self.max_raw_dimension}px."
+                )
+
+            # Preprocess: EXIF orientation, RGB normalization, and high-res downscaling (PRF-01)
+            image, orig_width, orig_height, was_downscaled = preprocess_specimen_image(
+                raw_image,
+                max_dimension=self.max_dimension,
+            )
+        except ValueError:
+            raise
         except Exception as e:
             raise ValueError(f"Failed to decode image data: {e}") from e
 
-        orig_width, orig_height = image.size
+        processed_width, processed_height = image.size
         logger.info(
-            f"[Inference] Processing specimen image ({orig_width}x{orig_height}px) with conf={confidence_threshold}"
+            f"[Inference] Processing specimen image ({processed_width}x{processed_height}px) with conf={confidence_threshold}"
         )
 
         start_time = time.perf_counter()
 
-        # 2. Run real YOLO inference
+        # 2. Run real YOLO inference with locked imgsz=640 invariant
         try:
             results = self.model.predict(
                 source=image,
                 conf=confidence_threshold,
+                imgsz=640,
                 verbose=False,
             )
         except Exception as e:
@@ -151,7 +270,16 @@ class ColonyDetector:
         # 4. Generate annotated image using Pillow
         annotated_image = self._render_annotation(image, detections)
 
-        return detections, orig_width, orig_height, elapsed_ms, annotated_image
+        return DetectionResult(
+            detections=detections,
+            width=processed_width,
+            height=processed_height,
+            latency_ms=elapsed_ms,
+            annotated_image=annotated_image,
+            original_width=orig_width,
+            original_height=orig_height,
+            was_downscaled=was_downscaled,
+        )
 
     def _render_annotation(
         self, image: Image.Image, detections: List[ColonyDetection]

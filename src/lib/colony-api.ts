@@ -25,10 +25,13 @@ export interface ColonyDetection {
   class_name: string;
 }
 
-/** Original image dimensions reported by the ML service */
+/** Dimensions of the processed specimen image and source resolution metadata (PRF-01) */
 export interface ColonyImageMetadata {
   width: number;
   height: number;
+  original_width?: number;
+  original_height?: number;
+  was_downscaled?: boolean;
 }
 
 /** Error details returned by the ML service or API client */

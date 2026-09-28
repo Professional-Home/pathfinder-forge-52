@@ -21,6 +21,15 @@ class ColonyImageMetadata(BaseModel):
 
     width: int = Field(..., ge=1, description="Image width in pixels")
     height: int = Field(..., ge=1, description="Image height in pixels")
+    original_width: Optional[int] = Field(
+        default=None, ge=1, description="Original source image width in pixels before normalization"
+    )
+    original_height: Optional[int] = Field(
+        default=None, ge=1, description="Original source image height in pixels before normalization"
+    )
+    was_downscaled: Optional[bool] = Field(
+        default=False, description="Whether the image was downscaled during preprocessing"
+    )
 
 
 class ColonyQualityAssessment(BaseModel):

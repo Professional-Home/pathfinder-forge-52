@@ -718,6 +718,208 @@ def test_rel03_cleanup_on_all_execution_paths():
     print("[PASS] test_rel03_cleanup_on_all_execution_paths passed successfully.")
 
 
+def test_prf01_small_normal_image_unchanged():
+    """Verifies that an image below maximum dimension remains untouched without downscaling (PRF-01 A)."""
+    from app.detector import preprocess_specimen_image
+
+    img = Image.new("RGB", (1024, 768), color="white")
+    processed, raw_w, raw_h, was_downscaled = preprocess_specimen_image(img, max_dimension=2048)
+    assert processed.size == (1024, 768)
+    assert raw_w == 1024
+    assert raw_h == 768
+    assert was_downscaled is False
+    print("[PASS] test_prf01_small_normal_image_unchanged passed.")
+
+
+def test_prf01_image_exactly_at_limit_deterministic():
+    """Verifies that an image exactly at the configured maximum dimension (2048) remains untouched (PRF-01 B)."""
+    from app.detector import preprocess_specimen_image
+
+    img_square = Image.new("RGB", (2048, 2048), color="white")
+    proc_sq, raw_w, raw_h, downscaled_sq = preprocess_specimen_image(img_square, max_dimension=2048)
+    assert proc_sq.size == (2048, 2048)
+    assert downscaled_sq is False
+
+    img_rect = Image.new("RGB", (2048, 1536), color="white")
+    proc_rect, raw_w, raw_h, downscaled_rect = preprocess_specimen_image(img_rect, max_dimension=2048)
+    assert proc_rect.size == (2048, 1536)
+    assert downscaled_rect is False
+    print("[PASS] test_prf01_image_exactly_at_limit_deterministic passed.")
+
+
+def test_prf01_oversized_image_downscaled_and_aspect_ratio_preserved():
+    """Verifies that an oversized image (4096x2048) is downscaled to max 2048 while preserving 2:1 aspect ratio (PRF-01 C)."""
+    from app.detector import preprocess_specimen_image
+
+    img = Image.new("RGB", (4096, 2048), color="white")
+    processed, raw_w, raw_h, was_downscaled = preprocess_specimen_image(img, max_dimension=2048)
+    assert was_downscaled is True
+    assert raw_w == 4096
+    assert raw_h == 2048
+    assert processed.size == (2048, 1024)
+    orig_ratio = 4096 / 2048
+    new_ratio = processed.size[0] / processed.size[1]
+    assert abs(orig_ratio - new_ratio) < 1e-4
+    print("[PASS] test_prf01_oversized_image_downscaled_and_aspect_ratio_preserved passed.")
+
+
+def test_prf01_small_image_never_upscaled():
+    """Verifies that small specimen images (e.g. 160x120) are never upscaled (PRF-01 D)."""
+    from app.detector import preprocess_specimen_image
+
+    img = Image.new("RGB", (160, 120), color="white")
+    processed, raw_w, raw_h, was_downscaled = preprocess_specimen_image(img, max_dimension=2048)
+    assert processed.size == (160, 120)
+    assert was_downscaled is False
+    assert raw_w == 160
+    assert raw_h == 120
+    print("[PASS] test_prf01_small_image_never_upscaled passed.")
+
+
+def test_prf01_non_square_aspect_ratio_preserved():
+    """Verifies that non-square portrait and landscape images strictly preserve aspect ratio (PRF-01 E)."""
+    from app.detector import preprocess_specimen_image
+
+    # 1. Tall portrait (3000 x 4000)
+    img_tall = Image.new("RGB", (3000, 4000), color="white")
+    proc_tall, _, _, was_downscaled = preprocess_specimen_image(img_tall, max_dimension=2048)
+    assert was_downscaled is True
+    assert proc_tall.size == (1536, 2048)
+    assert abs((3000 / 4000) - (1536 / 2048)) < 1e-4
+
+    # 2. Ultra-wide panorama (5000 x 2500)
+    img_wide = Image.new("RGB", (5000, 2500), color="white")
+    proc_wide, _, _, was_downscaled = preprocess_specimen_image(img_wide, max_dimension=2048)
+    assert was_downscaled is True
+    assert proc_wide.size == (2048, 1024)
+    assert abs((5000 / 2500) - (2048 / 1024)) < 1e-4
+    print("[PASS] test_prf01_non_square_aspect_ratio_preserved passed.")
+
+
+def test_prf01_exif_orientation_handling():
+    """Verifies that camera images with EXIF orientation tag 6 are upright transposed before downscaling (PRF-01 F)."""
+    from app.detector import preprocess_specimen_image
+
+    # Create image 3000x2000 with EXIF tag 6 (indicating 90 deg rotation to 2000x3000 portrait)
+    img = Image.new("RGB", (3000, 2000), color="white")
+    exif = img.getexif()
+    exif[0x0112] = 6  # Orientation: rotate 90 CW
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", exif=exif)
+    buf.seek(0)
+
+    loaded = Image.open(buf)
+    proc, raw_w, raw_h, was_downscaled = preprocess_specimen_image(loaded, max_dimension=2048)
+
+    assert raw_w == 2000
+    assert raw_h == 3000
+    assert proc.size[1] > proc.size[0], "Transposed portrait image height must exceed width"
+    assert proc.size == (1365, 2048)
+    assert was_downscaled is True
+    print("[PASS] test_prf01_exif_orientation_handling passed:", proc.size)
+
+
+def test_prf01_end_to_end_high_res_inference():
+    """Verifies end-to-end API inference on high-res image (3000x3000) produces valid detection response (PRF-01 G)."""
+    img = Image.new("RGB", (3000, 3000), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("high_res_plate.jpg", buf, "image/jpeg")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        data = response.json()
+        assert data["success"] is True
+        assert data["image"]["width"] == 2048
+        assert data["image"]["height"] == 2048
+        assert data["image"]["original_width"] == 3000
+        assert data["image"]["original_height"] == 3000
+        assert data["image"]["was_downscaled"] is True
+        assert "processing_time_ms" in data
+        assert isinstance(data["count"], int)
+        assert "annotated_image_url" in data
+    print("[PASS] test_prf01_end_to_end_high_res_inference passed.")
+
+
+def test_prf01_output_dimensions_and_coordinate_consistency():
+    """Verifies that detection bounding boxes and saved annotated artifact dimensions match response.image (PRF-01 H)."""
+    from PIL import ImageDraw
+    from app.main import OUTPUTS_DIR
+
+    # Create image 4000x3000 with synthetic colony dots
+    img = Image.new("RGB", (4000, 3000), color=(240, 240, 240))
+    d = ImageDraw.Draw(img)
+    d.ellipse([1800, 1300, 2200, 1700], fill=(200, 180, 150), outline=(100, 80, 50))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("colony_dot.jpg", buf, "image/jpeg")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        resp_w = data["image"]["width"]
+        resp_h = data["image"]["height"]
+
+        # 1. Verify processed image dimensions are normalized
+        assert resp_w == 2048
+        assert resp_h == 1536
+        assert data["image"]["was_downscaled"] is True
+
+        # 2. Verify all bounding box coordinates fall strictly within [0, resp_w] x [0, resp_h]
+        for det in data["detections"]:
+            assert 0 <= det["x1"] <= resp_w, f"x1 {det['x1']} out of bounds for width {resp_w}"
+            assert 0 <= det["x2"] <= resp_w, f"x2 {det['x2']} out of bounds for width {resp_w}"
+            assert 0 <= det["y1"] <= resp_h, f"y1 {det['y1']} out of bounds for height {resp_h}"
+            assert 0 <= det["y2"] <= resp_h, f"y2 {det['y2']} out of bounds for height {resp_h}"
+            assert det["x1"] <= det["x2"]
+            assert det["y1"] <= det["y2"]
+
+        # 3. Verify on-disk annotated artifact image matches response dimensions exactly
+        annotated_url = data["annotated_image_url"]
+        fname = annotated_url.split("/")[-1]
+        artifact_path = OUTPUTS_DIR / fname
+        assert artifact_path.exists(), "Annotated artifact must exist on disk"
+
+        with Image.open(artifact_path) as art_img:
+            assert art_img.size == (resp_w, resp_h), (
+                f"Annotated artifact size {art_img.size} must match response dimensions {(resp_w, resp_h)}"
+            )
+
+    print("[PASS] test_prf01_output_dimensions_and_coordinate_consistency passed.")
+
+
+def test_prf01_extreme_dimension_decompression_ceiling_rejected():
+    """Verifies that an image exceeding the extreme dimension limit (10000px) is rejected before raster allocation."""
+    img = Image.new("RGB", (12000, 12000), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/detect-colonies",
+            files={"image": ("extreme_dim.jpg", buf, "image/jpeg")},
+            data={"confidence_threshold": "0.30"},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert data["success"] is False
+        assert data["error"]["code"] == "INVALID_IMAGE"
+        assert "exceed" in data["error"]["message"].lower()
+
+    print("[PASS] test_prf01_extreme_dimension_decompression_ceiling_rejected passed.")
+
+
 if __name__ == "__main__":
     print("\n--- Running Colony Detector API Tests ---\n")
     test_health_check_with_model()
@@ -745,4 +947,14 @@ if __name__ == "__main__":
     test_rel03_over_limit_upload_rejected_before_inference()
     test_rel03_large_multipart_disk_spooling()
     test_rel03_cleanup_on_all_execution_paths()
+    # PRF-01 high-resolution preprocessing test additions
+    test_prf01_small_normal_image_unchanged()
+    test_prf01_image_exactly_at_limit_deterministic()
+    test_prf01_oversized_image_downscaled_and_aspect_ratio_preserved()
+    test_prf01_small_image_never_upscaled()
+    test_prf01_non_square_aspect_ratio_preserved()
+    test_prf01_exif_orientation_handling()
+    test_prf01_end_to_end_high_res_inference()
+    test_prf01_output_dimensions_and_coordinate_consistency()
+    test_prf01_extreme_dimension_decompression_ceiling_rejected()
     print("\n--- All Tests Passed Successfully! ---\n")

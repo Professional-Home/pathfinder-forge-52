@@ -418,11 +418,16 @@ async def detect_colonies(
 
             try:
                 # Pass spooled temporary file directly to avoid allocating in-memory byte buffers (REL-03)
-                detections, width, height, latency_ms, annotated_image = await run_in_threadpool(
+                # and apply safe high-resolution input normalization (PRF-01)
+                detection_result = await run_in_threadpool(
                     detector.detect,
                     image_input=image.file,
                     confidence_threshold=confidence_threshold,
                 )
+                detections, width, height, latency_ms, annotated_image = detection_result
+                original_width = getattr(detection_result, "original_width", width)
+                original_height = getattr(detection_result, "original_height", height)
+                was_downscaled = getattr(detection_result, "was_downscaled", False)
             except ModelNotConfiguredError as e:
                 return make_error_response(
                     status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -475,7 +480,13 @@ async def detect_colonies(
             success=True,
             count=len(detections),
             detections=detections,
-            image=ColonyImageMetadata(width=width, height=height),
+            image=ColonyImageMetadata(
+                width=width,
+                height=height,
+                original_width=original_width,
+                original_height=original_height,
+                was_downscaled=was_downscaled,
+            ),
             annotated_image_url=annotated_url,
             processing_time_ms=latency_ms,
             quality=quality_assessment,
