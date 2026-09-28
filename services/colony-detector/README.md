@@ -49,6 +49,7 @@ Create a local `.env` file in `services/colony-detector/` (refer to `.env.exampl
 | `FRONTEND_ORIGIN` | `http://localhost:8080,http://localhost:5173` | Allowed CORS origins (comma-separated) |
 | `COLONY_MODEL_PATH` | `models/best.pt` | Path to trained YOLO PyTorch weights |
 | `PUBLIC_BASE_URL` | `http://localhost:8000` | Base URL used for constructing annotated image artifact links |
+| `COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS` | `600` | Periodic background output artifact pruning interval in seconds |
 
 ---
 

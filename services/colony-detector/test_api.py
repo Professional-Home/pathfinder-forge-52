@@ -1289,52 +1289,250 @@ def test_sec04_trusted_proxy_and_anti_spoofing():
     print("[PASS] test_sec04_trusted_proxy_and_anti_spoofing passed.")
 
 
+# =========================================================================
+# Background Colony Artifact Cleanup Tests
+# =========================================================================
+
+
+def test_bg_cleanup_configuration():
+    """Verifies default, custom, and safe fallback handling for COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS."""
+    from app.main import get_cleanup_interval_from_env, DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+
+    # 1. Default when unset
+    with patch.dict("os.environ", {}, clear=True):
+        assert get_cleanup_interval_from_env() == DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+        assert get_cleanup_interval_from_env() == 600
+
+    # 2. Valid custom positive integer
+    with patch.dict("os.environ", {"COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS": "120"}):
+        assert get_cleanup_interval_from_env() == 120
+
+    # 3. Valid custom positive float is converted to integer
+    with patch.dict("os.environ", {"COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS": "300.5"}):
+        assert get_cleanup_interval_from_env() == 300
+
+    # 4. Zero interval falls back safely to default (prevents busy loop)
+    with patch.dict("os.environ", {"COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS": "0"}):
+        assert get_cleanup_interval_from_env() == DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+
+    # 5. Negative interval falls back safely to default
+    with patch.dict("os.environ", {"COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS": "-10"}):
+        assert get_cleanup_interval_from_env() == DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+
+    # 6. Non-numeric string falls back safely to default
+    with patch.dict("os.environ", {"COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS": "invalid_seconds"}):
+        assert get_cleanup_interval_from_env() == DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+
+    # 7. Infinity or NaN falls back safely to default
+    with patch.dict("os.environ", {"COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS": "inf"}):
+        assert get_cleanup_interval_from_env() == DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+    with patch.dict("os.environ", {"COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS": "nan"}):
+        assert get_cleanup_interval_from_env() == DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+
+    print("[PASS] test_bg_cleanup_configuration passed.")
+
+
+def test_bg_cleanup_lifecycle_management():
+    """Verifies that the background cleanup task starts exactly once and is cleanly cancelled on shutdown without orphans."""
+    import asyncio
+
+    with TestClient(app) as client:
+        # App is alive inside the context manager
+        cleanup_task = getattr(app.state, "cleanup_task", None)
+        assert cleanup_task is not None, "Cleanup task should be stored on app.state"
+        assert isinstance(cleanup_task, asyncio.Task), "Cleanup task must be an asyncio.Task"
+        assert not cleanup_task.done(), "Cleanup task should be running while app is active"
+        assert cleanup_task.get_name() == "colony_artifact_cleanup"
+
+        # Verify endpoint works normally while cleanup task is alive
+        res = client.get("/health")
+        assert res.status_code == 200
+
+    # TestClient context exited -> lifespan shutdown triggered
+    assert cleanup_task.done(), "Cleanup task must be terminated when lifespan shuts down"
+    # Task was either cancelled or completed upon cancellation
+    assert cleanup_task.cancelled() or cleanup_task.done()
+
+    print("[PASS] test_bg_cleanup_lifecycle_management passed.")
+
+
+def test_bg_cleanup_periodic_execution_and_resilience():
+    """Verifies periodic cleanup invokes prune logic, recovers from cycle errors, and cancels cleanly."""
+    import asyncio
+    from app.main import run_periodic_artifact_cleanup
+
+    calls = []
+    cycle_count = 0
+
+    def mock_prune(outputs_dir, max_age_seconds, max_files, **kwargs):
+        nonlocal cycle_count
+        cycle_count += 1
+        calls.append((outputs_dir, max_age_seconds, max_files))
+        if cycle_count == 1:
+            # Simulate a transient filesystem error in cycle 1
+            raise OSError("Simulated transient disk I/O error during scan")
+        return 3  # cycle 2 succeeds and reports 3 removed
+
+    sleep_count = 0
+
+    async def mock_sleep(interval):
+        nonlocal sleep_count
+        sleep_count += 1
+        assert interval == 15
+        if sleep_count > 2:
+            # Trigger cancellation after 2 full cycles
+            raise asyncio.CancelledError()
+
+    async def _run_test():
+        dummy_dir = Path("/tmp/mock_colony_outputs")
+        with patch("app.main.prune_output_artifacts", side_effect=mock_prune), \
+             patch("asyncio.sleep", side_effect=mock_sleep):
+            try:
+                await run_periodic_artifact_cleanup(
+                    outputs_dir=dummy_dir,
+                    interval_seconds=15,
+                    max_age_seconds=1800,
+                    max_files=40,
+                )
+            except asyncio.CancelledError:
+                pass
+
+    asyncio.run(_run_test())
+
+    # Cycle 1 raised OSError, but loop did not crash and ran cycle 2
+    assert cycle_count == 2, f"Expected 2 cleanup cycles executed, got {cycle_count}"
+    assert len(calls) == 2
+    assert calls[0] == (Path("/tmp/mock_colony_outputs"), 1800, 40)
+    assert calls[1] == (Path("/tmp/mock_colony_outputs"), 1800, 40)
+
+    print("[PASS] test_bg_cleanup_periodic_execution_and_resilience passed.")
+
+
+def test_bg_cleanup_filesystem_retention_rules():
+    """Verifies background pruning strictly respects artifact naming conventions, age, and max_files limits."""
+    import os
+    import time
+    import tempfile
+    from app.main import prune_output_artifacts
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        now = time.time()
+
+        # 1. Old annotated artifact (> 3600s) -> MUST BE REMOVED
+        stale_artifact = tmp_path / "annotated_stale0123456789abcdef012345.jpg"
+        stale_artifact.write_bytes(b"stale_data")
+        os.utime(stale_artifact, (now - 7200, now - 7200))
+
+        # 2. Fresh annotated artifact (< 3600s) -> MUST BE PRESERVED
+        fresh_artifact = tmp_path / "annotated_fresh0123456789abcdef012345.jpg"
+        fresh_artifact.write_bytes(b"fresh_data")
+        os.utime(fresh_artifact, (now - 30, now - 30))
+
+        # 3. Non-annotated JPEG -> MUST NEVER BE TOUCHED
+        other_jpg = tmp_path / "specimen_sample.jpg"
+        other_jpg.write_bytes(b"specimen")
+        os.utime(other_jpg, (now - 7200, now - 7200))
+
+        # 4. Non-image file -> MUST NEVER BE TOUCHED
+        safe_model = tmp_path / "weights.pt"
+        safe_model.write_bytes(b"weights")
+        os.utime(safe_model, (now - 7200, now - 7200))
+
+        # Run prune
+        removed = prune_output_artifacts(
+            outputs_dir=tmp_path,
+            max_age_seconds=3600,
+            max_files=10,
+        )
+
+        assert removed == 1, f"Expected 1 evicted file, got {removed}"
+        assert not stale_artifact.exists(), "Stale annotated artifact should have been deleted"
+        assert fresh_artifact.exists(), "Fresh annotated artifact must be preserved"
+        assert other_jpg.exists(), "Non-annotated jpg must never be deleted"
+        assert safe_model.exists(), "Non-annotated weights file must never be deleted"
+
+        # 5. Test max_files ceiling eviction
+        extra_fresh = []
+        for i in range(5):
+            f = tmp_path / f"annotated_overflow_{i}.jpg"
+            f.write_bytes(b"overflow")
+            # Stagger timestamps: 0 is oldest, 4 is newest
+            os.utime(f, (now - 50 + i * 5, now - 50 + i * 5))
+            extra_fresh.append(f)
+
+        # Now tmp_path has fresh_artifact + 5 extra_fresh = 6 annotated files
+        # Pruning with max_files=2 should evict 4 oldest files
+        overflow_removed = prune_output_artifacts(
+            outputs_dir=tmp_path,
+            max_age_seconds=3600,
+            max_files=2,
+        )
+        assert overflow_removed == 4, f"Expected 4 evicted files, got {overflow_removed}"
+        remaining = list(tmp_path.glob("annotated_*.jpg"))
+        assert len(remaining) == 2, f"Expected exactly 2 remaining files, got {len(remaining)}"
+
+    print("[PASS] test_bg_cleanup_filesystem_retention_rules passed.")
+
+
 if __name__ == "__main__":
     print("\n--- Running Colony Detector API Tests ---\n")
-    test_health_check_with_model()
-    test_health_check_model_path_leak_prevention()
-    test_health_check_without_model()
-    test_missing_image_file()
-    test_invalid_confidence_threshold_too_low()
-    test_invalid_confidence_threshold_too_high()
-    test_non_image_file()
-    test_oversized_image()
-    test_empty_image_upload()
-    test_missing_model_when_analyzing()
-    test_real_inference_with_model()
-    test_colony_quality_assessment_tiers()
-    test_prune_output_artifacts_retention()
-    test_concurrent_health_during_inference()
-    test_concurrent_inference_throttled_to_max_2()
-    test_client_disconnect_prevents_inference()
-    test_output_artifact_serving_and_security()
-    test_cors_configuration_resolution()
-    # REL-03 focused test additions
-    test_rel03_zero_byte_upload_rejected()
-    test_rel03_under_limit_upload_accepted()
-    test_rel03_exactly_at_limit_upload_deterministic()
-    test_rel03_over_limit_upload_rejected_before_inference()
-    test_rel03_large_multipart_disk_spooling()
-    test_rel03_cleanup_on_all_execution_paths()
-    # PRF-01 high-resolution preprocessing test additions
-    test_prf01_small_normal_image_unchanged()
-    test_prf01_image_exactly_at_limit_deterministic()
-    test_prf01_oversized_image_downscaled_and_aspect_ratio_preserved()
-    test_prf01_small_image_never_upscaled()
-    test_prf01_non_square_aspect_ratio_preserved()
-    test_prf01_exif_orientation_handling()
-    test_prf01_end_to_end_high_res_inference()
-    test_prf01_output_dimensions_and_coordinate_consistency()
-    test_prf01_extreme_dimension_decompression_ceiling_rejected()
-    # SEC-04 rate limiting focused test additions
-    test_sec04_requests_under_limit_accepted()
-    test_sec04_request_exactly_at_limit_deterministic()
-    test_sec04_request_exceeding_limit_returns_429()
-    test_sec04_rate_limited_requests_do_not_invoke_inference()
-    test_sec04_different_client_identities_independent_limits()
-    test_sec04_window_recovery_after_period()
-    test_sec04_concurrency_semaphore_still_caps_inference_at_2()
-    test_sec04_existing_error_behavior_preserved()
-    test_sec04_env_var_configuration_overrides()
-    test_sec04_trusted_proxy_and_anti_spoofing()
+    tests = [
+        test_health_check_with_model,
+        test_health_check_model_path_leak_prevention,
+        test_health_check_without_model,
+        test_missing_image_file,
+        test_invalid_confidence_threshold_too_low,
+        test_invalid_confidence_threshold_too_high,
+        test_non_image_file,
+        test_oversized_image,
+        test_empty_image_upload,
+        test_missing_model_when_analyzing,
+        test_real_inference_with_model,
+        test_colony_quality_assessment_tiers,
+        test_prune_output_artifacts_retention,
+        test_concurrent_health_during_inference,
+        test_concurrent_inference_throttled_to_max_2,
+        test_client_disconnect_prevents_inference,
+        test_output_artifact_serving_and_security,
+        test_cors_configuration_resolution,
+        # REL-03 focused test additions
+        test_rel03_zero_byte_upload_rejected,
+        test_rel03_under_limit_upload_accepted,
+        test_rel03_exactly_at_limit_upload_deterministic,
+        test_rel03_over_limit_upload_rejected_before_inference,
+        test_rel03_large_multipart_disk_spooling,
+        test_rel03_cleanup_on_all_execution_paths,
+        # PRF-01 high-resolution preprocessing test additions
+        test_prf01_small_normal_image_unchanged,
+        test_prf01_image_exactly_at_limit_deterministic,
+        test_prf01_oversized_image_downscaled_and_aspect_ratio_preserved,
+        test_prf01_small_image_never_upscaled,
+        test_prf01_non_square_aspect_ratio_preserved,
+        test_prf01_exif_orientation_handling,
+        test_prf01_end_to_end_high_res_inference,
+        test_prf01_output_dimensions_and_coordinate_consistency,
+        test_prf01_extreme_dimension_decompression_ceiling_rejected,
+        # SEC-04 rate limiting focused test additions
+        test_sec04_requests_under_limit_accepted,
+        test_sec04_request_exactly_at_limit_deterministic,
+        test_sec04_request_exceeding_limit_returns_429,
+        test_sec04_rate_limited_requests_do_not_invoke_inference,
+        test_sec04_different_client_identities_independent_limits,
+        test_sec04_window_recovery_after_period,
+        test_sec04_concurrency_semaphore_still_caps_inference_at_2,
+        test_sec04_existing_error_behavior_preserved,
+        test_sec04_env_var_configuration_overrides,
+        test_sec04_trusted_proxy_and_anti_spoofing,
+        # Background colony artifact cleanup test additions
+        test_bg_cleanup_configuration,
+        test_bg_cleanup_lifecycle_management,
+        test_bg_cleanup_periodic_execution_and_resilience,
+        test_bg_cleanup_filesystem_retention_rules,
+    ]
+    for test_fn in tests:
+        limiter.reset()
+        test_fn()
+        limiter.reset()
     print("\n--- All Tests Passed Successfully! ---\n")
+

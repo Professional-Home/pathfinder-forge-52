@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import math
 import os
 import re
 import time
@@ -49,6 +50,34 @@ ALLOWED_MIME_PREFIXES = ("image/",)
 # Retention policy configuration (P0-2)
 MAX_OUTPUT_AGE_SECONDS = int(os.getenv("MAX_OUTPUT_AGE_SECONDS", "3600"))  # Default 1 hour
 MAX_OUTPUT_FILES = int(os.getenv("MAX_OUTPUT_FILES", "500"))  # Default at most 500 files
+DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS = 600  # Default 10 minutes
+
+
+def get_cleanup_interval_from_env() -> int:
+    """Parses and validates COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS from environment.
+
+    Must be a strictly positive finite interval (> 0).
+    If missing, empty, non-numeric, non-finite, or <= 0, safely falls back to DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS (600s).
+    """
+    raw_val = os.getenv("COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS")
+    if raw_val is None or not raw_val.strip():
+        return DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+
+    try:
+        val = float(raw_val.strip())
+        if not math.isfinite(val) or val <= 0:
+            logger.warning(
+                f"Invalid COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS '{raw_val}': must be a positive finite number. "
+                f"Falling back to default of {DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS} seconds."
+            )
+            return DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
+        return int(val)
+    except ValueError:
+        logger.warning(
+            f"Invalid non-numeric COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS '{raw_val}'. "
+            f"Falling back to default of {DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS} seconds."
+        )
+        return DEFAULT_OUTPUT_CLEANUP_INTERVAL_SECONDS
 
 
 def prune_output_artifacts(
@@ -56,15 +85,19 @@ def prune_output_artifacts(
     max_age_seconds: int,
     max_files: int,
     preserve_filename: Optional[str] = None,
-) -> None:
+) -> int:
     """Safely prunes older annotated JPEG artifacts from outputs_dir to prevent unbounded disk growth.
 
     Never deletes files outside outputs_dir, never deletes non-annotated files,
     and preserves the newly created artifact from the active request.
+
+    Returns:
+        The total count of evicted files.
     """
+    evicted_count = 0
     try:
         if not outputs_dir.exists() or not outputs_dir.is_dir():
-            return
+            return 0
 
         now = time.time()
         surviving = []
@@ -77,6 +110,7 @@ def prune_output_artifacts(
                 mtime = item.stat().st_mtime
                 if now - mtime > max_age_seconds:
                     item.unlink(missing_ok=True)
+                    evicted_count += 1
                     logger.debug(f"Evicted expired artifact: {item.name}")
                 else:
                     surviving.append((mtime, item))
@@ -90,11 +124,53 @@ def prune_output_artifacts(
             for _, path in surviving[:excess_count]:
                 try:
                     path.unlink(missing_ok=True)
+                    evicted_count += 1
                     logger.debug(f"Evicted excess artifact: {path.name}")
                 except OSError as e:
                     logger.warning(f"Failed to evict excess output file {path.name}: {e}")
     except Exception as e:
         logger.warning(f"Unexpected error during output directory pruning: {e}")
+    return evicted_count
+
+
+async def run_periodic_artifact_cleanup(
+    outputs_dir: Path,
+    interval_seconds: int,
+    max_age_seconds: int = MAX_OUTPUT_AGE_SECONDS,
+    max_files: int = MAX_OUTPUT_FILES,
+) -> None:
+    """Periodically purges expired output artifacts outside the event loop while service is idle.
+
+    Runs in an asyncio loop with sleep(interval_seconds).
+    Executes synchronous filesystem cleanup in a worker threadpool using run_in_threadpool.
+    Gracefully handles cancellation on server shutdown without leaving orphaned tasks.
+    """
+    logger.info(
+        f"Background artifact cleanup task started (interval: {interval_seconds}s, "
+        f"max_age: {max_age_seconds}s, max_files: {max_files})."
+    )
+    try:
+        while True:
+            await asyncio.sleep(interval_seconds)
+            try:
+                removed = await run_in_threadpool(
+                    prune_output_artifacts,
+                    outputs_dir=outputs_dir,
+                    max_age_seconds=max_age_seconds,
+                    max_files=max_files,
+                )
+                logger.info(
+                    f"Background artifact cleanup cycle completed: {removed} artifact(s) removed."
+                )
+            except Exception as e:
+                logger.warning(f"Error during periodic artifact cleanup cycle: {e}")
+    except asyncio.CancelledError:
+        logger.info("Background artifact cleanup task received cancellation; stopping cleanly.")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in background artifact cleanup loop: {e}", exc_info=True)
+    finally:
+        logger.info("Background artifact cleanup task stopped.")
 
 
 # Detector instance (singleton)
@@ -160,14 +236,40 @@ def get_upload_file_size(upload_file: UploadFile) -> int:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initializes the ColonyDetector and RateLimiter on application startup."""
+    """Initializes ColonyDetector, RateLimiter, and background artifact cleanup on application startup."""
     global detector, limiter
     model_path = os.getenv("COLONY_MODEL_PATH", "models/best.pt")
     logger.info(f"Starting Colony Detector microservice. Model path configured as: {model_path}")
     detector = ColonyDetector(model_path=model_path)
     app.state.limiter = limiter
+
+    # Start background artifact cleanup task
+    cleanup_interval = get_cleanup_interval_from_env()
+    cleanup_task = asyncio.create_task(
+        run_periodic_artifact_cleanup(
+            outputs_dir=OUTPUTS_DIR,
+            interval_seconds=cleanup_interval,
+            max_age_seconds=MAX_OUTPUT_AGE_SECONDS,
+            max_files=MAX_OUTPUT_FILES,
+        ),
+        name="colony_artifact_cleanup",
+    )
+    app.state.cleanup_task = cleanup_task
+
     yield
-    logger.info("Colony Detector microservice shutting down.")
+
+    # Clean shutdown of background cleanup task
+    logger.info("Colony Detector microservice shutting down; stopping background tasks.")
+    if cleanup_task and not cleanup_task.done():
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.warning(f"Error awaiting cleanup task shutdown: {e}")
+
+    logger.info("Colony Detector microservice shutdown complete.")
 
 
 app = FastAPI(
