@@ -50,7 +50,7 @@ export const Route = createFileRoute("/tools/colony-counter")({
 
 type PageState = "EMPTY" | "READY" | "ANALYZING" | "SUCCESS" | "ERROR";
 
-function ColonyCounterPage() {
+export function ColonyCounterPage() {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [uploadPayload, setUploadPayload] = React.useState<File | null>(null);
   const [optimizationInfo, setOptimizationInfo] =
@@ -67,6 +67,7 @@ function ColonyCounterPage() {
   const [annotatedReportImageUrl, setAnnotatedReportImageUrl] = React.useState<string | null>(null);
   const [activeDemo, setActiveDemo] = React.useState<DemoPlateItem | null>(null);
   const [loadingDemoId, setLoadingDemoId] = React.useState<string | null>(null);
+  const [statusAnnouncement, setStatusAnnouncement] = React.useState<string>("");
 
   const handleCalculationChange = React.useCallback((data: CfuExportData | null) => {
     setCfuData((prev) => {
@@ -122,6 +123,7 @@ function ColonyCounterPage() {
 
     if (!file) {
       setActiveDemo(null);
+      setStatusAnnouncement("Image removed. Upload a new specimen to begin.");
     } else if (activeDemo && file.name !== activeDemo.filename) {
       setActiveDemo(null);
     }
@@ -149,8 +151,10 @@ function ColonyCounterPage() {
       const file = await fetchDemoPlateFile(demo);
       setActiveDemo(demo);
       handleFileSelect(file, file, null);
+      setStatusAnnouncement(`Demo plate loaded: ${demo.name}.`);
     } catch (err: unknown) {
       console.error("Failed to load demo plate file:", err);
+      setPageState("ERROR");
       setErrorMessage("Unable to load demo image file. Please try again.");
     } finally {
       setLoadingDemoId(null);
@@ -162,6 +166,7 @@ function ColonyCounterPage() {
     if (!fileToUpload || pageState === "ANALYZING") return;
 
     setPageState("ANALYZING");
+    setStatusAnnouncement("Analyzing culture plate.");
     setErrorMessage(null);
     setErrorDetails(null);
 
@@ -176,6 +181,7 @@ function ColonyCounterPage() {
 
       setAnalysisResult(response);
       setPageState("SUCCESS");
+      setStatusAnnouncement("Analysis complete. Colony detection results are ready.");
     } catch (err: unknown) {
       // Ignore user-initiated aborts
       if (err instanceof ColonyDetectionApiError && err.code === "REQUEST_ABORTED") {
@@ -220,10 +226,12 @@ function ColonyCounterPage() {
       abortControllerRef.current = null;
     }
     setPageState(selectedFile ? "READY" : "EMPTY");
+    setStatusAnnouncement("Analysis cancelled.");
   };
 
   const handleReset = () => {
     handleFileSelect(null);
+    setStatusAnnouncement("Workspace reset. No image selected.");
   };
 
   const confidencePercentage = Math.round(confidenceThreshold * 100);
@@ -235,6 +243,17 @@ function ColonyCounterPage() {
       </div>
 
       <main className="flex-1">
+        {/* Screen-reader live region for asynchronous workflow status updates */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+          data-testid="colony-counter-status-announcer"
+        >
+          {statusAnnouncement}
+        </div>
+
         {/* Page Header */}
         <section className="relative overflow-hidden border-b border-border/60 bg-surface/30 print:hidden">
           <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-40">
@@ -366,6 +385,7 @@ function ColonyCounterPage() {
                         type="button"
                         variant="outline"
                         onClick={handleCancel}
+                        aria-label="Cancel colony analysis"
                         className="w-full text-xs font-medium border-border/80"
                       >
                         Cancel Analysis
@@ -375,16 +395,22 @@ function ColonyCounterPage() {
                         type="button"
                         onClick={handleAnalyze}
                         disabled={!selectedFile}
+                        aria-busy={pageState === "ANALYZING"}
+                        aria-label={
+                          pageState === "SUCCESS"
+                            ? "Re-analyze Petri dish plate"
+                            : "Analyze Petri dish plate"
+                        }
                         className="w-full font-medium text-xs shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         {pageState === "SUCCESS" ? (
                           <>
-                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
                             Re-analyze Plate
                           </>
                         ) : (
                           <>
-                            <Sparkles className="mr-1.5 h-3.5 w-3.5 text-researcher" />
+                            <Sparkles className="mr-1.5 h-3.5 w-3.5 text-researcher" aria-hidden="true" />
                             Analyze Petri Dish
                           </>
                         )}
@@ -397,6 +423,7 @@ function ColonyCounterPage() {
                         variant="ghost"
                         size="sm"
                         onClick={handleReset}
+                        aria-label="Clear image and results"
                         className="text-xs text-muted-foreground hover:text-foreground"
                         title="Clear image and results"
                       >
@@ -410,7 +437,7 @@ function ColonyCounterPage() {
               {/* Research Guidance Note */}
               <div className="rounded-xl border border-border/60 bg-surface/40 p-4 text-xs text-muted-foreground space-y-1.5">
                 <div className="flex items-center gap-1.5 font-medium text-foreground">
-                  <Info className="h-3.5 w-3.5 text-student" />
+                  <Info className="h-3.5 w-3.5 text-student" aria-hidden="true" />
                   Best Practices for Reliable Detection
                 </div>
                 <ul className="list-disc pl-4 space-y-1 text-[11px] text-muted-foreground">
@@ -425,9 +452,14 @@ function ColonyCounterPage() {
             <div className="space-y-6 lg:col-span-7">
               {/* STATE 1: Analyzing in Progress */}
               {pageState === "ANALYZING" && (
-                <Card className="border-border/80 bg-surface-elevated p-12 text-center shadow-xs">
+                <Card
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                  className="border-border/80 bg-surface-elevated p-12 text-center shadow-xs"
+                >
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-researcher/30 bg-researcher-soft/50 text-researcher shadow-inner">
-                    <Loader2 className="h-7 w-7 animate-spin" />
+                    <Loader2 className="h-7 w-7 animate-spin" aria-hidden="true" />
                   </div>
                   <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
                     Analyzing Petri dish...
@@ -441,11 +473,16 @@ function ColonyCounterPage() {
 
               {/* STATE 2: Error Alert */}
               {pageState === "ERROR" && (
-                <Card className="border-destructive/30 bg-destructive/5 shadow-xs">
+                <Card
+                  role="alert"
+                  aria-live="assertive"
+                  aria-atomic="true"
+                  className="border-destructive/30 bg-destructive/5 shadow-xs"
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                        <AlertCircle className="h-5 w-5" />
+                        <AlertCircle className="h-5 w-5" aria-hidden="true" />
                       </div>
                       <div className="flex-1 space-y-2">
                         <h3 className="text-sm font-semibold text-destructive">
@@ -463,9 +500,10 @@ function ColonyCounterPage() {
                             size="sm"
                             variant="default"
                             onClick={handleAnalyze}
+                            aria-label="Retry colony analysis"
                             className="text-xs"
                           >
-                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
                             Retry Analysis
                           </Button>
                           <Button
@@ -473,6 +511,7 @@ function ColonyCounterPage() {
                             size="sm"
                             variant="outline"
                             onClick={handleReset}
+                            aria-label="Use different image"
                             className="text-xs"
                           >
                             Use Different Image

@@ -133,19 +133,21 @@ export function ColonyDemoPlates({
                     variant={isSelected ? "default" : "outline"}
                     onClick={() => onSelectDemo(demo)}
                     disabled={disabled || isLoadingThis}
+                    aria-busy={isLoadingThis}
+                    aria-pressed={isSelected}
+                    aria-label={isLoadingThis ? `Loading ${demo.name}` : `Use ${demo.name}`}
                     className={cn(
                       "w-full h-8 text-xs font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                       isSelected
                         ? "bg-primary text-primary-foreground shadow-xs"
                         : "border-border/80 hover:border-researcher hover:text-researcher",
                     )}
-                    aria-label={`Use ${demo.name}`}
                   >
                     {isLoadingThis ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                     ) : isSelected ? (
                       <>
-                        <CheckCircle2 className="mr-1 h-3.5 w-3.5 text-primary-foreground" />
+                        <CheckCircle2 className="mr-1 h-3.5 w-3.5 text-primary-foreground" aria-hidden="true" />
                         Selected
                       </>
                     ) : (
@@ -160,7 +162,7 @@ export function ColonyDemoPlates({
 
         {/* Scientific Disclaimer */}
         <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-surface/50 p-2.5 text-[11px] text-muted-foreground leading-relaxed">
-          <Info className="h-3.5 w-3.5 text-researcher shrink-0 mt-0.5" />
+          <Info className="h-3.5 w-3.5 text-researcher shrink-0 mt-0.5" aria-hidden="true" />
           <p>
             Demo images are provided for software demonstration only and are not real specimen results.
           </p>

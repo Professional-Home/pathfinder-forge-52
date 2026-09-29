@@ -226,9 +226,14 @@ export function PetriDishUploader({
           )}
         >
           {isPreprocessing ? (
-            <div className="py-6 flex flex-col items-center justify-center space-y-3">
+            <div
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+              className="py-6 flex flex-col items-center justify-center space-y-3"
+            >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-researcher-soft text-researcher shadow-sm animate-pulse">
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
               </div>
               <p className="text-sm font-medium text-foreground">
                 Optimizing large image for upload...
@@ -257,10 +262,12 @@ export function PetriDishUploader({
                   variant="outline"
                   size="sm"
                   disabled={disabled || isPreprocessing}
+                  aria-busy={isPreprocessing}
+                  aria-label="Browse files to upload Petri dish image"
                   onClick={() => fileInputRef.current?.click()}
                   className="border-border/80 hover:border-researcher hover:text-researcher"
                 >
-                  <FileImage className="mr-1.5 h-4 w-4" />
+                  <FileImage className="mr-1.5 h-4 w-4" aria-hidden="true" />
                   Browse Files
                 </Button>
 
@@ -269,10 +276,12 @@ export function PetriDishUploader({
                   variant="outline"
                   size="sm"
                   disabled={disabled || isPreprocessing}
+                  aria-busy={isPreprocessing}
+                  aria-label="Capture Petri dish image with mobile camera"
                   onClick={() => cameraInputRef.current?.click()}
                   className="border-border/80 hover:border-student hover:text-student"
                 >
-                  <Camera className="mr-1.5 h-4 w-4" />
+                  <Camera className="mr-1.5 h-4 w-4" aria-hidden="true" />
                   Mobile Camera
                 </Button>
               </div>
@@ -299,10 +308,12 @@ export function PetriDishUploader({
                 variant="secondary"
                 size="sm"
                 disabled={disabled || isPreprocessing}
+                aria-busy={isPreprocessing}
+                aria-label="Replace image"
                 onClick={() => fileInputRef.current?.click()}
                 className="h-8 rounded-lg bg-background/90 text-xs backdrop-blur-sm hover:bg-background shadow-sm"
               >
-                <RefreshCw className="mr-1 h-3.5 w-3.5" />
+                <RefreshCw className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
                 Replace
               </Button>
 
@@ -349,11 +360,13 @@ export function PetriDishUploader({
             {/* Scientific & UX distinction: Original user file vs optimized upload payload */}
             {activeOptimization && (
               <div
+                role="status"
+                aria-live="polite"
                 data-testid="optimization-feedback"
                 className="rounded-lg bg-surface/80 border border-researcher/30 p-2.5 text-[11px] space-y-1.5"
               >
                 <div className="flex items-center gap-1.5 font-medium text-researcher">
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <span>{USER_OPTIMIZATION_SUCCESS_MESSAGE}</span>
                 </div>
                 <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-x-2">
@@ -376,9 +389,11 @@ export function PetriDishUploader({
       {errorMessage && (
         <div
           role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
           className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
         >
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="flex-1 font-medium">{errorMessage}</div>
         </div>
       )}
