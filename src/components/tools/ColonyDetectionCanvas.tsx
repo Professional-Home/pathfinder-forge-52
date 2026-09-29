@@ -11,6 +11,7 @@ import {
   RotateCcw,
   MousePointer,
   Plus,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -95,6 +96,14 @@ export function ColonyDetectionCanvas({
   const labelHeight = Math.round(labelFontSize * 1.5);
 
   const hasDetections = detections.length > 0;
+  const aiCount = detections.length;
+  const removedCount = removedAiIndices ? removedAiIndices.size : 0;
+  const addedCount = manualColonies.length;
+  const hasModifications = removedCount > 0 || addedCount > 0;
+  const effectiveReviewedCount =
+    reviewedCount !== undefined
+      ? reviewedCount
+      : Math.max(0, aiCount - removedCount + addedCount);
 
   // Clamps pan coordinates so the image doesn't get dragged completely off screen
   const clampPan = React.useCallback(
@@ -345,18 +354,24 @@ export function ColonyDetectionCanvas({
                 size="sm"
                 role="radio"
                 aria-checked={activeTool === "select"}
+                aria-pressed={activeTool === "select"}
+                data-state={activeTool === "select" ? "active" : "inactive"}
+                data-testid="tool-select-button"
                 onClick={() => onSetActiveTool("select")}
                 className={cn(
-                  "h-7 gap-1 px-2.5 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:ring-primary",
+                  "h-7 gap-1 px-2.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
                   activeTool === "select"
                     ? "bg-primary text-primary-foreground shadow-xs hover:bg-primary hover:text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
-                title="Select tool: click an AI box to mark/restore false positives, or click a manual colony to remove"
-                aria-label="Select tool mode"
+                title="Select tool: click an AI marker to remove/restore, or click a manual colony to remove"
+                aria-label="Select tool mode (Active: select detections to remove or restore)"
               >
-                <MousePointer className="h-3 w-3" />
+                <MousePointer className="h-3 w-3" aria-hidden="true" />
                 <span>Select</span>
+                {activeTool === "select" && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground ml-0.5" aria-hidden="true" />
+                )}
               </Button>
 
               <Button
@@ -365,18 +380,24 @@ export function ColonyDetectionCanvas({
                 size="sm"
                 role="radio"
                 aria-checked={activeTool === "add"}
+                aria-pressed={activeTool === "add"}
+                data-state={activeTool === "add" ? "active" : "inactive"}
+                data-testid="tool-add-button"
                 onClick={() => onSetActiveTool("add")}
                 className={cn(
-                  "h-7 gap-1 px-2.5 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:ring-violet-500",
+                  "h-7 gap-1 px-2.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1",
                   activeTool === "add"
                     ? "bg-violet-600 text-white shadow-xs hover:bg-violet-600 hover:text-white dark:bg-violet-500"
                     : "text-muted-foreground hover:text-foreground",
                 )}
-                title="Add Colony tool: click on agar surface to place a manual colony marker"
-                aria-label="Add Colony tool mode"
+                title="Add Colony tool: click or tap on agar surface to place a manual colony marker"
+                aria-label="Add Colony tool mode (Active: click or tap plate to place colony marker)"
               >
-                <Plus className="h-3 w-3" />
+                <Plus className="h-3 w-3" aria-hidden="true" />
                 <span>+ Add Colony</span>
+                {activeTool === "add" && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-white ml-0.5" aria-hidden="true" />
+                )}
               </Button>
             </div>
           )}
@@ -479,6 +500,51 @@ export function ColonyDetectionCanvas({
         </div>
       </div>
 
+      {/* Review Guidance Area (User UX & Interaction Guidance) */}
+      {viewMode === "overlay" && (
+        <div
+          className="rounded-xl border border-border/70 bg-surface/50 p-2.5 text-xs shadow-xs"
+          data-testid="canvas-review-guidance"
+          aria-label="How to review colony detections"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-foreground">
+              <Info className="h-3.5 w-3.5 text-researcher" aria-hidden="true" />
+              <span>Review detections</span>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {hasModifications ? (
+                <span className="font-mono text-foreground font-medium">
+                  AI: {aiCount} · Removed: {removedCount} · Manual: +{addedCount} · Reviewed: {effectiveReviewedCount}
+                </span>
+              ) : (
+                <span className="italic text-muted-foreground">
+                  Review the highlighted detections before using the final count.
+                </span>
+              )}
+            </div>
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 text-[11px] text-muted-foreground">
+            <li className="flex items-start gap-1.5">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+              <span>Select an AI marker to remove a false detection.</span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" aria-hidden="true" />
+              <span>Select a removed marker to restore it.</span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-500" aria-hidden="true" />
+              <span>Switch to Add Colony to mark a colony the AI missed.</span>
+            </li>
+            <li className="flex items-start gap-1.5">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" aria-hidden="true" />
+              <span>Use the mouse, touch, or keyboard to review detections.</span>
+            </li>
+          </ul>
+        </div>
+      )}
+
       {/* Visual Distinction & Accessibility Legend (Phase 6C-3) */}
       {viewMode === "overlay" && (
         <div
@@ -499,6 +565,7 @@ export function ColonyDetectionCanvas({
               />
               <span className="font-medium text-foreground">AI Detected</span>
               <span className="text-[10px] text-muted-foreground">(Solid Box)</span>
+              <span className="sr-only">: Active AI colony detection marker with solid outline</span>
             </div>
 
             {/* 2. AI Excluded / Removed */}
@@ -511,6 +578,7 @@ export function ColonyDetectionCanvas({
               </span>
               <span className="font-medium text-foreground">Excluded</span>
               <span className="text-[10px] text-muted-foreground">(Dashed + ✕)</span>
+              <span className="sr-only">: Removed AI detection marker, excluded from count, dashed outline with ✕ symbol</span>
             </div>
 
             {/* 3. Manually Added */}
@@ -523,6 +591,7 @@ export function ColonyDetectionCanvas({
               </span>
               <span className="font-medium text-foreground">Manual</span>
               <span className="text-[10px] text-muted-foreground">(Reticle +)</span>
+              <span className="sr-only">: Manually added colony marker, circular reticle with + symbol</span>
             </div>
 
             {/* 4. Keyboard Focused */}
@@ -533,6 +602,7 @@ export function ColonyDetectionCanvas({
               />
               <span className="font-medium text-foreground">Focused</span>
               <span className="text-[10px] text-muted-foreground">(Tab / Ring)</span>
+              <span className="sr-only">: Keyboard focused detection marker, dashed highlight ring</span>
             </div>
           </div>
 
@@ -547,29 +617,29 @@ export function ColonyDetectionCanvas({
       {/* Active tool helper banner for keyboard and screen-reader accessibility (Phase 6C-2) */}
       {viewMode === "overlay" && (
         <div
-          className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface/50 border border-border/50 text-[11px] text-muted-foreground"
+          className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-surface/50 border border-border/50 text-[11px] text-muted-foreground"
           role="status"
           aria-live="polite"
         >
           <div className="flex items-center gap-1.5">
             {activeTool === "add" ? (
               <>
-                <Plus className="h-3.5 w-3.5 text-violet-500" />
+                <Plus className="h-3.5 w-3.5 text-violet-500 shrink-0" aria-hidden="true" />
                 <span>
-                  <strong>Add Colony Mode:</strong> Click or tap anywhere on the agar image to place a manual colony marker.
+                  <strong className="text-foreground">Add Colony Mode:</strong> Click or tap a colony location on the agar image to add it. Switch back to Select to review or remove existing markers.
                 </span>
               </>
             ) : (
               <>
-                <MousePointer className="h-3.5 w-3.5 text-primary" />
+                <MousePointer className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
                 <span>
-                  <strong>Select Mode:</strong> Tab to colony detections and press <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">Enter</kbd> or <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">Space</kbd> to toggle false-positive removal.
+                  <strong className="text-foreground">Select Mode:</strong> Select a detection to remove or restore it. Tab to a detection. Press <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">Enter</kbd> or <kbd className="px-1 py-0.5 rounded bg-muted font-mono text-[10px]">Space</kbd> to toggle it.
                 </span>
               </>
             )}
           </div>
           {reviewedCount !== undefined && (
-            <span className="font-mono text-foreground font-medium shrink-0">
+            <span className="font-mono text-foreground font-semibold shrink-0">
               Reviewed: {reviewedCount}
             </span>
           )}

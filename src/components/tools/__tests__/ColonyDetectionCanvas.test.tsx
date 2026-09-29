@@ -323,4 +323,142 @@ describe("ColonyDetectionCanvas Keyboard Accessibility (Phase 6C-2)", () => {
     expect(focusLegend).toHaveTextContent("Focused");
     expect(focusLegend).toHaveTextContent("(Tab / Ring)");
   });
+
+  describe("Review Guidance and Interaction Clarity", () => {
+    it("renders compact review guidance card when detections exist with clear, non-technical instructions", () => {
+      render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="select"
+        />,
+      );
+
+      const guidanceCard = screen.getByTestId("canvas-review-guidance");
+      expect(guidanceCard).toBeInTheDocument();
+      expect(guidanceCard).toHaveAttribute("aria-label", "How to review colony detections");
+
+      // Verify header and empty state factual notice
+      expect(guidanceCard).toHaveTextContent("Review detections");
+      expect(guidanceCard).toHaveTextContent("Review the highlighted detections before using the final count.");
+
+      // Verify all 4 non-technical guidance points
+      expect(guidanceCard).toHaveTextContent("Select an AI marker to remove a false detection.");
+      expect(guidanceCard).toHaveTextContent("Select a removed marker to restore it.");
+      expect(guidanceCard).toHaveTextContent("Switch to Add Colony to mark a colony the AI missed.");
+      expect(guidanceCard).toHaveTextContent("Use the mouse, touch, or keyboard to review detections.");
+    });
+
+    it("displays breakdown of reviewed count in guidance header when human modifications exist", () => {
+      render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          removedAiIndices={new Set([0])}
+          manualColonies={mockManualColonies}
+          activeTool="select"
+          reviewedCount={2}
+        />,
+      );
+
+      const guidanceCard = screen.getByTestId("canvas-review-guidance");
+      expect(guidanceCard).toHaveTextContent("AI: 2 · Removed: 1 · Manual: +1 · Reviewed: 2");
+    });
+
+    it("makes Select and Add Colony modes programmatically identifiable with aria and data attributes", () => {
+      const onSetActiveTool = vi.fn();
+      const { rerender } = render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="select"
+          onSetActiveTool={onSetActiveTool}
+        />,
+      );
+
+      const selectBtn = screen.getByTestId("tool-select-button");
+      const addBtn = screen.getByTestId("tool-add-button");
+
+      // In select mode
+      expect(selectBtn).toHaveAttribute("role", "radio");
+      expect(selectBtn).toHaveAttribute("aria-checked", "true");
+      expect(selectBtn).toHaveAttribute("aria-pressed", "true");
+      expect(selectBtn).toHaveAttribute("data-state", "active");
+
+      expect(addBtn).toHaveAttribute("role", "radio");
+      expect(addBtn).toHaveAttribute("aria-checked", "false");
+      expect(addBtn).toHaveAttribute("aria-pressed", "false");
+      expect(addBtn).toHaveAttribute("data-state", "inactive");
+
+      // Switch to add mode
+      rerender(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="add"
+          onSetActiveTool={onSetActiveTool}
+        />,
+      );
+
+      expect(selectBtn).toHaveAttribute("aria-checked", "false");
+      expect(selectBtn).toHaveAttribute("aria-pressed", "false");
+      expect(selectBtn).toHaveAttribute("data-state", "inactive");
+
+      expect(addBtn).toHaveAttribute("aria-checked", "true");
+      expect(addBtn).toHaveAttribute("aria-pressed", "true");
+      expect(addBtn).toHaveAttribute("data-state", "active");
+    });
+
+    it("displays contextual instructions and discoverable keyboard guidance", () => {
+      const { rerender } = render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="select"
+          reviewedCount={2}
+        />,
+      );
+
+      // Select mode contextual & keyboard text
+      const statusBanner = screen.getByRole("status");
+      expect(statusBanner).toHaveTextContent(/Select Mode:/i);
+      expect(statusBanner).toHaveTextContent(/Select a detection to remove or restore it/i);
+      expect(statusBanner).toHaveTextContent(/Tab to a detection\. Press Enter or Space to toggle it/i);
+
+      // Add mode contextual text
+      rerender(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="add"
+          reviewedCount={2}
+        />,
+      );
+
+      expect(statusBanner).toHaveTextContent(/Add Colony Mode:/i);
+      expect(statusBanner).toHaveTextContent(/Click or tap a colony location on the agar image to add it/i);
+    });
+
+    it("does not create duplicate interactive controls in review guidance", () => {
+      render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="select"
+        />,
+      );
+
+      const guidanceCard = screen.getByTestId("canvas-review-guidance");
+      // Guidance area should only provide informational list items, not redundant actionable buttons or inputs
+      expect(guidanceCard.querySelectorAll("button").length).toBe(0);
+      expect(guidanceCard.querySelectorAll("input").length).toBe(0);
+    });
+  });
 });

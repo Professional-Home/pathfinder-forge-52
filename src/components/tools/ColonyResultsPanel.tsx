@@ -341,7 +341,9 @@ export function ColonyResultsPanel({
           <div className="rounded-lg border border-border/50 bg-surface/30 p-2.5 text-[11px] text-muted-foreground space-y-1">
             <p>
               <strong className="text-foreground font-medium">Review Guidance: </strong>
-              Use Select to remove false positives or Add Colony to mark missed colonies.
+              {hasModifications
+                ? "Human review modifications applied. Use Select or Add Colony to further refine detections."
+                : "Review the highlighted detections before using the final count. Use Select to remove false detections or Add Colony to mark missed colonies."}
             </p>
             <p className="text-[10px] text-muted-foreground/90">
               Manual changes affect the Reviewed Count only. The original AI count is preserved.
