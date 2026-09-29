@@ -26,6 +26,7 @@ import {
 import { ColonyDetectionCanvas } from "@/components/tools/ColonyDetectionCanvas";
 import { ColonyResultsPanel } from "@/components/tools/ColonyResultsPanel";
 import { ColonyPrintReport } from "@/components/tools/ColonyPrintReport";
+import { ColonyWorkflowGuide } from "@/components/tools/ColonyWorkflowGuide";
 import { useColonyReview } from "@/hooks/use-colony-review";
 import type { CfuExportData } from "@/lib/colony-export";
 import {
@@ -314,7 +315,18 @@ export function ColonyCounterPage() {
         </section>
 
         {/* Main Workspace */}
-        <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 print:hidden">
+        <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 print:hidden">
+          {/* Guided Workflow Tracker */}
+          <div className="mb-6 sm:mb-8">
+            <ColonyWorkflowGuide
+              selectedFile={selectedFile}
+              activeDemo={activeDemo}
+              pageState={pageState}
+              hasModifications={review.hasModifications}
+              cfuCalculated={!!cfuData?.isValid}
+            />
+          </div>
+
           <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
             {/* Left Column: Upload & Controls (5 cols on desktop) */}
             <div className="space-y-6 lg:col-span-5">
