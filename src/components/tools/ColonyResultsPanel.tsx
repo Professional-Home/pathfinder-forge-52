@@ -233,120 +233,290 @@ export function ColonyResultsPanel({
         </div>
       )}
 
-      {/* Human-in-the-Loop Manual Review Summary Section */}
-      <Card className="border-border/80 bg-surface-elevated shadow-xs">
-        <CardHeader className="p-4 pb-2">
+      {/* Primary Result Summary & Count Lineage Card */}
+      <Card
+        className="border-border/80 bg-surface-elevated shadow-xs overflow-hidden"
+        data-testid="primary-result-card"
+        role="region"
+        aria-label="Colony detection primary result and count lineage"
+      >
+        <CardHeader className="p-4 pb-3 border-b border-border/50 bg-surface/30">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4 text-violet-500" />
-              <CardTitle className="text-sm font-semibold">Human-in-the-Loop Review</CardTitle>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">
+                Primary Result
+              </span>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "font-mono text-[10px] gap-1 px-2 py-0.5",
+                  hasModifications
+                    ? "border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-400 font-semibold"
+                    : "border-border text-muted-foreground",
+                )}
+                data-testid="count-provenance-badge"
+              >
+                {hasModifications ? (
+                  <>
+                    <UserCheck className="h-3 w-3 text-violet-500" aria-hidden="true" />
+                    <span>Human-reviewed count</span>
+                  </>
+                ) : (
+                  <>
+                    <FlaskConical className="h-3 w-3 text-researcher" aria-hidden="true" />
+                    <span>AI detections</span>
+                  </>
+                )}
+              </Badge>
             </div>
-            <div className="flex items-center gap-2">
-              {hasModifications ? (
-                <>
-                  <Badge
-                    variant="outline"
-                    className="border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-400 font-mono text-[10px]"
-                  >
-                    Human Reviewed
-                  </Badge>
-                  {onResetReview && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={onResetReview}
-                      aria-label="Reset all manual corrections to original AI count"
-                      className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-                      title="Reset all manual corrections to original AI count"
-                    >
-                      <RotateCcw className="mr-1 h-3 w-3" aria-hidden="true" />
-                      Reset Review
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground">
-                  No manual corrections
-                </Badge>
-              )}
-            </div>
+
+            {hasModifications && onResetReview && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onResetReview}
+                aria-label="Reset all manual corrections to original AI count"
+                className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                title="Reset all manual corrections to original AI count"
+              >
+                <RotateCcw className="mr-1 h-3 w-3" aria-hidden="true" />
+                Reset Review
+              </Button>
+            )}
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-2 space-y-3">
-          {/* Metrics comparison grid */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 pt-1">
-            {/* 1. Original AI Count */}
-            <div className="rounded-lg border border-border/60 bg-surface/50 p-2.5">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
-                AI Count
+
+        <CardContent className="p-4 space-y-4">
+          {/* Main Colony Count Hero & Concise Provenance Line */}
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                Reviewed colony count
               </span>
-              <div className="mt-1 font-mono text-xl font-bold text-foreground">{count}</div>
-              <span className="text-[10px] text-muted-foreground">Automated result</span>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span
+                  className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-foreground"
+                  data-testid="primary-reviewed-count"
+                >
+                  {effectiveReviewedCount}
+                </span>
+                <span className="text-sm font-medium text-muted-foreground">
+                  {effectiveReviewedCount === 1 ? "colony" : "colonies"}
+                </span>
+              </div>
+              <p
+                className="mt-1 text-xs text-muted-foreground font-medium"
+                data-testid="provenance-summary-line"
+              >
+                {hasModifications
+                  ? `AI detected ${count} · ${removedCount} removed · ${addedCount} manually added`
+                  : `AI detected ${count} · No manual changes`}
+              </p>
             </div>
 
-            {/* 2. Removed AI False Positives */}
-            <div className="rounded-lg border border-border/60 bg-surface/50 p-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
-                  Removed AI
-                </span>
-                <MinusCircle className="h-3 w-3 text-rose-500/70" />
-              </div>
-              <div className="mt-1 font-mono text-xl font-bold text-rose-500">
-                {removedCount > 0 ? `−${removedCount}` : "0"}
-              </div>
-              <span className="text-[10px] text-muted-foreground">False positives</span>
-            </div>
-
-            {/* 3. Manual Added Missed Colonies */}
-            <div className="rounded-lg border border-border/60 bg-surface/50 p-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
-                  Manual Added
-                </span>
-                <PlusCircle className="h-3 w-3 text-violet-500/70" />
-              </div>
-              <div className="mt-1 font-mono text-xl font-bold text-violet-500">
-                {addedCount > 0 ? `+${addedCount}` : "0"}
-              </div>
-              <span className="text-[10px] text-muted-foreground">Missed colonies</span>
-            </div>
-
-            {/* 4. Reviewed Count */}
-            <div
-              className={cn(
-                "rounded-lg border p-2.5 transition-colors",
-                hasModifications
-                  ? "border-violet-500/50 bg-violet-500/5"
-                  : "border-border/60 bg-surface/50",
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
-                  Reviewed Count
-                </span>
-                <CheckCircle2 className="h-3 w-3 text-researcher" />
-              </div>
-              <div className="mt-1 font-mono text-xl font-bold text-foreground">
-                {effectiveReviewedCount}
-              </div>
-              <span className="text-[10px] text-muted-foreground">
-                {hasModifications ? "Human-reviewed result" : "Matches AI baseline"}
+            {/* Factual explanation of count source */}
+            <div className="max-w-xs text-left sm:text-right text-[11px] text-muted-foreground" data-testid="count-provenance-explanation">
+              <span className="block font-medium text-foreground/80">
+                {hasModifications ? "Source: Human-reviewed count" : "Source: AI detections baseline"}
+              </span>
+              <span className="block text-[10px] mt-0.5 leading-relaxed">
+                {hasModifications
+                  ? "Human-reviewed count includes AI detections after removals and manual additions."
+                  : "Review detections on the canvas using Select to remove false detections or Add Colony to add missed colonies."}
               </span>
             </div>
           </div>
 
-          {/* Concise Review Guidance Notice */}
-          <div className="rounded-lg border border-border/50 bg-surface/30 p-2.5 text-[11px] text-muted-foreground space-y-1">
-            <p>
-              <strong className="text-foreground font-medium">Review Guidance: </strong>
-              {hasModifications
-                ? "Human review modifications applied. Use Select or Add Colony to further refine detections."
-                : "Review the highlighted detections before using the final count. Use Select to remove false detections or Add Colony to mark missed colonies."}
+          {/* Mathematical Count Lineage Breakdown */}
+          <div
+            className="rounded-xl border border-border/70 bg-surface/50 p-3 text-xs"
+            data-testid="count-lineage-block"
+            aria-label="Colony count calculation lineage"
+          >
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center justify-between">
+              <span>Count Lineage</span>
+              <span className="font-mono text-[10px] normal-case text-muted-foreground">
+                Mathematical Lineage
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              {/* Lineage Item 1: AI Detected */}
+              <div className="rounded-lg border border-border/60 bg-surface/80 p-2">
+                <span className="text-[10px] text-muted-foreground block">AI detected</span>
+                <div className="mt-0.5 font-mono text-base font-bold text-foreground" data-testid="lineage-ai-count">
+                  {count}
+                </div>
+                <span className="text-[9px] text-muted-foreground">Automated model</span>
+              </div>
+
+              {/* Lineage Item 2: Removed */}
+              <div className="rounded-lg border border-border/60 bg-surface/80 p-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground block">− Removed</span>
+                  <MinusCircle className="h-3 w-3 text-rose-500/70" aria-hidden="true" />
+                </div>
+                <div
+                  className={cn(
+                    "mt-0.5 font-mono text-base font-bold",
+                    removedCount > 0 ? "text-rose-500" : "text-muted-foreground",
+                  )}
+                  data-testid="lineage-removed-count"
+                >
+                  {removedCount > 0 ? `−${removedCount}` : "0"}
+                </div>
+                <span className="text-[9px] text-muted-foreground">False positives</span>
+              </div>
+
+              {/* Lineage Item 3: Manual Added */}
+              <div className="rounded-lg border border-border/60 bg-surface/80 p-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground block">+ Manual</span>
+                  <PlusCircle className="h-3 w-3 text-violet-500/70" aria-hidden="true" />
+                </div>
+                <div
+                  className={cn(
+                    "mt-0.5 font-mono text-base font-bold",
+                    addedCount > 0 ? "text-violet-500" : "text-muted-foreground",
+                  )}
+                  data-testid="lineage-added-count"
+                >
+                  {addedCount > 0 ? `+${addedCount}` : "0"}
+                </div>
+                <span className="text-[9px] text-muted-foreground">Missed colonies</span>
+              </div>
+
+              {/* Lineage Item 4: Reviewed Count */}
+              <div
+                className={cn(
+                  "rounded-lg border p-2 transition-colors",
+                  hasModifications
+                    ? "border-violet-500/50 bg-violet-500/10"
+                    : "border-border/70 bg-surface/80",
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold text-foreground block">= Reviewed count</span>
+                  <CheckCircle2 className="h-3 w-3 text-researcher" aria-hidden="true" />
+                </div>
+                <div className="mt-0.5 font-mono text-base font-bold text-foreground" data-testid="lineage-reviewed-count">
+                  {effectiveReviewedCount}
+                </div>
+                <span className="text-[9px] text-muted-foreground">
+                  {hasModifications ? "Human-reviewed count" : "Matches AI baseline"}
+                </span>
+              </div>
+            </div>
+
+            {/* Screen-reader accessible complete lineage string */}
+            <p className="sr-only">
+              Count lineage: AI detected {count} minus {removedCount} removed plus {addedCount} manual equals reviewed count {effectiveReviewedCount}.
             </p>
-            <p className="text-[10px] text-muted-foreground/90">
-              Manual changes affect the Reviewed Count only. The original AI count is preserved.
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Plate Quality, Density & Screening Summary */}
+      <Card
+        className="border-border/80 bg-surface-elevated shadow-xs"
+        data-testid="quality-density-summary"
+        role="region"
+        aria-label="Plate density, crowding, and review recommendation summary"
+      >
+        <CardHeader className="p-4 pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-startup" aria-hidden="true" />
+              <span>Plate Density & Screening Indicators</span>
+            </CardTitle>
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] font-mono font-semibold uppercase tracking-wider",
+                reviewRecommended
+                  ? "border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                  : "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+              )}
+              data-testid="review-recommendation-badge"
+            >
+              {reviewRecommended ? "Review Recommended" : "Review Available"}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-4 pt-2 space-y-3">
+          {/* 3-Column Indicator Grid: Density, Overlap/Crowding, Review Recommendation */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+            {/* 1. Density Tier */}
+            <div className="rounded-lg border border-border/60 bg-surface/40 p-2.5 space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                Colony Density
+              </span>
+              <div className="font-medium text-foreground text-xs" data-testid="density-tier-label">
+                {densityLevel === "ultra_high" && `Ultra-high density — ${count} detected colonies`}
+                {densityLevel === "high" && `High density — ${count} detected colonies`}
+                {densityLevel === "medium" && `Medium density — ${count} detected colonies`}
+                {densityLevel === "low" && `Low density — ${count} detected colonies`}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {densityLevel === "ultra_high" && "Over 400 colonies. Confluent lawn / TNTC risk."}
+                {densityLevel === "high" && "201–400 colonies. Crowded colony distribution."}
+                {densityLevel === "medium" && "50–200 colonies. Standard countable range (30–300 CFU)."}
+                {densityLevel === "low" && "Under 50 colonies. Dispersed colony distribution."}
+              </p>
+            </div>
+
+            {/* 2. Detected Overlap & Crowding */}
+            <div className="rounded-lg border border-border/60 bg-surface/40 p-2.5 space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                Detected Overlap & Crowding
+              </span>
+              <div className="font-medium text-foreground text-xs" data-testid="overlap-crowding-label">
+                {typeof overlapRatio === "number" ? (
+                  overlapRatio >= 0.25
+                    ? `High detected overlap — ${Math.round(overlapRatio * 100)}%`
+                    : overlapRatio >= 0.10
+                      ? `Moderate detected overlap — ${Math.round(overlapRatio * 100)}%`
+                      : `Low detected overlap — ${Math.round(overlapRatio * 100)}%`
+                ) : (
+                  `Confluence risk: ${confluenceRisk}`
+                )}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {confluenceRisk === "high"
+                  ? "Adjacent colony borders merge; cluster separation may be required."
+                  : confluenceRisk === "medium"
+                    ? "Minor spatial overlap between nearby colonies."
+                    : "Low spatial clustering; boundaries are well-separated."}
+              </p>
+            </div>
+
+            {/* 3. Review Recommendation */}
+            <div className="rounded-lg border border-border/60 bg-surface/40 p-2.5 space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                Review Status
+              </span>
+              <div className="font-medium text-foreground text-xs" data-testid="review-status-label">
+                {reviewRecommended ? "Human review recommended" : "Human review is available"}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                {reviewRecommended
+                  ? (quality?.reason || "Plate density or detected overlap suggests human verification before reporting.")
+                  : "Plate is within standard countable density. Detections can be refined as desired."}
+              </p>
+            </div>
+          </div>
+
+          {/* Contextual Non-ML Screening Explanation */}
+          <div
+            className="rounded-lg border border-border/50 bg-surface/30 p-2.5 text-[11px] text-muted-foreground flex items-start gap-2"
+            data-testid="quality-signal-explanation"
+          >
+            <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5" aria-hidden="true" />
+            <p className="leading-relaxed">
+              <strong>Quality Screening Notice: </strong>
+              Density and overlap are screening indicators that help identify plates that may need closer human review. They do not represent model accuracy scores or certainty percentages.
             </p>
           </div>
         </CardContent>
@@ -354,34 +524,28 @@ export function ColonyResultsPanel({
 
       {/* Primary KPI Metrics Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {/* Effective Colony Count (Reviewed if modified, otherwise AI baseline) */}
+        {/* Card 1: AI Baseline Count */}
         <Card className="border-border/80 bg-surface-elevated shadow-xs">
           <CardContent className="p-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="font-medium">
-                {hasModifications ? "Reviewed Count" : "Total AI Count"}
-              </span>
-              <FlaskConical className="h-4 w-4 text-researcher" />
+              <span className="font-medium">AI Baseline Count</span>
+              <FlaskConical className="h-4 w-4 text-researcher" aria-hidden="true" />
             </div>
-            <div className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
-              {effectiveReviewedCount}
+            <div className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl" data-testid="kpi-ai-count">
+              {count}
             </div>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {hasModifications
-                ? `AI baseline: ${count} (${removedCount > 0 ? `−${removedCount}` : ""} ${addedCount > 0 ? `+${addedCount}` : ""})`
-                : count === 1
-                  ? "Colony identified"
-                  : "Colonies identified"}
+              {count === 1 ? "1 detection baseline" : `${count} detections baseline`}
             </p>
           </CardContent>
         </Card>
 
-        {/* Processing Time */}
+        {/* Card 2: Inference Latency */}
         <Card className="border-border/80 bg-surface-elevated shadow-xs">
           <CardContent className="p-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-medium">Latency</span>
-              <Clock className="h-4 w-4 text-student" />
+              <Clock className="h-4 w-4 text-student" aria-hidden="true" />
             </div>
             <div className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
               {processing_time_ms}
@@ -391,12 +555,12 @@ export function ColonyResultsPanel({
           </CardContent>
         </Card>
 
-        {/* Average Confidence */}
+        {/* Card 3: Average Confidence */}
         <Card className="border-border/80 bg-surface-elevated shadow-xs">
           <CardContent className="p-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-medium">Avg Confidence</span>
-              <Gauge className="h-4 w-4 text-startup" />
+              <Gauge className="h-4 w-4 text-startup" aria-hidden="true" />
             </div>
             <div className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
               {stats.avgConfidence}%
@@ -409,12 +573,12 @@ export function ColonyResultsPanel({
           </CardContent>
         </Card>
 
-        {/* Resolution & Filter */}
+        {/* Card 4: Cutoff Threshold */}
         <Card className="border-border/80 bg-surface-elevated shadow-xs">
           <CardContent className="p-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-medium">Filter Applied</span>
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <Target className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             </div>
             <div className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
               {typeof appliedThreshold === "number"
@@ -430,11 +594,26 @@ export function ColonyResultsPanel({
         </Card>
       </div>
 
-      {/* Scientific Utilities: Concentration Analysis */}
+      {/* Scientific Utilities: Concentration Analysis & CFU Connection */}
       <div className="space-y-2">
-        <div className="flex items-center gap-1.5 px-0.5 text-xs text-muted-foreground font-medium">
-          <Sparkles className="h-3.5 w-3.5 text-student" />
-          <span>Scientific Utilities & Concentration Analysis</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-0.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 font-medium text-foreground">
+            <Sparkles className="h-3.5 w-3.5 text-student" aria-hidden="true" />
+            <span>Scientific Utilities & Concentration Analysis</span>
+          </div>
+          <div
+            className="text-[11px] font-medium text-muted-foreground flex items-center gap-1"
+            data-testid="cfu-source-connection"
+          >
+            <Info className="h-3 w-3 text-muted-foreground shrink-0" aria-hidden="true" />
+            <span>
+              {activeCfuData?.countSource === "custom"
+                ? "CFU/mL uses a custom laboratory count."
+                : activeCfuData?.countSource === "ai"
+                  ? "CFU/mL uses the automated AI count."
+                  : "CFU/mL uses the reviewed colony count."}
+            </span>
+          </div>
         </div>
         <CfuCalculator
           aiCount={count}
@@ -535,7 +714,7 @@ export function ColonyResultsPanel({
 
           <div className="flex items-center justify-between border-b border-border/50 py-1.5">
             <span className="text-muted-foreground">Inference Pipeline</span>
-            <span className="font-mono font-medium text-foreground">Python + YOLO (best.pt)</span>
+            <span className="font-mono font-medium text-foreground">Python + YOLO11n (best.pt)</span>
           </div>
 
           <div className="flex items-center justify-between border-b border-border/50 py-1.5">

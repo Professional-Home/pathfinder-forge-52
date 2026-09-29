@@ -347,7 +347,7 @@ export function CfuCalculator({
                 {effectiveReviewedCount}
               </div>
               <span className="text-[10px] text-muted-foreground">
-                {hasModifications ? "Human-verified" : "Matches AI baseline"}
+                {hasModifications ? "Human-reviewed" : "Matches AI baseline"}
               </span>
             </button>
 
