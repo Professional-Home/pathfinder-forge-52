@@ -24,6 +24,8 @@ import {
 
 export interface PetriDishUploaderProps {
   selectedFile: File | null;
+  /** Optional pre-computed preview URL to eliminate duplicate object URL allocations */
+  previewUrl?: string | null;
   optimizationInfo?: ImageOptimizationSuccess | null;
   onFileSelect: (
     originalFile: File | null,
@@ -48,6 +50,7 @@ const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".tif", "
 
 export function PetriDishUploader({
   selectedFile,
+  previewUrl: propPreviewUrl,
   optimizationInfo,
   onFileSelect,
   disabled = false,
@@ -56,10 +59,12 @@ export function PetriDishUploader({
 }: PetriDishUploaderProps) {
   const [dragActive, setDragActive] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [internalPreviewUrl, setInternalPreviewUrl] = React.useState<string | null>(null);
   const [isPreprocessing, setIsPreprocessing] = React.useState<boolean>(false);
   const [internalOptimizationResult, setInternalOptimizationResult] =
     React.useState<ImageOptimizationSuccess | null>(null);
+
+  const previewUrl = propPreviewUrl !== undefined ? propPreviewUrl : internalPreviewUrl;
 
   const activeOptimization =
     optimizationInfo !== undefined ? optimizationInfo : internalOptimizationResult;
@@ -68,27 +73,32 @@ export function PetriDishUploader({
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
   const prevSelectedFileRef = React.useRef(selectedFile);
 
-  // Manage object URL lifecycle in memory (avoid memory leaks)
+  // Manage object URL lifecycle in memory when parent does not provide previewUrl
   React.useEffect(() => {
+    if (propPreviewUrl !== undefined) {
+      // Parent component manages previewUrl lifecycle, avoiding duplicate object URL allocations
+      return;
+    }
+
     if (!selectedFile && prevSelectedFileRef.current) {
       setInternalOptimizationResult(null);
-      setPreviewUrl(null);
+      setInternalPreviewUrl(null);
     }
     prevSelectedFileRef.current = selectedFile;
 
     const fileToPreview = activeOptimization?.uploadFile || selectedFile;
     if (!fileToPreview) {
-      setPreviewUrl(null);
+      setInternalPreviewUrl(null);
       return;
     }
 
     const objectUrl = URL.createObjectURL(fileToPreview);
-    setPreviewUrl(objectUrl);
+    setInternalPreviewUrl(objectUrl);
 
     return () => {
       URL.revokeObjectURL(objectUrl);
     };
-  }, [selectedFile, activeOptimization]);
+  }, [selectedFile, activeOptimization, propPreviewUrl]);
 
   const validateFormat = (file: File): { valid: boolean; error?: string } => {
     if (!file) {

@@ -163,4 +163,45 @@ describe("PetriDishUploader Component (UX-03)", () => {
 
     expect(handleFileSelect).toHaveBeenCalledWith(null, null, null);
   });
+
+  describe("Memory & Object URL Lifecycle Optimization", () => {
+    it("skips duplicate URL.createObjectURL allocation when previewUrl prop is provided by parent", () => {
+      const createObjectURLSpy = vi.spyOn(URL, "createObjectURL");
+      const handleFileSelect = vi.fn();
+      const file = new File([new Uint8Array(1024)], "plate.png", { type: "image/png" });
+
+      render(
+        <PetriDishUploader
+          selectedFile={file}
+          previewUrl="blob:http://localhost:3000/parent-managed-preview"
+          onFileSelect={handleFileSelect}
+        />,
+      );
+
+      // Verify PetriDishUploader did not allocate a second object URL in memory
+      expect(createObjectURLSpy).not.toHaveBeenCalled();
+
+      // Verify the preview image renders with parent's previewUrl
+      const previewImg = screen.getByAltText("Uploaded Petri dish specimen preview");
+      expect(previewImg).toHaveAttribute("src", "blob:http://localhost:3000/parent-managed-preview");
+    });
+
+    it("creates and revokes object URL cleanly when used in standalone mode without previewUrl prop", () => {
+      const createObjectURLSpy = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:http://localhost/internal-test");
+      const revokeObjectURLSpy = vi.spyOn(URL, "revokeObjectURL");
+      const handleFileSelect = vi.fn();
+      const file = new File([new Uint8Array(1024)], "standalone.png", { type: "image/png" });
+
+      const { unmount } = render(
+        <PetriDishUploader selectedFile={file} onFileSelect={handleFileSelect} />,
+      );
+
+      expect(createObjectURLSpy).toHaveBeenCalledWith(file);
+
+      // Unmount should promptly revoke the object URL to prevent memory leaks
+      unmount();
+      expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:http://localhost/internal-test");
+    });
+  });
 });
+

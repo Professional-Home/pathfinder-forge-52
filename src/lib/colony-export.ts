@@ -338,12 +338,23 @@ export async function generateAnnotatedPlateImage(params: AnnotatedImageParams):
     const img = new Image();
     img.crossOrigin = "anonymous";
 
-    img.onload = () => {
+    img.onload = async () => {
+      img.onload = null;
+      img.onerror = null;
+      let canvas: HTMLCanvasElement | null = null;
       try {
+        if (typeof img.decode === "function") {
+          try {
+            await img.decode();
+          } catch {
+            // Safe fallback if decode() rejects
+          }
+        }
+
         const width = imageWidth > 0 ? imageWidth : img.naturalWidth || 1024;
         const height = imageHeight > 0 ? imageHeight : img.naturalHeight || 1024;
 
-        const canvas = document.createElement("canvas");
+        canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
@@ -444,14 +455,56 @@ export async function generateAnnotatedPlateImage(params: AnnotatedImageParams):
           ctx.fillText(labelText, labelX + labelPaddingX, labelY + labelHeight / 2);
         });
 
-        const dataUrl = canvas.toDataURL("image/png");
-        resolve(dataUrl);
+        // Convert canvas to Blob URL to prevent heap memory exhaustion from multi-megabyte Base64 strings
+        if (typeof canvas.toBlob === "function") {
+          canvas.toBlob((blob) => {
+            try {
+              if (blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                if (canvas) {
+                  canvas.width = 0;
+                  canvas.height = 0;
+                  canvas = null;
+                }
+                resolve(blobUrl);
+              } else {
+                const dataUrl = canvas!.toDataURL("image/png");
+                if (canvas) {
+                  canvas.width = 0;
+                  canvas.height = 0;
+                  canvas = null;
+                }
+                resolve(dataUrl);
+              }
+            } catch (blobErr) {
+              if (canvas) {
+                canvas.width = 0;
+                canvas.height = 0;
+                canvas = null;
+              }
+              reject(blobErr);
+            }
+          }, "image/png");
+        } else {
+          const dataUrl = canvas.toDataURL("image/png");
+          canvas.width = 0;
+          canvas.height = 0;
+          canvas = null;
+          resolve(dataUrl);
+        }
       } catch (err) {
+        if (canvas) {
+          canvas.width = 0;
+          canvas.height = 0;
+          canvas = null;
+        }
         reject(err);
       }
     };
 
     img.onerror = () => {
+      img.onload = null;
+      img.onerror = null;
       reject(new Error("Failed to load specimen image for annotated canvas rendering."));
     };
 

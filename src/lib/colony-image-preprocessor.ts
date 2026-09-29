@@ -157,8 +157,23 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
       objectUrl = URL.createObjectURL(file);
       const img = new Image();
       await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Image decode failed"));
+        img.onload = async () => {
+          img.onload = null;
+          img.onerror = null;
+          if (typeof img.decode === "function") {
+            try {
+              await img.decode();
+            } catch {
+              // Safe fallback
+            }
+          }
+          resolve();
+        };
+        img.onerror = () => {
+          img.onload = null;
+          img.onerror = null;
+          reject(new Error("Image decode failed"));
+        };
         img.src = objectUrl!;
       });
       imgElement = img;
@@ -171,6 +186,7 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
       try {
         bitmap.close();
       } catch {}
+      bitmap = null;
     }
     return {
       success: false,
@@ -185,6 +201,7 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
       try {
         bitmap.close();
       } catch {}
+      bitmap = null;
     }
     return {
       success: false,
@@ -213,6 +230,7 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
       try {
         bitmap.close();
       } catch {}
+      bitmap = null;
     }
     canvas.width = 0;
     canvas.height = 0;
@@ -228,14 +246,6 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
 
   const imageSource: CanvasImageSource = bitmap || imgElement!;
   ctx.drawImage(imageSource, 0, 0, targetWidth, targetHeight);
-
-  // Release initial bitmap or object URL memory as soon as rendered to canvas
-  if (bitmap) {
-    try {
-      bitmap.close();
-    } catch {}
-    bitmap = null;
-  }
 
   // Iterative bounded compression loop
   let currentQuality = INITIAL_JPEG_QUALITY;
@@ -288,7 +298,13 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
       }
     }
   } finally {
-    // Memory cleanup: release objectUrl and clear canvas memory buffer
+    // Memory cleanup: close bitmap, release objectUrl, and clear canvas memory buffer
+    if (bitmap) {
+      try {
+        bitmap.close();
+      } catch {}
+      bitmap = null;
+    }
     if (objectUrl) {
       URL.revokeObjectURL(objectUrl);
       objectUrl = null;
@@ -298,6 +314,7 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
       canvas.height = 0;
       canvas = null;
     }
+    imgElement = null;
   }
 
   // Check if resulting blob satisfies the <= 5 MB invariant

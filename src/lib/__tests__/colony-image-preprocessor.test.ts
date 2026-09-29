@@ -173,5 +173,45 @@ describe("Colony Image Preprocessor (UX-03 / Mobile Uploads)", () => {
         expect(result.error).toBe(USER_OPTIMIZATION_FAILURE_MESSAGE);
       }
     });
+
+    it("ensures ImageBitmap is closed and canvas dimensions are reset to 0 in finally block", async () => {
+      const largeFile = new File([new Uint8Array(6 * 1024 * 1024)], "close_test.jpg", {
+        type: "image/jpeg",
+      });
+
+      const closeSpy = vi.fn();
+      globalThis.createImageBitmap = vi.fn().mockResolvedValue({
+        width: 3000,
+        height: 2000,
+        close: closeSpy,
+      } as unknown as ImageBitmap);
+
+      const compressedBlob = new Blob([new Uint8Array(1.2 * 1024 * 1024)], { type: "image/jpeg" });
+      HTMLCanvasElement.prototype.toBlob = vi.fn((callback) => {
+        callback(compressedBlob);
+      }) as unknown as typeof HTMLCanvasElement.prototype.toBlob;
+
+      let lastCreatedCanvas: HTMLCanvasElement | null = null;
+      const originalCreateElement = document.createElement.bind(document);
+      vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+        const el = originalCreateElement(tagName);
+        if (tagName.toLowerCase() === "canvas") {
+          lastCreatedCanvas = el as HTMLCanvasElement;
+        }
+        return el;
+      });
+
+      const result = await preprocessSpecimenImage(largeFile);
+      expect(result.success).toBe(true);
+
+      // Verify ImageBitmap is explicitly closed to free GPU memory
+      expect(closeSpy).toHaveBeenCalled();
+
+      // Verify canvas buffer is released by resetting dimensions to 0
+      expect(lastCreatedCanvas).not.toBeNull();
+      expect(lastCreatedCanvas!.width).toBe(0);
+      expect(lastCreatedCanvas!.height).toBe(0);
+    });
   });
 });
+

@@ -103,6 +103,26 @@ export function ColonyCounterPage() {
     };
   }, [selectedFile, uploadPayload]);
 
+  // Manage annotated report image object URL lifecycle in memory (avoid memory leaks)
+  const prevAnnotatedUrlRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (
+      prevAnnotatedUrlRef.current &&
+      prevAnnotatedUrlRef.current !== annotatedReportImageUrl &&
+      prevAnnotatedUrlRef.current.startsWith("blob:")
+    ) {
+      URL.revokeObjectURL(prevAnnotatedUrlRef.current);
+    }
+    prevAnnotatedUrlRef.current = annotatedReportImageUrl;
+
+    return () => {
+      if (prevAnnotatedUrlRef.current && prevAnnotatedUrlRef.current.startsWith("blob:")) {
+        URL.revokeObjectURL(prevAnnotatedUrlRef.current);
+        prevAnnotatedUrlRef.current = null;
+      }
+    };
+  }, [annotatedReportImageUrl]);
+
   // Clean up any in-flight requests on unmount
   React.useEffect(() => {
     return () => {
@@ -309,6 +329,7 @@ export function ColonyCounterPage() {
                 <CardContent className="p-5 pt-2">
                   <PetriDishUploader
                     selectedFile={selectedFile}
+                    previewUrl={previewUrl}
                     optimizationInfo={optimizationInfo}
                     onFileSelect={handleFileSelect}
                     disabled={pageState === "ANALYZING"}

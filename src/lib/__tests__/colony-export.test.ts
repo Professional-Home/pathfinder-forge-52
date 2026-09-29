@@ -8,6 +8,7 @@ import {
   exportSummaryCsv,
   buildDetectionsCsv,
   exportDetectionsCsv,
+  generateAnnotatedPlateImage,
   type SummaryExportParams,
   type DetectionsExportParams,
 } from "../colony-export";
@@ -305,4 +306,101 @@ describe("colony-export pure logic and formatting", () => {
       expect(removeSpy).toHaveBeenCalled();
     });
   });
+
+  describe("Offscreen Canvas Annotated Image Compositor (generateAnnotatedPlateImage)", () => {
+    it("generates blob URL and releases offscreen canvas memory buffers upon completion", async () => {
+      let createdCanvas: HTMLCanvasElement | null = null;
+      const origCreateElement = document.createElement.bind(document);
+      vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+        const el = origCreateElement(tag);
+        if (tag.toLowerCase() === "canvas") {
+          createdCanvas = el as HTMLCanvasElement;
+        }
+        return el;
+      });
+
+      const createObjectURLSpy = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:http://localhost/annotated-mock");
+
+      const origImage = globalThis.Image;
+      class MockImage {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        crossOrigin = "";
+        naturalWidth = 800;
+        naturalHeight = 800;
+        decode = vi.fn().mockResolvedValue(undefined);
+        set src(_val: string) {
+          setTimeout(() => this.onload?.(), 0);
+        }
+      }
+      globalThis.Image = MockImage as unknown as typeof Image;
+
+      try {
+        const url = await generateAnnotatedPlateImage({
+          imageUrl: "http://example.com/plate.jpg",
+          imageWidth: 800,
+          imageHeight: 800,
+          detections: [
+            {
+              x1: 100,
+              y1: 100,
+              x2: 150,
+              y2: 150,
+              confidence: 0.95,
+              class_id: 0,
+              class_name: "colony",
+            },
+          ],
+          removedAiIndices: new Set(),
+          manualColonies: [
+            {
+              id: "man-1",
+              x: 200,
+              y: 200,
+              radius: 12,
+              timestamp: Date.now(),
+            },
+          ],
+        });
+
+        // Verify returned URL is a memory-efficient blob: URL rather than multi-MB base64
+        expect(url).toBe("blob:http://localhost/annotated-mock");
+        expect(createObjectURLSpy).toHaveBeenCalled();
+
+        // Verify canvas dimensions were zeroed out to release backing store GPU memory
+        expect(createdCanvas).not.toBeNull();
+        expect(createdCanvas!.width).toBe(0);
+        expect(createdCanvas!.height).toBe(0);
+      } finally {
+        globalThis.Image = origImage;
+      }
+    });
+
+    it("rejects gracefully when specimen image fails to load", async () => {
+      const origImage = globalThis.Image;
+      class FailingImage {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        crossOrigin = "";
+        set src(_val: string) {
+          setTimeout(() => this.onerror?.(), 0);
+        }
+      }
+      globalThis.Image = FailingImage as unknown as typeof Image;
+
+      try {
+        await expect(
+          generateAnnotatedPlateImage({
+            imageUrl: "http://example.com/bad-plate.jpg",
+            imageWidth: 800,
+            imageHeight: 800,
+            detections: [],
+          }),
+        ).rejects.toThrow("Failed to load specimen image for annotated canvas rendering.");
+      } finally {
+        globalThis.Image = origImage;
+      }
+    });
+  });
 });
+

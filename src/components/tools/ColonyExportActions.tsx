@@ -167,6 +167,7 @@ export function ColonyExportActions({
             variant="default"
             size="sm"
             disabled={isComposingPrint}
+            aria-busy={isComposingPrint}
             onClick={handlePrintPdfReport}
             className="flex-1 justify-center gap-1.5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
             aria-label="Print or save PDF assay report"
@@ -174,12 +175,12 @@ export function ColonyExportActions({
           >
             {isComposingPrint ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                 <span>Preparing PDF...</span>
               </>
             ) : (
               <>
-                <Printer className="h-3.5 w-3.5 shrink-0" />
+                <Printer className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span>Print / Save PDF</span>
               </>
             )}
