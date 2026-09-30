@@ -107,6 +107,13 @@ export function PetriDishUploader({
       return { valid: false, error: "No file was selected." };
     }
 
+    if (file.size === 0) {
+      return {
+        valid: false,
+        error: "The selected file is empty. Choose another image.",
+      };
+    }
+
     const fileType = (file.type || "").toLowerCase();
     const fileName = (file.name || "").toLowerCase();
     const hasValidExt = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
@@ -116,7 +123,7 @@ export function PetriDishUploader({
       return {
         valid: false,
         error:
-          "Unsupported format. Please select a valid culture plate image (JPEG, PNG, WEBP, etc.).",
+          "Unsupported format. That file type isn't supported. Choose a JPEG, PNG, WebP, AVIF, or BMP image.",
       };
     }
 
@@ -149,11 +156,17 @@ export function PetriDishUploader({
         setInternalOptimizationResult(result);
         onFileSelect(file, result.uploadFile, result);
       } else {
-        setErrorMessage(result.error || USER_OPTIMIZATION_FAILURE_MESSAGE);
+        const failureMessage =
+          "We couldn't prepare this image for analysis. This image could not be prepared for upload. Try a smaller image or a different file. " +
+          USER_OPTIMIZATION_FAILURE_MESSAGE;
+        setErrorMessage(failureMessage);
         onFileSelect(null, null, null);
       }
     } catch {
-      setErrorMessage(USER_OPTIMIZATION_FAILURE_MESSAGE);
+      setErrorMessage(
+        "We couldn't prepare this image for analysis. This image could not be prepared for upload. Try a smaller image or a different file. " +
+          USER_OPTIMIZATION_FAILURE_MESSAGE,
+      );
       onFileSelect(null, null, null);
     } finally {
       setIsPreprocessing(false);
@@ -206,6 +219,7 @@ export function PetriDishUploader({
       {/* Hidden file inputs: standard file picker & native mobile camera */}
       <input
         ref={fileInputRef}
+        id="petri-dish-file-input"
         type="file"
         accept="image/jpeg,image/png,image/webp,image/*"
         onChange={handleNativeInputChange}
@@ -405,7 +419,7 @@ export function PetriDishUploader({
         </div>
       )}
 
-      {/* Error alert */}
+      {/* Error alert with recovery guidance */}
       {errorMessage && (
         <div
           role="alert"
@@ -414,7 +428,12 @@ export function PetriDishUploader({
           className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
         >
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="flex-1 font-medium">{errorMessage}</div>
+          <div className="flex-1 space-y-1">
+            <div className="font-medium">{errorMessage}</div>
+            <p className="text-[11px] text-destructive/80">
+              Please choose another image or use one of the demonstration plates below.
+            </p>
+          </div>
         </div>
       )}
     </div>

@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   UserCheck,
   FileSpreadsheet,
+  Upload,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -24,6 +25,7 @@ import { PetriDishUploader } from "@/components/tools/PetriDishUploader";
 import {
   ColonyDemoPlates,
   fetchDemoPlateFile,
+  DEMO_PLATES,
   type DemoPlateItem,
 } from "@/components/tools/ColonyDemoPlates";
 import { ColonyDetectionCanvas } from "@/components/tools/ColonyDetectionCanvas";
@@ -67,6 +69,7 @@ export function ColonyCounterPage() {
   );
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [errorDetails, setErrorDetails] = React.useState<string | null>(null);
+  const [failedDemo, setFailedDemo] = React.useState<DemoPlateItem | null>(null);
   const [cfuData, setCfuData] = React.useState<CfuExportData | null>(null);
   const [annotatedReportImageUrl, setAnnotatedReportImageUrl] = React.useState<string | null>(null);
   const [activeDemo, setActiveDemo] = React.useState<DemoPlateItem | null>(null);
@@ -170,6 +173,7 @@ export function ColonyCounterPage() {
       setActiveDemo(null);
     }
 
+    setFailedDemo(null);
     setSelectedFile(file);
     setUploadPayload(payload ?? file);
     setOptimizationInfo(optimization ?? null);
@@ -191,6 +195,7 @@ export function ColonyCounterPage() {
   const handleSelectDemo = async (demo: DemoPlateItem) => {
     if (pageState === "ANALYZING") return;
     setLoadingDemoId(demo.id);
+    setFailedDemo(null);
     try {
       const file = await fetchDemoPlateFile(demo);
       setActiveDemo(demo);
@@ -198,8 +203,15 @@ export function ColonyCounterPage() {
       setStatusAnnouncement(`Demo plate loaded: ${demo.name}.`);
     } catch (err: unknown) {
       console.error("Failed to load demo plate file:", err);
+      setFailedDemo(demo);
       setPageState("ERROR");
-      setErrorMessage("Unable to load demo image file. Please try again.");
+      setErrorMessage(
+        "Demo plate couldn't be loaded. Unable to load demo image file. Please try again or upload your own image.",
+      );
+      setErrorDetails(
+        `Failed to retrieve demonstration image (${demo.name}). You can retry loading the demo plate or upload your own Petri dish photo.`,
+      );
+      setStatusAnnouncement(`Unable to load demo image file: ${demo.name}. Please try again.`);
     } finally {
       setLoadingDemoId(null);
     }
@@ -258,38 +270,59 @@ export function ColonyCounterPage() {
       setPageState("ERROR");
 
       if (err instanceof ColonyDetectionApiError) {
-        setErrorMessage(err.message);
         if (err.code === "NETWORK_ERROR") {
-          setErrorDetails(
-            "The Colony Detection Python ML service is currently offline or unreachable. Please verify that the microservice is running at the configured endpoint (default: http://localhost:8000).",
+          setErrorMessage(
+            "We couldn't reach the colony analysis service. Check your connection and try again.",
           );
-          setStatusAnnouncement("Network error connecting to ML service.");
+          setErrorDetails(
+            (err.message ? `${err.message} ` : "") +
+              "The Colony Detection Python ML service is currently offline or unreachable. Please verify network connectivity and ensure the local backend server is running.",
+          );
+          setStatusAnnouncement(
+            "We couldn't reach the colony analysis service. Check your connection and try again.",
+          );
         } else if (err.code === "REQUEST_TIMEOUT") {
           setErrorMessage("Analysis timed out. Please try again.");
           setErrorDetails(
-            "The colony detection request timed out before receiving a response from the ML microservice. The server may be busy or experiencing high latency. Please retry or try a smaller image.",
+            "The colony detection request timed out before receiving a response from the ML microservice. The server may be busy or experiencing high latency. Your uploaded image is still loaded and ready to retry.",
           );
           setStatusAnnouncement("Analysis timed out. Please try again.");
         } else if (err.code === "RATE_LIMIT_EXCEEDED" || err.status === 429) {
+          setErrorMessage("Too many analysis requests. Please wait and try again.");
           setErrorDetails(
-            "Colony analysis requests are throttled to protect shared laboratory compute resources. Please wait a moment before analyzing your next plate.",
+            "Colony analysis requests are throttled to protect shared laboratory compute resources. Please wait a moment before analyzing your next plate. Your uploaded image is still loaded.",
           );
-          setStatusAnnouncement("Rate limit exceeded. Please wait a moment.");
+          setStatusAnnouncement("Too many analysis requests. Please wait and try again.");
         } else if (err.status === 413 || err.code === "PAYLOAD_TOO_LARGE") {
-          setErrorMessage("Image file exceeds maximum upload size.");
+          setErrorMessage("The image is too large to process. Try a smaller image.");
           setErrorDetails(
-            "The image file size exceeds the server's maximum upload limit. Please select an image under 10 MB or use an optimized photograph.",
+            "Image file exceeds maximum upload size. The image file size exceeds the server's maximum upload limit. Please select an image under 10 MB or use an optimized photograph.",
           );
-          setStatusAnnouncement("Image file exceeds maximum upload size.");
+          setStatusAnnouncement("The image is too large to process. Try a smaller image.");
         } else if (err.status) {
-          setErrorDetails(`Server returned HTTP ${err.status} (${err.code}).`);
+          setErrorMessage("Analysis service returned an error. Please try again.");
+          setErrorDetails(
+            `Server returned HTTP ${err.status} (${err.code || "SERVICE_ERROR"}). Your specimen image is still loaded and ready to retry.`,
+          );
+          setStatusAnnouncement("Analysis service returned an error. Please try again.");
+        } else {
+          setErrorMessage("Analysis service returned an error. Please try again.");
+          setErrorDetails(
+            err.message ||
+              "An unexpected error occurred while analyzing the image. Your specimen image is still loaded and ready to retry.",
+          );
+          setStatusAnnouncement("Analysis service returned an error. Please try again.");
         }
       } else if (err instanceof Error) {
-        setErrorMessage(err.message);
+        setErrorMessage("Analysis service returned an error. Please try again.");
+        setErrorDetails(err.message);
+        setStatusAnnouncement("Analysis service returned an error. Please try again.");
       } else {
-        setErrorMessage(
-          "An unexpected error occurred while analyzing the image. Please try again.",
+        setErrorMessage("Analysis service returned an error. Please try again.");
+        setErrorDetails(
+          "An unexpected error occurred while analyzing the image. Your specimen image is still loaded. Please try again.",
         );
+        setStatusAnnouncement("Analysis service returned an error. Please try again.");
       }
     } finally {
       if (waitingTimerRef.current) {
@@ -323,6 +356,7 @@ export function ColonyCounterPage() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+    setFailedDemo(null);
     setAnalyzingSubStage("initial");
     setMeasuredDurationSec(null);
     handleFileSelect(null);
@@ -737,6 +771,7 @@ export function ColonyCounterPage() {
                   role="alert"
                   aria-live="assertive"
                   aria-atomic="true"
+                  data-testid="colony-error-card"
                   className="border-destructive/30 bg-destructive/5 shadow-xs"
                 >
                   <CardContent className="p-6">
@@ -754,18 +789,56 @@ export function ColonyCounterPage() {
                             {errorDetails}
                           </p>
                         )}
-                        <div className="pt-2 flex items-center gap-3">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="default"
-                            onClick={handleAnalyze}
-                            aria-label="Retry colony analysis"
-                            className="text-xs"
+                        {/* State preservation indicator: communicates if user image/data is preserved */}
+                        {selectedFile ? (
+                          <div
+                            data-testid="state-preservation-indicator"
+                            className="flex items-center gap-1.5 rounded-md border border-border/60 bg-surface/60 px-2.5 py-1 text-[11px] text-muted-foreground"
                           >
-                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                            Retry Analysis
-                          </Button>
+                            <Sparkles className="h-3 w-3 text-researcher shrink-0" aria-hidden="true" />
+                            <span>
+                              Specimen retained: <strong className="font-medium text-foreground">{selectedFile.name}</strong> (Ready to retry)
+                            </span>
+                          </div>
+                        ) : failedDemo ? (
+                          <div
+                            data-testid="state-preservation-indicator"
+                            className="flex items-center gap-1.5 rounded-md border border-border/60 bg-surface/60 px-2.5 py-1 text-[11px] text-muted-foreground"
+                          >
+                            <FlaskConical className="h-3 w-3 text-student shrink-0" aria-hidden="true" />
+                            <span>
+                              Demo selection: <strong className="font-medium text-foreground">{failedDemo.name}</strong> (Ready to retry)
+                            </span>
+                          </div>
+                        ) : null}
+
+                        <div className="pt-2 flex flex-wrap items-center gap-3">
+                          {selectedFile && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="default"
+                              onClick={handleAnalyze}
+                              aria-label="Retry colony analysis"
+                              className="text-xs"
+                            >
+                              <RotateCcw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                              Retry Analysis
+                            </Button>
+                          )}
+                          {failedDemo && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleSelectDemo(failedDemo)}
+                              aria-label="Retry demo plate"
+                              className="text-xs"
+                            >
+                              <RotateCcw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                              Retry Demo
+                            </Button>
+                          )}
                           <Button
                             type="button"
                             size="sm"
@@ -853,20 +926,75 @@ export function ColonyCounterPage() {
                 </div>
               )}
 
-              {/* STATE 4: Ready / Empty Idle State */}
-              {(pageState === "EMPTY" || pageState === "READY") && (
-                <Card className="border-dashed border-border/80 bg-surface/30 p-10 text-center shadow-none">
+              {/* STATE 4: Empty Idle State */}
+              {pageState === "EMPTY" && (
+                <Card
+                  data-testid="colony-empty-state"
+                  className="border-dashed border-border/80 bg-surface/30 p-10 text-center shadow-none"
+                >
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border/80 bg-surface-elevated text-muted-foreground">
-                    <FlaskConical className="h-6 w-6 opacity-60" />
+                    <FlaskConical className="h-6 w-6 opacity-60" aria-hidden="true" />
                   </div>
                   <h3 className="mt-3 font-display text-base font-semibold text-foreground">
-                    {pageState === "READY" ? "Ready for Analysis" : "No Specimen Selected"}
+                    No Specimen Selected
+                  </h3>
+                  <p className="mt-1 text-xs font-medium text-foreground max-w-sm mx-auto leading-relaxed">
+                    Upload a Petri dish image or choose a demo plate to begin.
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                    Upload a culture plate image or choose a demo plate to begin automated colony counting.
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const input = document.getElementById("petri-dish-file-input");
+                        if (input) input.click();
+                      }}
+                      aria-label="Upload Petri dish specimen"
+                      className="text-xs"
+                    >
+                      <Upload className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                      Upload Specimen
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleSelectDemo(DEMO_PLATES[0])}
+                      aria-label="Try demo plate A"
+                      className="text-xs"
+                    >
+                      <FlaskConical className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                      Try Demo Plate A
+                    </Button>
+                  </div>
+                </Card>
+              )}
+
+              {/* STATE 5: Ready for Analysis State */}
+              {pageState === "READY" && (
+                <Card
+                  data-testid="colony-ready-state"
+                  className="border-dashed border-border/80 bg-surface/30 p-10 text-center shadow-none"
+                >
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border/80 bg-surface-elevated text-muted-foreground">
+                    <FlaskConical className="h-6 w-6 opacity-60" aria-hidden="true" />
+                  </div>
+                  <h3 className="mt-3 font-display text-base font-semibold text-foreground">
+                    Ready for Analysis
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                    {pageState === "READY"
-                      ? "Click 'Analyze Petri Dish' to run colony detection. After analysis, detected colonies are shown on the plate. You can review the detections, remove false detections, add missed colonies, and use the reviewed count for downstream calculations."
-                      : "Upload a culture plate image or choose a demo plate to begin automated colony counting."}
+                    Click 'Analyze Petri Dish' to run colony detection. After analysis, detected colonies are shown on the plate. You can review the detections, remove false detections, add missed colonies, and use the reviewed count for downstream calculations.
                   </p>
+                  {selectedFile && (
+                    <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                      <Sparkles className="h-3.5 w-3.5 text-researcher" aria-hidden="true" />
+                      <span>Specimen selected: <strong className="font-medium text-foreground">{selectedFile.name}</strong></span>
+                    </div>
+                  )}
                 </Card>
               )}
             </div>
