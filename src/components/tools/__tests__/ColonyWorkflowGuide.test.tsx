@@ -28,17 +28,17 @@ describe("ColonyWorkflowGuide Component", () => {
 
     // Stage descriptions
     expect(
-      screen.getByText("Upload an image or try a demo plate"),
+      screen.getByText("Upload an image or choose a demo plate."),
     ).toBeInTheDocument();
-    expect(screen.getByText("Run AI colony detection")).toBeInTheDocument();
+    expect(screen.getByText("Run AI colony detection.")).toBeInTheDocument();
     expect(
-      screen.getByText("Review, remove, or add colony detections"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Calculate CFU/mL using your assay parameters"),
+      screen.getByText("Review, remove, or add detections."),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Download CSV data or print the analysis report"),
+      screen.getByText("Use the selected colony count for CFU/mL calculation."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Export detection and analysis results."),
     ).toBeInTheDocument();
   });
 
@@ -190,7 +190,7 @@ describe("ColonyWorkflowGuide Component", () => {
 
     // Full screen-reader text summary for accessibility
     expect(
-      screen.getByText(/Step 1: Specimen\. Upload an image or try a demo plate\. Status: Current Step\./i),
+      screen.getByText(/Step 1: Specimen\. Upload an image or choose a demo plate\. Status: Current Step\./i),
     ).toBeInTheDocument();
   });
 

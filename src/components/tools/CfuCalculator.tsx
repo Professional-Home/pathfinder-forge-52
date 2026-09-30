@@ -11,7 +11,7 @@ import {
   UserCheck,
   Edit3,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -315,6 +315,9 @@ export function CfuCalculator({
             </Button>
           </div>
         </div>
+        <CardDescription className="text-xs mt-1">
+          CFU/mL is calculated from the selected colony count, sample volume, and dilution factor.
+        </CardDescription>
       </CardHeader>
 
       <CardContent className="p-4 pt-1 space-y-4">

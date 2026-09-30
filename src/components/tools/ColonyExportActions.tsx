@@ -127,7 +127,7 @@ export function ColonyExportActions({
           </span>
         </div>
         <CardDescription className="text-xs">
-          Export quantification metrics, audit trails, and printable lab documentation.
+          Export the reviewed results and analysis report for record keeping.
         </CardDescription>
       </CardHeader>
 

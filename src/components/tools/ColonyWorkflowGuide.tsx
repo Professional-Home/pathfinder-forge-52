@@ -105,7 +105,7 @@ export function computeWorkflowSteps(params: {
       id: "specimen",
       number: 1,
       title: "Specimen",
-      description: "Upload an image or try a demo plate",
+      description: "Upload an image or choose a demo plate.",
       status: step1Status,
       statusLabel: getStatusLabel(step1Status),
     },
@@ -113,7 +113,7 @@ export function computeWorkflowSteps(params: {
       id: "analyze",
       number: 2,
       title: "Analyze",
-      description: "Run AI colony detection",
+      description: "Run AI colony detection.",
       status: step2Status,
       statusLabel: getStatusLabel(step2Status),
     },
@@ -121,7 +121,7 @@ export function computeWorkflowSteps(params: {
       id: "review",
       number: 3,
       title: "Review",
-      description: "Review, remove, or add colony detections",
+      description: "Review, remove, or add detections.",
       status: step3Status,
       statusLabel: getStatusLabel(step3Status),
     },
@@ -129,7 +129,7 @@ export function computeWorkflowSteps(params: {
       id: "quantify",
       number: 4,
       title: "Quantify",
-      description: "Calculate CFU/mL using your assay parameters",
+      description: "Use the selected colony count for CFU/mL calculation.",
       status: step4Status,
       statusLabel: getStatusLabel(step4Status),
     },
@@ -137,7 +137,7 @@ export function computeWorkflowSteps(params: {
       id: "export",
       number: 5,
       title: "Export",
-      description: "Download CSV data or print the analysis report",
+      description: "Export detection and analysis results.",
       status: step5Status,
       statusLabel: getStatusLabel(step5Status),
     },
@@ -313,7 +313,7 @@ export function ColonyWorkflowGuide({
 
                   {/* Non-color accessibility screen-reader label */}
                   <span className="sr-only">
-                    {`Step ${step.number}: ${step.title}. ${step.description}. Status: ${step.statusLabel}.`}
+                    {`Step ${step.number}: ${step.title}. ${step.description.replace(/\.$/, "")}. Status: ${step.statusLabel}.`}
                   </span>
                 </li>
               );

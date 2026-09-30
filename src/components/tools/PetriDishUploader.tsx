@@ -300,6 +300,12 @@ export function PetriDishUploader({
                 JPG, PNG, or WEBP up to 5 MB (larger camera images are automatically optimized in
                 browser).
               </p>
+
+              <div className="mt-3 pt-2 border-t border-border/50 text-center">
+                <span className="text-[11px] text-muted-foreground">
+                  No Petri dish image? Try a demo plate below.
+                </span>
+              </div>
             </>
           )}
         </div>
