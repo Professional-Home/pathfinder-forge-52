@@ -2,7 +2,8 @@ import { memo, useCallback, useEffect, useState, useRef } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Session } from "@supabase/supabase-js";
-import { Wordmark } from "@/components/brand";
+import { Wordmark, GooglePlayIcon } from "@/components/brand";
+import { PLAY_STORE_URL } from "@/lib/app-config";
 import { supabase } from "@/utils/supabase";
 import {
   PUBLIC_EXPLORE_LINKS,
@@ -243,6 +244,18 @@ function SiteHeaderComponent() {
             </nav>
 
             <div className="flex items-center justify-self-end gap-2 sm:gap-2.5">
+              <a
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Get the App on Google Play"
+                title="Get the App on Google Play"
+                className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-surface-elevated/70 px-2.5 py-1 text-[12px] font-medium text-foreground transition hover:border-foreground/30 hover:bg-accent md:inline-flex"
+              >
+                <GooglePlayIcon className="h-3.5 w-3.5 shrink-0" />
+                <span>Get App</span>
+              </a>
+
               {session ? (
                 <>
                   <Link
@@ -374,11 +387,25 @@ function SiteHeaderComponent() {
                   <Link
                     to="/dashboard"
                     onClick={() => setMenuOpen(false)}
-                    className="mt-10 inline-flex items-center justify-center rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background"
+                    className="mt-6 inline-flex items-center justify-center rounded-full bg-foreground px-4 py-3 text-sm font-medium text-background"
                   >
                     Open dashboard
                   </Link>
                 )}
+
+                <div className="mt-6 pt-6 border-t border-border">
+                  <a
+                    href={PLAY_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMenuOpen(false)}
+                    aria-label="Get the App on Google Play"
+                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-border-strong bg-surface-elevated px-4 py-3 text-sm font-semibold text-foreground shadow-sm transition hover:bg-accent"
+                  >
+                    <GooglePlayIcon className="h-4 w-4 shrink-0" />
+                    <span>Get the App on Google Play</span>
+                  </a>
+                </div>
               </div>
             </motion.aside>
           </motion.div>

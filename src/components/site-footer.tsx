@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Instagram, Linkedin, Mail, MapPin, Phone, Youtube } from "lucide-react";
-import { Wordmark } from "@/components/brand";
+import { Wordmark, GooglePlayIcon } from "@/components/brand";
+import { PLAY_STORE_URL } from "@/lib/app-config";
 
 const NAV_LINKS = [
   { name: "Home", to: "/" as const },
@@ -85,6 +86,27 @@ function SiteFooterComponent() {
                 </a>
               ))}
             </div>
+
+            <div className="mt-6">
+              <a
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Get it on Google Play"
+                title="Get it on Google Play"
+                className="group inline-flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] transition hover:border-[#2dd4bf]/60 hover:bg-white/15"
+              >
+                <GooglePlayIcon className="h-6 w-6 shrink-0" />
+                <div className="text-left">
+                  <div className="text-[9px] font-medium uppercase tracking-wider text-white/70 leading-none">
+                    GET IT ON
+                  </div>
+                  <div className="text-[13px] font-semibold text-white leading-tight mt-0.5">
+                    Google Play
+                  </div>
+                </div>
+              </a>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-8 md:gap-6">
@@ -100,6 +122,16 @@ function SiteFooterComponent() {
                     </FooterNavLink>
                   </li>
                 ))}
+                <li>
+                  <a
+                    href={PLAY_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-white"
+                  >
+                    Google Play App
+                  </a>
+                </li>
               </ul>
             </div>
 
