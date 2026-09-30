@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { CfuCalculator } from "@/components/tools/CfuCalculator";
 import { ColonyExportActions } from "@/components/tools/ColonyExportActions";
 import { cn } from "@/lib/utils";
-import type { ColonyDetectionSuccessResponse } from "@/lib/colony-api";
+import { resolveAnnotatedImageUrl, type ColonyDetectionSuccessResponse } from "@/lib/colony-api";
 import type { ManualColony } from "@/hooks/use-colony-review";
 import type { CfuExportData } from "@/lib/colony-export";
 
@@ -728,7 +728,7 @@ export function ColonyResultsPanel({
             <div className="flex items-center justify-between pt-1">
               <span className="text-muted-foreground">Server Annotation Artifact</span>
               <a
-                href={annotated_image_url}
+                href={resolveAnnotatedImageUrl(annotated_image_url) || annotated_image_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-student hover:underline"

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   getColonyApiUrl,
+  resolveAnnotatedImageUrl,
   detectColonies,
   ColonyDetectionApiError,
   type ColonyDetectionSuccessResponse,
@@ -191,6 +192,48 @@ describe("colony-api client & URL resolution (DEP-01)", () => {
       await expect(detectColonies(mockFile, { timeoutMs: 50 })).rejects.toMatchObject({
         code: "REQUEST_TIMEOUT",
       });
+    });
+  });
+
+  describe("resolveAnnotatedImageUrl (Section 12 / Production Artifact URL Handling)", () => {
+    it("returns undefined for null, undefined, or empty string", () => {
+      expect(resolveAnnotatedImageUrl(undefined)).toBeUndefined();
+      expect(resolveAnnotatedImageUrl("")).toBeUndefined();
+      expect(resolveAnnotatedImageUrl("   ")).toBeUndefined();
+    });
+
+    it("anchors relative path in development to localhost API base", () => {
+      (import.meta.env as Record<string, unknown>).PROD = false;
+      (import.meta.env as Record<string, unknown>).VITE_COLONY_ML_API_URL = "http://localhost:8000";
+
+      const resolved = resolveAnnotatedImageUrl("/outputs/annotated_abc123.jpg");
+      expect(resolved).toBe("http://localhost:8000/outputs/annotated_abc123.jpg");
+    });
+
+    it("anchors relative path in production to configured public API base", () => {
+      (import.meta.env as Record<string, unknown>).PROD = true;
+      (import.meta.env as Record<string, unknown>).VITE_COLONY_ML_API_URL = "https://colony-api.biotech.micrylis.com";
+
+      const resolved = resolveAnnotatedImageUrl("/outputs/annotated_abc123.jpg");
+      expect(resolved).toBe("https://colony-api.biotech.micrylis.com/outputs/annotated_abc123.jpg");
+    });
+
+    it("re-anchors internal localhost artifact URL to configured public API base in production", () => {
+      (import.meta.env as Record<string, unknown>).PROD = true;
+      (import.meta.env as Record<string, unknown>).VITE_COLONY_ML_API_URL = "https://colony-api.biotech.micrylis.com";
+
+      const internalUrl = "http://127.0.0.1:8000/outputs/annotated_xyz789.jpg";
+      const resolved = resolveAnnotatedImageUrl(internalUrl);
+      expect(resolved).toBe("https://colony-api.biotech.micrylis.com/outputs/annotated_xyz789.jpg");
+    });
+
+    it("preserves legitimate external HTTPS artifact URLs", () => {
+      (import.meta.env as Record<string, unknown>).PROD = true;
+      (import.meta.env as Record<string, unknown>).VITE_COLONY_ML_API_URL = "https://colony-api.biotech.micrylis.com";
+
+      const cdnUrl = "https://cdn.biotech.micrylis.com/outputs/annotated_test.jpg";
+      const resolved = resolveAnnotatedImageUrl(cdnUrl);
+      expect(resolved).toBe("https://cdn.biotech.micrylis.com/outputs/annotated_test.jpg");
     });
   });
 });

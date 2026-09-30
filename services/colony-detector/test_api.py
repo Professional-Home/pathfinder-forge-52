@@ -516,10 +516,10 @@ def test_cors_configuration_resolution():
         prod_empty_origins = get_cors_origins()
         assert prod_empty_origins == [], "Production without FRONTEND_ORIGIN must not permit origins"
 
-    # 3. In production with explicit FRONTEND_ORIGIN, returns configured origins
+    # 3. In production with explicit FRONTEND_ORIGIN, returns configured origins (and trims trailing slashes)
     with patch.dict(
         "os.environ",
-        {"ENVIRONMENT": "production", "FRONTEND_ORIGIN": "https://biotech.micrylis.com,https://app.micrylis.com"},
+        {"ENVIRONMENT": "production", "FRONTEND_ORIGIN": "https://biotech.micrylis.com/,https://app.micrylis.com"},
     ):
         prod_configured = get_cors_origins()
         assert prod_configured == ["https://biotech.micrylis.com", "https://app.micrylis.com"]
@@ -529,6 +529,14 @@ def test_cors_configuration_resolution():
         prod_wildcard = get_cors_origins()
         assert "*" not in prod_wildcard
         assert prod_wildcard == []
+
+    # 5. In production with malformed non-HTTP scheme, filters out malformed entries
+    with patch.dict(
+        "os.environ",
+        {"ENVIRONMENT": "production", "FRONTEND_ORIGIN": "invalid_origin,https://biotech.micrylis.com"},
+    ):
+        prod_filtered = get_cors_origins()
+        assert prod_filtered == ["https://biotech.micrylis.com"]
 
     print("[PASS] test_cors_configuration_resolution passed successfully.")
 

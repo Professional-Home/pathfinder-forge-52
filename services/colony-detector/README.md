@@ -46,10 +46,18 @@ Create a local `.env` file in `services/colony-detector/` (refer to `.env.exampl
 | `HOST` | `0.0.0.0` | Server bind host |
 | `PORT` | `8000` | Server HTTP port |
 | `DEBUG` | `false` | Enable debug auto-reload |
-| `FRONTEND_ORIGIN` | `http://localhost:8080,http://localhost:5173` | Allowed CORS origins (comma-separated) |
+| `ENVIRONMENT` | `development` | Environment mode (`development` or `production`). In production, strict CORS is enforced. |
+| `FRONTEND_ORIGIN` | `http://localhost:8080,http://localhost:5173` | Allowed CORS origins (comma-separated; required in production). |
 | `COLONY_MODEL_PATH` | `models/best.pt` | Path to trained YOLO PyTorch weights |
 | `PUBLIC_BASE_URL` | `http://localhost:8000` | Base URL used for constructing annotated image artifact links |
+| `COLONY_RATE_LIMIT_ENABLED` | `true` | Enable token-bucket inference rate limiting |
+| `COLONY_RATE_LIMIT_REQUESTS`| `10` | Max requests per time window per client IP |
+| `COLONY_RATE_LIMIT_WINDOW_SECONDS` | `60` | Rate limit window in seconds |
+| `COLONY_RATE_LIMIT_BURST` | `10` | Rate limit burst token capacity |
+| `COLONY_TRUSTED_PROXIES` | `""` | Comma-separated list of trusted reverse proxy IPs for X-Forwarded-For evaluation |
 | `COLONY_OUTPUT_CLEANUP_INTERVAL_SECONDS` | `600` | Periodic background output artifact pruning interval in seconds |
+| `MAX_OUTPUT_AGE_SECONDS` | `3600` | Maximum lifetime of generated output image artifacts in seconds |
+| `MAX_OUTPUT_FILES` | `50` | Maximum count of output artifacts retained before evicting oldest |
 
 ---
 

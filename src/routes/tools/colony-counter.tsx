@@ -37,6 +37,7 @@ import type { CfuExportData } from "@/lib/colony-export";
 import {
   detectColonies,
   ColonyDetectionApiError,
+  resolveAnnotatedImageUrl,
   type ColonyDetectionSuccessResponse,
 } from "@/lib/colony-api";
 
@@ -890,7 +891,7 @@ export function ColonyCounterPage() {
                     <CardContent className="p-4 pt-2">
                       <ColonyDetectionCanvas
                         originalImageUrl={previewUrl}
-                        annotatedImageUrl={analysisResult.annotated_image_url}
+                        annotatedImageUrl={resolveAnnotatedImageUrl(analysisResult.annotated_image_url)}
                         detections={analysisResult.detections}
                         imageMetadata={analysisResult.image}
                         removedAiIndices={review.removedAiIndices}

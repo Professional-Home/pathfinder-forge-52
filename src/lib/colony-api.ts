@@ -140,6 +140,54 @@ export function getColonyApiUrl(): string {
   return "http://localhost:8000/api/v1/detect-colonies";
 }
 
+/**
+ * Resolves an annotated image artifact URL to ensure it is safely accessible by the client.
+ *
+ * - If a relative path is provided (e.g. "/outputs/annotated_...jpg"), it anchors to the API base URL.
+ * - In production, if an artifact URL contains a development origin (localhost / 127.0.0.1)
+ *   due to internal microservice networking, it re-anchors the path to the configured
+ *   production VITE_COLONY_ML_API_URL (DEP-02 / Section 12).
+ * - Otherwise preserves the original URL.
+ */
+export function resolveAnnotatedImageUrl(rawUrl?: string): string | undefined {
+  if (!rawUrl || typeof rawUrl !== "string") {
+    return undefined;
+  }
+  const trimmed = rawUrl.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  try {
+    let apiBase = "";
+    try {
+      const fullApiUrl = getColonyApiUrl();
+      apiBase = fullApiUrl.replace(/\/api\/v1\/detect-colonies\/?$/, "");
+    } catch {
+      apiBase = "";
+    }
+
+    if (trimmed.startsWith("/")) {
+      return apiBase ? `${apiBase}${trimmed}` : trimmed;
+    }
+
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      const parsed = new URL(trimmed);
+      if (
+        import.meta.env.PROD &&
+        (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
+        apiBase
+      ) {
+        return `${apiBase}${parsed.pathname}${parsed.search}`;
+      }
+    }
+
+    return trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
 // ─── API Client Function ──────────────────────────────────────────────────────
 
 /**

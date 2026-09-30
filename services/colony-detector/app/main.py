@@ -293,10 +293,14 @@ def get_cors_origins() -> List[str]:
     is_production = env_mode in ("production", "prod")
 
     raw_origins = os.getenv("FRONTEND_ORIGIN", "")
-    explicit_origins = [orig.strip() for orig in raw_origins.split(",") if orig.strip()]
+    explicit_origins = [orig.strip().rstrip("/") for orig in raw_origins.split(",") if orig.strip()]
 
     if is_production:
-        production_origins = [orig for orig in explicit_origins if orig != "*"]
+        production_origins = [
+            orig
+            for orig in explicit_origins
+            if orig != "*" and (orig.startswith("http://") or orig.startswith("https://"))
+        ]
         if not production_origins:
             logger.warning(
                 "FRONTEND_ORIGIN is not configured in production environment. "
@@ -600,7 +604,16 @@ async def detect_colonies(
             logger.warning(f"Artifact retention pruning failed: {e}")
 
         # Build public URL for annotated image
-        public_base = os.getenv("PUBLIC_BASE_URL", str(request.base_url).rstrip("/"))
+        public_base = os.getenv("PUBLIC_BASE_URL")
+        if not public_base:
+            forwarded_proto = request.headers.get("x-forwarded-proto")
+            forwarded_host = request.headers.get("x-forwarded-host")
+            if forwarded_proto and forwarded_host:
+                public_base = f"{forwarded_proto}://{forwarded_host}"
+            else:
+                public_base = str(request.base_url).rstrip("/")
+        else:
+            public_base = public_base.rstrip("/")
         annotated_url = f"{public_base}/outputs/{annotated_filename}"
 
         # 9. Assess colony plate density, crowding, and review indicators
