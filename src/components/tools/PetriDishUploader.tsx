@@ -35,6 +35,7 @@ export interface PetriDishUploaderProps {
   disabled?: boolean;
   className?: string;
   isDemo?: boolean;
+  onPreprocessingChange?: (isPreprocessing: boolean) => void;
 }
 
 const ALLOWED_MIME_TYPES = [
@@ -56,6 +57,7 @@ export function PetriDishUploader({
   disabled = false,
   className,
   isDemo = false,
+  onPreprocessingChange,
 }: PetriDishUploaderProps) {
   const [dragActive, setDragActive] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -140,6 +142,7 @@ export function PetriDishUploader({
 
     // 2. High-resolution / Mobile camera path (> 5 MB): preprocess in browser
     setIsPreprocessing(true);
+    onPreprocessingChange?.(true);
     try {
       const result = await preprocessSpecimenImage(file);
       if (result.success) {
@@ -154,6 +157,7 @@ export function PetriDishUploader({
       onFileSelect(null, null, null);
     } finally {
       setIsPreprocessing(false);
+      onPreprocessingChange?.(false);
     }
   };
 
@@ -246,10 +250,10 @@ export function PetriDishUploader({
                 <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
               </div>
               <p className="text-sm font-medium text-foreground">
-                Optimizing large image for upload...
+                Preparing image…
               </p>
-              <p className="text-xs text-muted-foreground max-w-xs">
-                Scaling high-resolution mobile photograph in browser memory.
+              <p className="text-xs text-muted-foreground max-w-xs text-center">
+                Optimizing large image for upload and colony detection.
               </p>
             </div>
           ) : (

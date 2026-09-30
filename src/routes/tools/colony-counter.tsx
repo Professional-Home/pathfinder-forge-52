@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { PetriDishUploader } from "@/components/tools/PetriDishUploader";
 import {
   ColonyDemoPlates,
@@ -71,6 +72,10 @@ export function ColonyCounterPage() {
   const [activeDemo, setActiveDemo] = React.useState<DemoPlateItem | null>(null);
   const [loadingDemoId, setLoadingDemoId] = React.useState<string | null>(null);
   const [statusAnnouncement, setStatusAnnouncement] = React.useState<string>("");
+  const [isPreprocessing, setIsPreprocessing] = React.useState<boolean>(false);
+  const [analyzingSubStage, setAnalyzingSubStage] = React.useState<"initial" | "waiting">("initial");
+  const [measuredDurationSec, setMeasuredDurationSec] = React.useState<string | null>(null);
+  const waitingTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleCalculationChange = React.useCallback((data: CfuExportData | null) => {
     setCfuData((prev) => {
@@ -126,11 +131,21 @@ export function ColonyCounterPage() {
     };
   }, [annotatedReportImageUrl]);
 
-  // Clean up any in-flight requests on unmount
+  // Clean up any in-flight requests and timers on unmount
   React.useEffect(() => {
     return () => {
+      if (waitingTimerRef.current) {
+        clearTimeout(waitingTimerRef.current);
+      }
       abortControllerRef.current?.abort();
     };
+  }, []);
+
+  const handlePreprocessingChange = React.useCallback((preprocessing: boolean) => {
+    setIsPreprocessing(preprocessing);
+    if (preprocessing) {
+      setStatusAnnouncement("Preparing image…");
+    }
   }, []);
 
   const handleFileSelect = (
@@ -138,7 +153,11 @@ export function ColonyCounterPage() {
     payload?: File | null,
     optimization?: import("@/lib/colony-image-preprocessor").ImageOptimizationSuccess | null,
   ) => {
-    // Abort active analysis if any
+    // Abort active analysis and clear timer if any
+    if (waitingTimerRef.current) {
+      clearTimeout(waitingTimerRef.current);
+      waitingTimerRef.current = null;
+    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -159,6 +178,8 @@ export function ColonyCounterPage() {
     setErrorDetails(null);
     setCfuData(null);
     setAnnotatedReportImageUrl(null);
+    setAnalyzingSubStage("initial");
+    setMeasuredDurationSec(null);
 
     if (file) {
       setPageState("READY");
@@ -186,15 +207,28 @@ export function ColonyCounterPage() {
 
   const handleAnalyze = async () => {
     const fileToUpload = uploadPayload || selectedFile;
-    if (!fileToUpload || pageState === "ANALYZING") return;
+    if (!fileToUpload || pageState === "ANALYZING" || isPreprocessing) return;
 
     setPageState("ANALYZING");
-    setStatusAnnouncement("Analyzing culture plate.");
+    setAnalyzingSubStage("initial");
+    setMeasuredDurationSec(null);
     setErrorMessage(null);
     setErrorDetails(null);
 
+    const startAnnouncement = activeDemo
+      ? "Analyzing demo plate. Analyzing culture plate."
+      : "Analyzing culture plate. Analyzing colony image…";
+    setStatusAnnouncement(startAnnouncement);
+
+    if (waitingTimerRef.current) clearTimeout(waitingTimerRef.current);
+    waitingTimerRef.current = setTimeout(() => {
+      setAnalyzingSubStage("waiting");
+      setStatusAnnouncement("Detecting colonies and preparing results…");
+    }, 1200);
+
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    const startTime = performance.now();
 
     try {
       const response = await detectColonies(fileToUpload, {
@@ -202,13 +236,22 @@ export function ColonyCounterPage() {
         signal: controller.signal,
       });
 
+      const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+      setMeasuredDurationSec(elapsed);
       setAnalysisResult(response);
       setPageState("SUCCESS");
       setStatusAnnouncement("Analysis complete. Colony detection results are ready.");
     } catch (err: unknown) {
+      if (waitingTimerRef.current) {
+        clearTimeout(waitingTimerRef.current);
+        waitingTimerRef.current = null;
+      }
+      setAnalyzingSubStage("initial");
+
       // Ignore user-initiated aborts
       if (err instanceof ColonyDetectionApiError && err.code === "REQUEST_ABORTED") {
         setPageState(selectedFile ? "READY" : "EMPTY");
+        setStatusAnnouncement("Analysis cancelled.");
         return;
       }
 
@@ -220,14 +263,24 @@ export function ColonyCounterPage() {
           setErrorDetails(
             "The Colony Detection Python ML service is currently offline or unreachable. Please verify that the microservice is running at the configured endpoint (default: http://localhost:8000).",
           );
+          setStatusAnnouncement("Network error connecting to ML service.");
         } else if (err.code === "REQUEST_TIMEOUT") {
+          setErrorMessage("Analysis timed out. Please try again.");
           setErrorDetails(
             "The colony detection request timed out before receiving a response from the ML microservice. The server may be busy or experiencing high latency. Please retry or try a smaller image.",
           );
-        } else if (err.code === "RATE_LIMIT_EXCEEDED") {
+          setStatusAnnouncement("Analysis timed out. Please try again.");
+        } else if (err.code === "RATE_LIMIT_EXCEEDED" || err.status === 429) {
           setErrorDetails(
             "Colony analysis requests are throttled to protect shared laboratory compute resources. Please wait a moment before analyzing your next plate.",
           );
+          setStatusAnnouncement("Rate limit exceeded. Please wait a moment.");
+        } else if (err.status === 413 || err.code === "PAYLOAD_TOO_LARGE") {
+          setErrorMessage("Image file exceeds maximum upload size.");
+          setErrorDetails(
+            "The image file size exceeds the server's maximum upload limit. Please select an image under 10 MB or use an optimized photograph.",
+          );
+          setStatusAnnouncement("Image file exceeds maximum upload size.");
         } else if (err.status) {
           setErrorDetails(`Server returned HTTP ${err.status} (${err.code}).`);
         }
@@ -239,20 +292,39 @@ export function ColonyCounterPage() {
         );
       }
     } finally {
+      if (waitingTimerRef.current) {
+        clearTimeout(waitingTimerRef.current);
+        waitingTimerRef.current = null;
+      }
       abortControllerRef.current = null;
     }
   };
 
   const handleCancel = () => {
+    if (waitingTimerRef.current) {
+      clearTimeout(waitingTimerRef.current);
+      waitingTimerRef.current = null;
+    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
     setPageState(selectedFile ? "READY" : "EMPTY");
+    setAnalyzingSubStage("initial");
     setStatusAnnouncement("Analysis cancelled.");
   };
 
   const handleReset = () => {
+    if (waitingTimerRef.current) {
+      clearTimeout(waitingTimerRef.current);
+      waitingTimerRef.current = null;
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setAnalyzingSubStage("initial");
+    setMeasuredDurationSec(null);
     handleFileSelect(null);
     setStatusAnnouncement("Workspace reset. No image selected.");
   };
@@ -384,7 +456,8 @@ export function ColonyCounterPage() {
                     previewUrl={previewUrl}
                     optimizationInfo={optimizationInfo}
                     onFileSelect={handleFileSelect}
-                    disabled={pageState === "ANALYZING"}
+                    onPreprocessingChange={handlePreprocessingChange}
+                    disabled={pageState === "ANALYZING" || isPreprocessing}
                     isDemo={!!activeDemo}
                   />
                 </CardContent>
@@ -395,7 +468,7 @@ export function ColonyCounterPage() {
                 onSelectDemo={handleSelectDemo}
                 selectedDemoId={activeDemo?.id}
                 loadingDemoId={loadingDemoId}
-                disabled={pageState === "ANALYZING"}
+                disabled={pageState === "ANALYZING" || isPreprocessing}
               />
 
               {/* Analysis Parameters Card */}
@@ -428,7 +501,7 @@ export function ColonyCounterPage() {
                       min={0.2}
                       max={0.9}
                       step={0.05}
-                      disabled={pageState === "ANALYZING"}
+                      disabled={pageState === "ANALYZING" || isPreprocessing}
                       onValueChange={(val) => {
                         if (val[0] !== undefined) {
                           setConfidenceThreshold(Number(val[0].toFixed(2)));
@@ -451,32 +524,39 @@ export function ColonyCounterPage() {
                     plate lighting and culture density.
                   </p>
 
-                  {/* Actions */}
-                  <div className="pt-2 flex items-center gap-3">
-                    {pageState === "ANALYZING" ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCancel}
-                        aria-label="Cancel colony analysis"
-                        className="w-full text-xs font-medium border-border/80"
-                      >
-                        Cancel Analysis
-                      </Button>
-                    ) : (
+                  {/* Actions & Staged Loading Area */}
+                  <div className="pt-2 space-y-3">
+                    <div className="flex items-center gap-3">
                       <Button
                         type="button"
                         onClick={handleAnalyze}
-                        disabled={!selectedFile}
-                        aria-busy={pageState === "ANALYZING"}
+                        disabled={!selectedFile || pageState === "ANALYZING" || isPreprocessing}
+                        aria-busy={pageState === "ANALYZING" || isPreprocessing}
                         aria-label={
-                          pageState === "SUCCESS"
-                            ? "Re-analyze Petri dish plate"
-                            : "Analyze Petri dish plate"
+                          pageState === "ANALYZING"
+                            ? activeDemo
+                              ? "Analyzing demo plate…"
+                              : "Analyzing colony image…"
+                            : isPreprocessing
+                              ? "Preparing image…"
+                              : pageState === "SUCCESS"
+                                ? "Re-analyze Petri dish plate"
+                                : "Analyze Petri dish plate"
                         }
-                        className="w-full font-medium text-xs shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground"
+                        className="flex-1 font-medium text-xs shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
-                        {pageState === "SUCCESS" ? (
+                        {pageState === "ANALYZING" || isPreprocessing ? (
+                          <>
+                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin shrink-0" aria-hidden="true" />
+                            <span>
+                              {isPreprocessing
+                                ? "Preparing image…"
+                                : activeDemo
+                                  ? "Analyzing demo plate…"
+                                  : "Analyzing colony image…"}
+                            </span>
+                          </>
+                        ) : pageState === "SUCCESS" ? (
                           <>
                             <RotateCcw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
                             Re-analyze Plate
@@ -488,20 +568,112 @@ export function ColonyCounterPage() {
                           </>
                         )}
                       </Button>
-                    )}
 
-                    {selectedFile && pageState !== "ANALYZING" && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleReset}
-                        aria-label="Clear image and results"
-                        className="text-xs text-muted-foreground hover:text-foreground"
-                        title="Clear image and results"
+                      {pageState === "ANALYZING" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCancel}
+                          aria-label="Cancel colony analysis"
+                          className="text-xs font-medium border-border/80 shrink-0"
+                        >
+                          Cancel Analysis
+                        </Button>
+                      )}
+
+                      {selectedFile && pageState !== "ANALYZING" && !isPreprocessing && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleReset}
+                          aria-label="Clear image and results"
+                          className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                          title="Clear image and results"
+                        >
+                          Reset
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Compact Analysis Loading Status Area */}
+                    {(pageState === "READY" ||
+                      pageState === "ANALYZING" ||
+                      isPreprocessing ||
+                      pageState === "ERROR" ||
+                      (pageState === "SUCCESS" && measuredDurationSec)) && (
+                      <div
+                        data-testid="analysis-loading-status"
+                        className={cn(
+                          "rounded-lg border p-2.5 text-xs transition-colors",
+                          pageState === "ANALYZING" || isPreprocessing
+                            ? "border-researcher/30 bg-researcher-soft/20 text-foreground"
+                            : pageState === "SUCCESS"
+                              ? "border-emerald-500/30 bg-emerald-500/10 text-foreground"
+                              : pageState === "ERROR"
+                                ? "border-destructive/30 bg-destructive/5 text-foreground"
+                                : "border-border/60 bg-surface/50 text-muted-foreground",
+                        )}
                       >
-                        Reset
-                      </Button>
+                        <div className="flex items-start gap-2.5">
+                          {pageState === "ANALYZING" || isPreprocessing ? (
+                            <Loader2
+                              className="h-4 w-4 animate-spin text-researcher shrink-0 mt-0.5"
+                              aria-hidden="true"
+                            />
+                          ) : pageState === "SUCCESS" ? (
+                            <CheckCircle2
+                              className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <Sparkles
+                              className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <div className="space-y-0.5 min-w-0 flex-1">
+                            <div className="font-semibold text-xs text-foreground flex items-center justify-between gap-2">
+                              <span data-testid="analysis-status-text">
+                                {isPreprocessing
+                                  ? "Preparing image…"
+                                  : pageState === "ANALYZING"
+                                    ? analyzingSubStage === "waiting"
+                                      ? "Detecting colonies and preparing results…"
+                                      : activeDemo
+                                        ? "Analyzing demo plate…"
+                                        : "Analyzing colony image…"
+                                    : pageState === "SUCCESS"
+                                      ? "Analysis complete."
+                                      : pageState === "ERROR"
+                                        ? "Ready to retry"
+                                        : "Ready to analyze"}
+                              </span>
+                              {pageState === "SUCCESS" && measuredDurationSec && (
+                                <span className="font-mono text-[11px] text-muted-foreground font-normal shrink-0">
+                                  {measuredDurationSec}s
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                              {isPreprocessing
+                                ? "Optimizing high-resolution photograph for colony detection."
+                                : pageState === "ANALYZING"
+                                  ? analyzingSubStage === "waiting"
+                                    ? "Detecting colonies and preparing results…"
+                                    : "Colony detection may take a few moments for larger images."
+                                  : pageState === "SUCCESS" && measuredDurationSec
+                                    ? `Analysis completed in ${measuredDurationSec}s`
+                                    : pageState === "ERROR"
+                                      ? "Analysis encountered an issue. Click Retry to run analysis again."
+                                      : activeDemo
+                                        ? "Demo plate loaded. Click Analyze to start detection."
+                                        : "Image loaded. Click Analyze to run YOLO colony detection."}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -542,17 +714,19 @@ export function ColonyCounterPage() {
                   role="status"
                   aria-live="polite"
                   aria-busy="true"
+                  data-testid="analyzing-state-panel"
                   className="border-border/80 bg-surface-elevated p-12 text-center shadow-xs"
                 >
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-researcher/30 bg-researcher-soft/50 text-researcher shadow-inner">
                     <Loader2 className="h-7 w-7 animate-spin" aria-hidden="true" />
                   </div>
                   <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
-                    Analyzing Petri dish...
+                    {activeDemo ? "Analyzing Demo Plate…" : "Analyzing Petri dish..."}
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
-                    Executing YOLO colony detection and localization. Processing time is typically
-                    under 500 ms.
+                    {analyzingSubStage === "waiting"
+                      ? "Detecting colonies and preparing results…"
+                      : "Executing YOLO colony detection and localization. Colony detection may take a few moments for larger images."}
                   </p>
                 </Card>
               )}
