@@ -236,6 +236,41 @@ YOLO11n Model (best.pt)
 8. **STEP 8 — Run Production Smoke Test**:
    Open `https://biotech.yourdomain.com/tools/colony-counter`, select Demo Plate A, and verify end-to-end detection, artifact loading, review, CFU calculation, and export.
 
+### 8.3 Google Cloud Run Deployment (Free-Tier Oriented)
+
+When deploying to Google Cloud Run, execute the following from `services/colony-detector`:
+
+```bash
+# 1. Authenticate with your Google Cloud account
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+
+# 2. Deploy from source using Cloud Build (builds Dockerfile automatically)
+gcloud run deploy micrylis-colony-detector \
+  --source . \
+  --region asia-south1 \
+  --platform managed \
+  --allow-unauthenticated \
+  --min-instances 0 \
+  --max-instances 2 \
+  --cpu 1 \
+  --memory 1Gi \
+  --timeout 45s \
+  --set-env-vars "ENVIRONMENT=production,COLONY_MODEL_PATH=models/best.pt"
+
+# 3. Note the returned Service URL (e.g. https://micrylis-colony-detector-xxx-el.a.run.app)
+# Update PUBLIC_BASE_URL:
+gcloud run services update micrylis-colony-detector \
+  --region asia-south1 \
+  --update-env-vars "PUBLIC_BASE_URL=https://YOUR_CLOUD_RUN_URL"
+
+# 4. Once your Cloudflare frontend is deployed, whitelist its origin:
+gcloud run services update micrylis-colony-detector \
+  --region asia-south1 \
+  --update-env-vars "FRONTEND_ORIGIN=https://YOUR_FRONTEND_DOMAIN"
+```
+
+*Free-Tier Safety Note*: `--min-instances 0` guarantees scale-to-zero when idle (no container instances running when there is no traffic).
 
 ---
 
