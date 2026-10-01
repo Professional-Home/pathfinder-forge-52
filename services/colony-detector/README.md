@@ -184,7 +184,11 @@ FRONTEND_ORIGIN=http://localhost:5173,http://localhost:8080
 
 ---
 
-## 8. Docker Deployment
+## 8. Docker & Production Cloud Deployment
+
+The colony detection microservice is packaged as a provider-neutral standalone Docker container running under an unprivileged user (`appuser`, UID 10001) with built-in healthchecks and OS image-processing libraries (`libgl1`, `libglib2.0-0`, `curl`).
+
+### 8.1 Building & Running the Image Locally
 
 ```bash
 # Build Docker image
@@ -192,10 +196,46 @@ docker build -t micrylis-colony-detector services/colony-detector
 
 # Run container with mounted models and outputs
 docker run -p 8000:8000 \
+  -e ENVIRONMENT=development \
   -v $(pwd)/services/colony-detector/models:/app/models \
   -v $(pwd)/services/colony-detector/outputs:/app/outputs \
   micrylis-colony-detector
 ```
+
+### 8.2 Production Deployment Sequence
+
+In production, the frontend and backend must communicate strictly over **HTTPS** (never `localhost` or `http://`):
+
+```text
+Production Frontend (Cloudflare Pages/Workers or Vercel)
+        |
+        | HTTPS (Exact Origin Whitelist)
+        v
+FastAPI Colony Service (Container: Fly.io, Cloud Run, AWS ECS, VPS)
+        |
+        v
+YOLO11n Model (best.pt)
+```
+
+#### Step-by-Step Deployment:
+1. **STEP 1 — Deploy FastAPI Docker Container**:
+   Deploy `services/colony-detector/Dockerfile` to your container provider (e.g., Fly.io, Google Cloud Run, AWS ECS, or Container VPS) ensuring `models/best.pt` is present in `/app/models`.
+2. **STEP 2 — Obtain Public Backend HTTPS URL**:
+   Acquire your assigned public HTTPS endpoint (e.g., `https://colony-api.yourdomain.com`).
+3. **STEP 3 — Configure Initial Backend Environment**:
+   Set `ENVIRONMENT=production`, `PUBLIC_BASE_URL=https://colony-api.yourdomain.com`, and `COLONY_MODEL_PATH=models/best.pt`.
+4. **STEP 4 — Deploy Frontend with Backend URL**:
+   Configure the build environment variable `VITE_COLONY_ML_API_URL=https://colony-api.yourdomain.com` and trigger the production build/deployment on Cloudflare Pages or Vercel.
+5. **STEP 5 — Obtain Public Frontend HTTPS URL**:
+   Acquire the deployed frontend public origin (e.g., `https://biotech.yourdomain.com`).
+6. **STEP 6 — Whitelist Frontend Origin on Backend**:
+   Update the backend container environment variable:
+   `FRONTEND_ORIGIN=https://biotech.yourdomain.com` (no trailing slash, no wildcard `*`).
+7. **STEP 7 — Redeploy / Restart Backend**:
+   Restart the FastAPI service to apply CORS origin updates.
+8. **STEP 8 — Run Production Smoke Test**:
+   Open `https://biotech.yourdomain.com/tools/colony-counter`, select Demo Plate A, and verify end-to-end detection, artifact loading, review, CFU calculation, and export.
+
 
 ---
 

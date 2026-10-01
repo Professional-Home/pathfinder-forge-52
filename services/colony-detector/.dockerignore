@@ -1,0 +1,25 @@
+# Ignore Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Ignore test caches and artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ignore ephemeral generated outputs (preserve .gitkeep)
+outputs/*
+!outputs/.gitkeep
+
+# Ignore local environment files and git metadata
+.env
+.env.*
+.git/
+.gitignore
