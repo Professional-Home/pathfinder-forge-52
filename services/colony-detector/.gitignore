@@ -11,6 +11,7 @@ __pycache__/
 
 # Local model weights (DO NOT commit large/proprietary weights)
 models/*.pt
+!models/best.pt
 models/*.onnx
 models/*.engine
 !models/README.md
