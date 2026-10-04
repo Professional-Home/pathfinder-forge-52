@@ -461,4 +461,130 @@ describe("ColonyDetectionCanvas Keyboard Accessibility (Phase 6C-2)", () => {
       expect(guidanceCard.querySelectorAll("input").length).toBe(0);
     });
   });
+
+  describe("Interactive Colony Review Controls & Production Regression", () => {
+    const annotatedUrl = "https://pathfinder-forge-52.onrender.com/outputs/annotated_sample.jpg";
+
+    it("A. defaults to interactive overlay and keeps review controls available when annotatedImageUrl is present", () => {
+      const onSetActiveTool = vi.fn();
+      render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          annotatedImageUrl={annotatedUrl}
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="select"
+          onSetActiveTool={onSetActiveTool}
+        />,
+      );
+
+      // AI detection elements must be mounted and interactive by default
+      const det0 = screen.getByTestId("ai-colony-det-0");
+      expect(det0).toBeInTheDocument();
+      expect(det0).toHaveAttribute("role", "button");
+
+      // Review Select and Add Colony tool buttons must be available
+      expect(screen.getByTestId("tool-select-button")).toBeInTheDocument();
+      expect(screen.getByTestId("tool-add-button")).toBeInTheDocument();
+
+      // Transparent hit-test backdrop must be mounted
+      expect(screen.getByTestId("canvas-hit-backdrop")).toBeInTheDocument();
+    });
+
+    it("B. invokes onToggleAiDetection with index 0 when AI detection marker is clicked", () => {
+      const onToggle = vi.fn();
+      render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          annotatedImageUrl={annotatedUrl}
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="select"
+          onToggleAiDetection={onToggle}
+        />,
+      );
+
+      const det0 = screen.getByTestId("ai-colony-det-0");
+      fireEvent.click(det0);
+
+      expect(onToggle).toHaveBeenCalledTimes(1);
+      expect(onToggle).toHaveBeenCalledWith(0);
+    });
+
+    it("C. invokes onAddManualColony with image-space coordinates when empty agar backdrop is clicked in Add mode", () => {
+      const onAdd = vi.fn();
+      render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          annotatedImageUrl={annotatedUrl}
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          activeTool="add"
+          onAddManualColony={onAdd}
+        />,
+      );
+
+      const backdrop = screen.getByTestId("canvas-hit-backdrop");
+      const svg = backdrop.closest("svg")!;
+
+      // Mock getBoundingClientRect for JSDOM coordinate mapping
+      vi.spyOn(svg, "getBoundingClientRect").mockReturnValue({
+        width: 800,
+        height: 800,
+        top: 0,
+        left: 0,
+        bottom: 800,
+        right: 800,
+        x: 0,
+        y: 0,
+        toJSON: () => {},
+      } as DOMRect);
+
+      fireEvent.click(backdrop, { clientX: 250, clientY: 350 });
+
+      expect(onAdd).toHaveBeenCalledTimes(1);
+      expect(onAdd).toHaveBeenCalledWith({ x: 250, y: 350 });
+    });
+
+    it("D. allows switching between interactive Overlay and Server Annotated views while preserving review state", () => {
+      const onSetActiveTool = vi.fn();
+      const removedSet = new Set([0]);
+
+      render(
+        <ColonyDetectionCanvas
+          originalImageUrl="blob:http://localhost/sample.jpg"
+          annotatedImageUrl={annotatedUrl}
+          detections={mockDetections}
+          imageMetadata={mockImageMetadata}
+          removedAiIndices={removedSet}
+          manualColonies={mockManualColonies}
+          activeTool="select"
+          onSetActiveTool={onSetActiveTool}
+        />,
+      );
+
+      // Verify initially in overlay mode with removed indicator
+      expect(screen.getByTestId("ai-excluded-badge-0")).toBeInTheDocument();
+      expect(screen.getByTestId("manual-colony-manual-1")).toBeInTheDocument();
+
+      // Switch to Server Annotated mode
+      const serverAnnotatedTab = screen.getByRole("button", { name: "Server Annotated" });
+      fireEvent.click(serverAnnotatedTab);
+
+      // In server-annotated mode: static image is displayed and notice is visible
+      expect(screen.getByTestId("server-annotated-notice")).toBeInTheDocument();
+      const serverImg = screen.getByAltText("Server-annotated Petri dish colony detections");
+      expect(serverImg).toBeInTheDocument();
+      expect(serverImg).toHaveAttribute("src", annotatedUrl);
+
+      // Review tools remain accessible; clicking Select switches back to Overlay
+      const selectBtn = screen.getByTestId("tool-select-button");
+      fireEvent.click(selectBtn);
+
+      // Verify back in overlay mode and previous review modifications are fully retained
+      expect(screen.getByTestId("ai-excluded-badge-0")).toBeInTheDocument();
+      expect(screen.getByTestId("manual-colony-manual-1")).toBeInTheDocument();
+      expect(screen.queryByTestId("server-annotated-notice")).not.toBeInTheDocument();
+    });
+  });
 });

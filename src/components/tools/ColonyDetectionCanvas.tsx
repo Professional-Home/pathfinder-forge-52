@@ -63,9 +63,7 @@ export function ColonyDetectionCanvas({
 }: ColonyDetectionCanvasProps) {
   const [showBoxes, setShowBoxes] = React.useState(true);
   const [showLabels, setShowLabels] = React.useState(true);
-  const [viewMode, setViewMode] = React.useState<"overlay" | "server-annotated">(
-    annotatedImageUrl ? "server-annotated" : "overlay",
-  );
+  const [viewMode, setViewMode] = React.useState<"overlay" | "server-annotated">("overlay");
   const [hoveredAiIndex, setHoveredAiIndex] = React.useState<number | null>(null);
   const [hoveredManualId, setHoveredManualId] = React.useState<string | null>(null);
   const [focusedAiIndex, setFocusedAiIndex] = React.useState<number | null>(null);
@@ -200,7 +198,7 @@ export function ColonyDetectionCanvas({
     }
   };
 
-  // Two-finger pinch-to-zoom on touch devices
+  // Two-finger pinch-to-zoom and single-finger tap tracking on touch devices
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 2) {
       const dist = Math.hypot(
@@ -209,6 +207,15 @@ export function ColonyDetectionCanvas({
       );
       touchDistanceRef.current = dist;
       initialTouchZoomRef.current = zoom;
+    } else if (e.touches.length === 1) {
+      pointerDownPosRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+      isDraggingRef.current = false;
+      if (zoom > 1) {
+        panStartRef.current = { ...pan };
+      }
     }
   };
 
@@ -225,6 +232,16 @@ export function ColonyDetectionCanvas({
       setZoom(nextZoom);
       if (nextZoom === 1) {
         setPan({ x: 0, y: 0 });
+      }
+    } else if (e.touches.length === 1 && zoom > 1) {
+      const dx = e.touches[0].clientX - pointerDownPosRef.current.x;
+      const dy = e.touches[0].clientY - pointerDownPosRef.current.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 5) {
+        isDraggingRef.current = true;
+        const nextX = panStartRef.current.x + dx;
+        const nextY = panStartRef.current.y + dy;
+        setPan(clampPan(nextX, nextY, zoom));
       }
     }
   };
@@ -262,12 +279,13 @@ export function ColonyDetectionCanvas({
 
   // SVG surface click handler for adding manual colonies
   const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    // Suppress colony addition if this interaction was a pan drag
+    // Suppress colony addition if this interaction was an active pan drag
+    const hasPointerDown = pointerDownPosRef.current.x !== 0 || pointerDownPosRef.current.y !== 0;
     const dragDist = Math.hypot(
       e.clientX - pointerDownPosRef.current.x,
       e.clientY - pointerDownPosRef.current.y,
     );
-    if (dragDist > 5 || isDraggingRef.current) {
+    if (isDraggingRef.current || (zoom > 1 && hasPointerDown && dragDist > 5)) {
       return;
     }
 
@@ -276,20 +294,33 @@ export function ColonyDetectionCanvas({
     const svg = svgRef.current;
     if (!svg) return;
 
-    // Zero-drift image-space coordinate mapping using native SVG transformation matrix
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return;
+    let clickX: number;
+    let clickY: number;
 
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const svgPt = pt.matrixTransform(ctm.inverse());
+    const ctm = svg.getScreenCTM?.();
+    if (ctm && typeof svg.createSVGPoint === "function") {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const svgPt = pt.matrixTransform(ctm.inverse());
+      clickX = svgPt.x;
+      clickY = svgPt.y;
+    } else {
+      // BoundingClientRect fallback for headless/JSDOM testing environments
+      const rect = svg.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        clickX = ((e.clientX - rect.left) / rect.width) * imgWidth;
+        clickY = ((e.clientY - rect.top) / rect.height) * imgHeight;
+      } else {
+        return;
+      }
+    }
 
     // Verify pointer falls within natural image bounds
-    if (svgPt.x >= 0 && svgPt.x <= imgWidth && svgPt.y >= 0 && svgPt.y <= imgHeight) {
+    if (clickX >= 0 && clickX <= imgWidth && clickY >= 0 && clickY <= imgHeight) {
       onAddManualColony({
-        x: Math.round(svgPt.x),
-        y: Math.round(svgPt.y),
+        x: Math.round(clickX),
+        y: Math.round(clickY),
       });
     }
   };
@@ -342,7 +373,7 @@ export function ColonyDetectionCanvas({
           )}
 
           {/* Phase 6B-2 Review Tools: [ Select ] [ + Add Colony ] */}
-          {viewMode === "overlay" && onSetActiveTool && (
+          {onSetActiveTool && (
             <div
               className="inline-flex items-center rounded-lg border border-border/80 bg-surface-elevated p-0.5 shadow-xs"
               role="radiogroup"
@@ -357,7 +388,12 @@ export function ColonyDetectionCanvas({
                 aria-pressed={activeTool === "select"}
                 data-state={activeTool === "select" ? "active" : "inactive"}
                 data-testid="tool-select-button"
-                onClick={() => onSetActiveTool("select")}
+                onClick={() => {
+                  if (viewMode !== "overlay") {
+                    setViewMode("overlay");
+                  }
+                  onSetActiveTool("select");
+                }}
                 className={cn(
                   "h-7 gap-1 px-2.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
                   activeTool === "select"
@@ -383,7 +419,12 @@ export function ColonyDetectionCanvas({
                 aria-pressed={activeTool === "add"}
                 data-state={activeTool === "add" ? "active" : "inactive"}
                 data-testid="tool-add-button"
-                onClick={() => onSetActiveTool("add")}
+                onClick={() => {
+                  if (viewMode !== "overlay") {
+                    setViewMode("overlay");
+                  }
+                  onSetActiveTool("add");
+                }}
                 className={cn(
                   "h-7 gap-1 px-2.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1",
                   activeTool === "add"
@@ -499,6 +540,31 @@ export function ColonyDetectionCanvas({
           )}
         </div>
       </div>
+
+      {/* Server Annotated Mode Informational Notice */}
+      {viewMode === "server-annotated" && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-surface/50 border border-border/60 text-xs text-muted-foreground shadow-xs"
+          role="status"
+          data-testid="server-annotated-notice"
+        >
+          <div className="flex items-center gap-2">
+            <Info className="h-3.5 w-3.5 text-researcher shrink-0" aria-hidden="true" />
+            <span>
+              Viewing static server-annotated output. Switch to <strong>Interactive Overlay</strong> or select a review tool above to remove or add detections.
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode("overlay")}
+            className="h-6 text-[11px] px-2 text-foreground hover:bg-surface-elevated"
+          >
+            Switch to Interactive Review
+          </Button>
+        </div>
+      )}
 
       {/* Review Guidance Area (User UX & Interaction Guidance) */}
       {viewMode === "overlay" && (
@@ -704,6 +770,20 @@ export function ColonyDetectionCanvas({
                 role="region"
                 aria-label={`Petri dish detection overlay. ${detections.length} AI detections, ${manualColonies.length} manual colonies.${activeTool === "add" ? " Add Colony tool is active: click or tap the agar image to place a colony marker." : " Select tool is active: use Tab to inspect detections, Enter or Space to toggle."}`}
               >
+                {/* Full-image transparent hit-test backdrop to capture clicks across empty agar space */}
+                <rect
+                  data-testid="canvas-hit-backdrop"
+                  x={0}
+                  y={0}
+                  width={imgWidth}
+                  height={imgHeight}
+                  fill="transparent"
+                  className={cn(
+                    "transition-colors",
+                    activeTool === "add" ? "cursor-crosshair" : "cursor-default",
+                  )}
+                />
+
                 {/* 1. AI Detections Layer */}
                 {hasDetections &&
                   showBoxes &&
@@ -774,11 +854,13 @@ export function ColonyDetectionCanvas({
                           // Only handle click when Select tool is active
                           if (activeTool === "select") {
                             e.stopPropagation();
+                            const hasPointerDown =
+                              pointerDownPosRef.current.x !== 0 || pointerDownPosRef.current.y !== 0;
                             const dragDist = Math.hypot(
                               e.clientX - pointerDownPosRef.current.x,
                               e.clientY - pointerDownPosRef.current.y,
                             );
-                            if (dragDist <= 5 && !isDraggingRef.current) {
+                            if (!isDraggingRef.current && (zoom === 1 || !hasPointerDown || dragDist <= 5)) {
                               onToggleAiDetection?.(index);
                             }
                           }
@@ -982,11 +1064,13 @@ export function ColonyDetectionCanvas({
                       onClick={(e) => {
                         if (activeTool === "select") {
                           e.stopPropagation();
+                          const hasPointerDown =
+                            pointerDownPosRef.current.x !== 0 || pointerDownPosRef.current.y !== 0;
                           const dragDist = Math.hypot(
                             e.clientX - pointerDownPosRef.current.x,
                             e.clientY - pointerDownPosRef.current.y,
                           );
-                          if (dragDist <= 5 && !isDraggingRef.current) {
+                          if (!isDraggingRef.current && (zoom === 1 || !hasPointerDown || dragDist <= 5)) {
                             onRemoveManualColony?.(colony.id);
                           }
                         }
@@ -1158,7 +1242,9 @@ export function ColonyDetectionCanvas({
 
         {/* Dynamic Tool Mode / Navigation Hint */}
         <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-1 rounded-md bg-background/80 px-2 py-0.5 text-[10px] font-mono text-muted-foreground backdrop-blur-sm border border-border/40">
-          {activeTool === "add" ? (
+          {viewMode === "server-annotated" ? (
+            <span>Static server output · Switch to Interactive Overlay to edit</span>
+          ) : activeTool === "add" ? (
             <span className="text-violet-500 font-semibold">
               Click agar to add colony · Drag to pan
             </span>
