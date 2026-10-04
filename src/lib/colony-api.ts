@@ -89,7 +89,7 @@ export interface DetectColoniesOptions {
   confidenceThreshold?: number;
   /** Optional AbortSignal to cancel in-flight detection requests */
   signal?: AbortSignal;
-  /** Optional timeout in milliseconds for the detection request (defaults to 45000ms / 45s) */
+  /** Optional timeout in milliseconds for the detection request (defaults to 120000ms / 120s) */
   timeoutMs?: number;
 }
 
@@ -216,7 +216,7 @@ export async function detectColonies(
       ? { confidenceThreshold: optionsOrThreshold }
       : (optionsOrThreshold ?? {});
 
-  const { confidenceThreshold, signal, timeoutMs = 45_000 } = options;
+  const { confidenceThreshold, signal, timeoutMs = 120_000 } = options;
 
   if (
     typeof confidenceThreshold === "number" &&
