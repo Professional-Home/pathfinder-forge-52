@@ -195,7 +195,8 @@ describe("Colony Counter Recovery & Non-Success States UX", { timeout: 15000 }, 
   it("9. User cancellation restores ready state and preserves image", async () => {
     let cancelSignal: AbortSignal | undefined;
     vi.spyOn(apiModule, "detectColonies").mockImplementation((_file, opts) => {
-      cancelSignal = opts?.signal;
+      const options = typeof opts === "object" ? opts : undefined;
+      cancelSignal = options?.signal;
       return new Promise((_resolve, reject) => {
         cancelSignal?.addEventListener("abort", () => {
           reject(new DOMException("Aborted", "AbortError"));

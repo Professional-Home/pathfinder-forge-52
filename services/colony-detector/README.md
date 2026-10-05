@@ -204,73 +204,54 @@ docker run -p 8000:8000 \
 
 ### 8.2 Production Deployment Sequence
 
-In production, the frontend and backend must communicate strictly over **HTTPS** (never `localhost` or `http://`):
+In production, the frontend and backend communicate strictly over **HTTPS** (never `localhost` or `http://`):
 
 ```text
-Production Frontend (Cloudflare Pages/Workers or Vercel)
+Production Frontend (Vercel)
         |
         | HTTPS (Exact Origin Whitelist)
         v
-FastAPI Colony Service (Container: Fly.io, Cloud Run, AWS ECS, VPS)
+FastAPI Colony Service (Render Docker Web Service)
         |
         v
 YOLO11n Model (best.pt)
 ```
 
 #### Step-by-Step Deployment:
-1. **STEP 1 — Deploy FastAPI Docker Container**:
-   Deploy `services/colony-detector/Dockerfile` to your container provider (e.g., Fly.io, Google Cloud Run, AWS ECS, or Container VPS) ensuring `models/best.pt` is present in `/app/models`.
+1. **STEP 1 — Deploy FastAPI Docker Service on Render**:
+   Create a new Web Service on Render linked to this repository using `services/colony-detector/Dockerfile` (or root context).
 2. **STEP 2 — Obtain Public Backend HTTPS URL**:
-   Acquire your assigned public HTTPS endpoint (e.g., `https://colony-api.yourdomain.com`).
-3. **STEP 3 — Configure Initial Backend Environment**:
-   Set `ENVIRONMENT=production`, `PUBLIC_BASE_URL=https://colony-api.yourdomain.com`, and `COLONY_MODEL_PATH=models/best.pt`.
-4. **STEP 4 — Deploy Frontend with Backend URL**:
-   Configure the build environment variable `VITE_COLONY_ML_API_URL=https://colony-api.yourdomain.com` and trigger the production build/deployment on Cloudflare Pages or Vercel.
+   Acquire your assigned Render HTTPS endpoint (e.g. `https://pathfinder-forge-52.onrender.com`).
+3. **STEP 3 — Configure Backend Environment Variables**:
+   In Render Dashboard, set:
+   - `ENVIRONMENT=production`
+   - `PUBLIC_BASE_URL=https://pathfinder-forge-52.onrender.com`
+   - `COLONY_MODEL_PATH=models/best.pt`
+   - `COLONY_RATE_LIMIT_ENABLED=true`
+4. **STEP 4 — Deploy Frontend on Vercel**:
+   Deploy the TanStack Start frontend to Vercel (using Nitro Vercel preset in `vite.config.ts`).
+   Set build environment variable:
+   `VITE_COLONY_ML_API_URL=https://pathfinder-forge-52.onrender.com`
 5. **STEP 5 — Obtain Public Frontend HTTPS URL**:
-   Acquire the deployed frontend public origin (e.g., `https://biotech.yourdomain.com`).
+   Acquire the deployed frontend public origin (e.g. `https://pathfinder-forge-52.vercel.app` or custom domain).
 6. **STEP 6 — Whitelist Frontend Origin on Backend**:
-   Update the backend container environment variable:
-   `FRONTEND_ORIGIN=https://biotech.yourdomain.com` (no trailing slash, no wildcard `*`).
+   Update the backend container environment variable in Render:
+   `FRONTEND_ORIGIN=https://pathfinder-forge-52.vercel.app` (no trailing slash, no wildcard `*`).
 7. **STEP 7 — Redeploy / Restart Backend**:
-   Restart the FastAPI service to apply CORS origin updates.
+   Restart the FastAPI service on Render to apply CORS origin updates.
 8. **STEP 8 — Run Production Smoke Test**:
-   Open `https://biotech.yourdomain.com/tools/colony-counter`, select Demo Plate A, and verify end-to-end detection, artifact loading, review, CFU calculation, and export.
+   Open `/tools/colony-counter`, select Demo Plate A, and verify end-to-end detection, interactive overlay, review controls, CFU calculation, and report export.
 
-### 8.3 Google Cloud Run Deployment (Free-Tier Oriented)
+### 8.3 Render Web Service Configuration (FastAPI + YOLO)
 
-When deploying to Google Cloud Run, execute the following from `services/colony-detector`:
+When configuring the Render Web Service:
+- **Environment**: Docker
+- **Dockerfile Path**: `services/colony-detector/Dockerfile`
+- **Docker Context**: `services/colony-detector` (or repository root)
+- **Instance Type**: Free / Starter (1 CPU, 512MB-1GB RAM)
+- **Health Check Path**: `/health`
 
-```bash
-# 1. Authenticate with your Google Cloud account
-gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
-
-# 2. Deploy from source using Cloud Build (builds Dockerfile automatically)
-gcloud run deploy micrylis-colony-detector \
-  --source . \
-  --region asia-south1 \
-  --platform managed \
-  --allow-unauthenticated \
-  --min-instances 0 \
-  --max-instances 2 \
-  --cpu 1 \
-  --memory 1Gi \
-  --timeout 45s \
-  --set-env-vars "ENVIRONMENT=production,COLONY_MODEL_PATH=models/best.pt"
-
-# 3. Note the returned Service URL (e.g. https://micrylis-colony-detector-xxx-el.a.run.app)
-# Update PUBLIC_BASE_URL:
-gcloud run services update micrylis-colony-detector \
-  --region asia-south1 \
-  --update-env-vars "PUBLIC_BASE_URL=https://YOUR_CLOUD_RUN_URL"
-
-# 4. Once your Cloudflare frontend is deployed, whitelist its origin:
-gcloud run services update micrylis-colony-detector \
-  --region asia-south1 \
-  --update-env-vars "FRONTEND_ORIGIN=https://YOUR_FRONTEND_DOMAIN"
-```
-
-*Free-Tier Safety Note*: `--min-instances 0` guarantees scale-to-zero when idle (no container instances running when there is no traffic).
+*Note on Cold Starts*: On Render free tier, idle containers spin down. The frontend client includes an extended 120-second timeout to gracefully accommodate cold starts while maintaining responsive steady-state performance.
 
 ---
 

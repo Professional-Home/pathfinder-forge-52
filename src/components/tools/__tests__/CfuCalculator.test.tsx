@@ -117,6 +117,7 @@ describe("CfuCalculator Component", () => {
           confluence_risk: "high",
           review_recommended: true,
           overlap_ratio: 0.35,
+          reason: "Plate exceeds countable density range.",
         }}
       />,
     );
@@ -135,7 +136,7 @@ describe("CfuCalculator Component", () => {
 
   it("emits calculation updates through onCalculationChange callback", async () => {
     const user = userEvent.setup();
-    const handleCalculationChange = vi.fn<[CfuExportData | null], void>();
+    const handleCalculationChange = vi.fn<(data: CfuExportData | null) => void>();
 
     render(
       <CfuCalculator

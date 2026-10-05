@@ -33,7 +33,7 @@ vi.mock("@/components/site-footer", () => ({
 global.URL.createObjectURL = vi.fn(() => "blob:mock-url");
 global.URL.revokeObjectURL = vi.fn();
 
-describe("Colony Counter Accessibility (a11y) Suite", () => {
+describe("Colony Counter Accessibility (a11y) Suite", { timeout: 15000 }, () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -124,6 +124,7 @@ describe("Colony Counter Accessibility (a11y) Suite", () => {
 
     it("exposes preprocessing success feedback with role='status' and aria-live='polite'", () => {
       const mockOptimization = {
+        success: true as const,
         isOptimized: true,
         uploadFile: new File([new Uint8Array(1.5 * 1024 * 1024)], "opt.jpg", {
           type: "image/jpeg",
@@ -234,9 +235,10 @@ describe("Colony Counter Accessibility (a11y) Suite", () => {
     it("announces 'Analysis cancelled.' when cancellation is triggered", async () => {
       let abortSignal: AbortSignal | undefined;
       vi.spyOn(apiModule, "detectColonies").mockImplementation((_, opts) => {
-        abortSignal = opts?.signal;
+        const options = typeof opts === "object" ? opts : undefined;
+        abortSignal = options?.signal;
         return new Promise((_, reject) => {
-          opts?.signal?.addEventListener("abort", () => {
+          options?.signal?.addEventListener("abort", () => {
             reject(new apiModule.ColonyDetectionApiError("Analysis cancelled by user", "REQUEST_ABORTED", 499));
           });
         });
@@ -279,7 +281,8 @@ describe("Colony Counter Accessibility (a11y) Suite", () => {
       const fileInput = screen.getByLabelText("Upload Petri dish image file");
       fireEvent.change(fileInput, { target: { files: [smallFile] } });
 
-      const analyzeBtn = screen.getByRole("button", { name: "Analyze Petri dish plate" });
+      const analyzeBtn = await screen.findByRole("button", { name: "Analyze Petri dish plate" });
+      await waitFor(() => expect(analyzeBtn).toBeEnabled());
       fireEvent.click(analyzeBtn);
 
       await waitFor(() => {
@@ -309,7 +312,8 @@ describe("Colony Counter Accessibility (a11y) Suite", () => {
       const fileInput = screen.getByLabelText("Upload Petri dish image file");
       fireEvent.change(fileInput, { target: { files: [smallFile] } });
 
-      const analyzeBtn = screen.getByRole("button", { name: "Analyze Petri dish plate" });
+      const analyzeBtn = await screen.findByRole("button", { name: "Analyze Petri dish plate" });
+      await waitFor(() => expect(analyzeBtn).toBeEnabled());
       fireEvent.click(analyzeBtn);
 
       await waitFor(() => {
@@ -335,7 +339,8 @@ describe("Colony Counter Accessibility (a11y) Suite", () => {
       const fileInput = screen.getByLabelText("Upload Petri dish image file");
       fireEvent.change(fileInput, { target: { files: [smallFile] } });
 
-      const analyzeBtn = screen.getByRole("button", { name: "Analyze Petri dish plate" });
+      const analyzeBtn = await screen.findByRole("button", { name: "Analyze Petri dish plate" });
+      await waitFor(() => expect(analyzeBtn).toBeEnabled());
       fireEvent.click(analyzeBtn);
 
       await waitFor(() => {

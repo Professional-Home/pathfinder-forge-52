@@ -184,7 +184,7 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     if (bitmap) {
       try {
-        bitmap.close();
+        (bitmap as unknown as ImageBitmap).close();
       } catch {}
       bitmap = null;
     }
@@ -199,7 +199,7 @@ export async function preprocessSpecimenImage(file: File): Promise<PreprocessIma
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     if (bitmap) {
       try {
-        bitmap.close();
+        (bitmap as unknown as ImageBitmap).close();
       } catch {}
       bitmap = null;
     }

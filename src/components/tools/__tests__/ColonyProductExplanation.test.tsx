@@ -182,7 +182,6 @@ describe("Colony Counter Product & Demo Explanation UX", () => {
       annotated_image_url: "/annotated.jpg",
       image: { width: 500, height: 500 },
       processing_time_ms: 100,
-      applied_threshold: 0.3,
     };
 
     render(
@@ -250,12 +249,12 @@ describe("Colony Counter Product & Demo Explanation UX", () => {
       annotated_image_url: "/outputs/annotated_demo_a.jpg",
       image: { width: 640, height: 640 },
       processing_time_ms: 120,
-      applied_threshold: 0.3,
       quality: {
         density_level: "low",
         confluence_risk: "low",
         review_recommended: false,
         overlap_ratio: 0.01,
+        reason: "Low density plate.",
       },
     });
 

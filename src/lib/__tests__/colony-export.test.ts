@@ -124,6 +124,7 @@ describe("colony-export pure logic and formatting", () => {
         confluence_risk: "low",
         review_recommended: false,
         overlap_ratio: 0.082,
+        reason: "Medium density plate.",
       },
       cfuData: {
         countSource: "reviewed",
@@ -208,6 +209,7 @@ describe("colony-export pure logic and formatting", () => {
           confluence_risk: "high",
           review_recommended: true,
           overlap_ratio: 0.38,
+          reason: "Ultra high density plate.",
         },
       };
       const csv = buildSummaryCsv(params);
@@ -355,10 +357,15 @@ describe("colony-export pure logic and formatting", () => {
           manualColonies: [
             {
               id: "man-1",
+              source: "manual",
               x: 200,
               y: 200,
               radius: 12,
-              timestamp: Date.now(),
+              x1: 188,
+              y1: 188,
+              x2: 212,
+              y2: 212,
+              createdAt: 1700000000000,
             },
           ],
         });

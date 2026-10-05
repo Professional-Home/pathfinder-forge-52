@@ -79,12 +79,12 @@ describe("colony-api client & URL resolution (DEP-01)", () => {
       annotated_image_url: "/outputs/annotated_0123456789abcdef0123456789abcdef.jpg",
       image: { width: 1024, height: 1024 },
       processing_time_ms: 120,
-      applied_threshold: 0.3,
       quality: {
         density_level: "low",
         confluence_risk: "low",
         review_recommended: false,
         overlap_ratio: 0.02,
+        reason: "Low colony density.",
       },
     };
 

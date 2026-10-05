@@ -25,12 +25,12 @@ describe("ColonyExportActions Component", () => {
     annotated_image_url: "/outputs/annotated_123.jpg",
     image: { width: 1024, height: 1024 },
     processing_time_ms: 150,
-    applied_threshold: 0.3,
     quality: {
       density_level: "medium",
       confluence_risk: "low",
       review_recommended: false,
       overlap_ratio: 0.05,
+      reason: "Medium density plate.",
     },
   };
 

@@ -39,7 +39,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 # Expose microservice HTTP port
 EXPOSE 8000
 
-# Run FastAPI app with Uvicorn (binds to Cloud Run $PORT, default 8000)
+# Run FastAPI app with Uvicorn (binds to dynamic container $PORT on Render/Cloud, default 8000)
 CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
 
 
