@@ -1,3 +1,5 @@
+import { supabase } from "@/utils/supabase";
+
 const ADMIN_SESSION_TOKEN_KEY = "mf_admin_session_token";
 const ADMIN_USER_KEY = "mf_admin_user";
 
@@ -67,6 +69,12 @@ export function adminLogin(email: string, pass: string): { success: boolean; err
         role: "SUPER_ADMIN",
       })
     );
+
+    // Sync session with Supabase Auth so RLS policies can authenticate admin user
+    supabase.auth.signInWithPassword({ email: normalizedEmail, password: pass }).catch((err) => {
+      console.warn("[AdminAuth] Supabase Auth sign-in sync warning:", err);
+    });
+
     return { success: true };
   }
 
@@ -79,6 +87,7 @@ export function adminLogout(): void {
   sessionStorage.removeItem(ADMIN_SESSION_TOKEN_KEY);
   localStorage.removeItem(ADMIN_SESSION_TOKEN_KEY);
   localStorage.removeItem(ADMIN_USER_KEY);
+  supabase.auth.signOut().catch(() => {});
 }
 
 export function getAdminUser(): AdminUser {

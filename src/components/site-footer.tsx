@@ -6,11 +6,11 @@ import { PLAY_STORE_URL } from "@/lib/app-config";
 
 const NAV_LINKS = [
   { name: "Home", to: "/" as const },
-  { name: "About Us", to: "/about" as const },
+  { name: "About", to: "/about" as const },
   { name: "Projects", to: "/projects" as const },
+  { name: "Community", to: "/community" as const },
+  { name: "Opportunities", to: "/opportunities" as const },
   { name: "Blog", to: "/blog" as const },
-  { name: "Webinar", to: "/webinars" as const },
-  { name: "Events", to: "/events" as const },
 ] as const;
 
 const COMPANY_LINKS = [

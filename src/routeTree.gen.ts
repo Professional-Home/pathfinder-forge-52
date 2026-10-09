@@ -16,22 +16,27 @@ import { Route as ReturnPolicyRouteImport } from './routes/return-policy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as EmployeesRouteImport } from './routes/employees'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CommunityRouteImport } from './routes/community'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
+import { Route as OpportunitiesIndexRouteImport } from './routes/opportunities/index'
 import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as CoursesIndexRouteImport } from './routes/courses/index'
+import { Route as CommunityIndexRouteImport } from './routes/community/index'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
+import { Route as OpportunitiesSlugRouteImport } from './routes/opportunities/$slug'
 import { Route as EventsIdRouteImport } from './routes/events/$id'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
 import { Route as DashboardPaymentsRouteImport } from './routes/dashboard/payments'
@@ -40,11 +45,18 @@ import { Route as DashboardGuidanceRouteImport } from './routes/dashboard/guidan
 import { Route as DashboardCoursesRouteImport } from './routes/dashboard/courses'
 import { Route as DashboardCertificatesRouteImport } from './routes/dashboard/certificates'
 import { Route as CoursesSlugRouteImport } from './routes/courses/$slug'
+import { Route as CommunityWorkshopsRouteImport } from './routes/community/workshops'
+import { Route as CommunityWebinarsRouteImport } from './routes/community/webinars'
+import { Route as CommunityNationalBioChallengeRouteImport } from './routes/community/national-bio-challenge'
+import { Route as CommunityEventsRouteImport } from './routes/community/events'
+import { Route as CommunityConferencesRouteImport } from './routes/community/conferences'
+import { Route as CommunityCompetitionsRouteImport } from './routes/community/competitions'
 import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminWebinarsRouteImport } from './routes/admin/webinars'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
+import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminGuidanceRouteImport } from './routes/admin/guidance'
@@ -95,6 +107,11 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpportunitiesRoute = OpportunitiesRouteImport.update({
+  id: '/opportunities',
+  path: '/opportunities',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -125,6 +142,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -150,6 +172,11 @@ const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   path: '/projects/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OpportunitiesIndexRoute = OpportunitiesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OpportunitiesRoute,
+} as any)
 const EventsIndexRoute = EventsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -165,6 +192,11 @@ const CoursesIndexRoute = CoursesIndexRouteImport.update({
   path: '/courses/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunityIndexRoute = CommunityIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CommunityRoute,
+} as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -174,6 +206,11 @@ const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
   id: '/projects/$slug',
   path: '/projects/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OpportunitiesSlugRoute = OpportunitiesSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => OpportunitiesRoute,
 } as any)
 const EventsIdRoute = EventsIdRouteImport.update({
   id: '/$id',
@@ -215,6 +252,37 @@ const CoursesSlugRoute = CoursesSlugRouteImport.update({
   path: '/courses/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunityWorkshopsRoute = CommunityWorkshopsRouteImport.update({
+  id: '/workshops',
+  path: '/workshops',
+  getParentRoute: () => CommunityRoute,
+} as any)
+const CommunityWebinarsRoute = CommunityWebinarsRouteImport.update({
+  id: '/webinars',
+  path: '/webinars',
+  getParentRoute: () => CommunityRoute,
+} as any)
+const CommunityNationalBioChallengeRoute =
+  CommunityNationalBioChallengeRouteImport.update({
+    id: '/national-bio-challenge',
+    path: '/national-bio-challenge',
+    getParentRoute: () => CommunityRoute,
+  } as any)
+const CommunityEventsRoute = CommunityEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => CommunityRoute,
+} as any)
+const CommunityConferencesRoute = CommunityConferencesRouteImport.update({
+  id: '/conferences',
+  path: '/conferences',
+  getParentRoute: () => CommunityRoute,
+} as any)
+const CommunityCompetitionsRoute = CommunityCompetitionsRouteImport.update({
+  id: '/competitions',
+  path: '/competitions',
+  getParentRoute: () => CommunityRoute,
+} as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -238,6 +306,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
 const AdminReviewsRoute = AdminReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOpportunitiesRoute = AdminOpportunitiesRouteImport.update({
+  id: '/opportunities',
+  path: '/opportunities',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMentorsRoute = AdminMentorsRouteImport.update({
@@ -318,12 +391,14 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/community': typeof CommunityRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/opportunities': typeof OpportunitiesRouteWithChildren
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -339,11 +414,18 @@ export interface FileRoutesByFullPath {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/community/competitions': typeof CommunityCompetitionsRoute
+  '/community/conferences': typeof CommunityConferencesRoute
+  '/community/events': typeof CommunityEventsRoute
+  '/community/national-bio-challenge': typeof CommunityNationalBioChallengeRoute
+  '/community/webinars': typeof CommunityWebinarsRoute
+  '/community/workshops': typeof CommunityWorkshopsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -352,11 +434,14 @@ export interface FileRoutesByFullPath {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/events/$id': typeof EventsIdRoute
+  '/opportunities/$slug': typeof OpportunitiesSlugRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/blog/': typeof BlogIndexRoute
+  '/community/': typeof CommunityIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/events/': typeof EventsIndexRoute
+  '/opportunities/': typeof OpportunitiesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
@@ -387,11 +472,18 @@ export interface FileRoutesByTo {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/community/competitions': typeof CommunityCompetitionsRoute
+  '/community/conferences': typeof CommunityConferencesRoute
+  '/community/events': typeof CommunityEventsRoute
+  '/community/national-bio-challenge': typeof CommunityNationalBioChallengeRoute
+  '/community/webinars': typeof CommunityWebinarsRoute
+  '/community/workshops': typeof CommunityWorkshopsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -400,11 +492,14 @@ export interface FileRoutesByTo {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/events/$id': typeof EventsIdRoute
+  '/opportunities/$slug': typeof OpportunitiesSlugRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/blog': typeof BlogIndexRoute
+  '/community': typeof CommunityIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/events': typeof EventsIndexRoute
+  '/opportunities': typeof OpportunitiesIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
@@ -419,12 +514,14 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/community': typeof CommunityRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
   '/events': typeof EventsRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/opportunities': typeof OpportunitiesRouteWithChildren
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -440,11 +537,18 @@ export interface FileRoutesById {
   '/admin/guidance': typeof AdminGuidanceRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
+  '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/reviews': typeof AdminReviewsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/community/competitions': typeof CommunityCompetitionsRoute
+  '/community/conferences': typeof CommunityConferencesRoute
+  '/community/events': typeof CommunityEventsRoute
+  '/community/national-bio-challenge': typeof CommunityNationalBioChallengeRoute
+  '/community/webinars': typeof CommunityWebinarsRoute
+  '/community/workshops': typeof CommunityWorkshopsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/dashboard/certificates': typeof DashboardCertificatesRoute
   '/dashboard/courses': typeof DashboardCoursesRoute
@@ -453,11 +557,14 @@ export interface FileRoutesById {
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/events/$id': typeof EventsIdRoute
+  '/opportunities/$slug': typeof OpportunitiesSlugRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/blog/': typeof BlogIndexRoute
+  '/community/': typeof CommunityIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/events/': typeof EventsIndexRoute
+  '/opportunities/': typeof OpportunitiesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/admin/courses/new': typeof AdminCoursesNewRoute
   '/dashboard/book/$mentorId': typeof DashboardBookMentorIdRoute
@@ -473,12 +580,14 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/blog'
+    | '/community'
     | '/dashboard'
     | '/disclaimer'
     | '/employees'
     | '/events'
     | '/login'
     | '/onboarding'
+    | '/opportunities'
     | '/privacy-policy'
     | '/refund-policy'
     | '/reset-password'
@@ -494,11 +603,18 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/opportunities'
     | '/admin/reviews'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
     | '/blog/$slug'
+    | '/community/competitions'
+    | '/community/conferences'
+    | '/community/events'
+    | '/community/national-bio-challenge'
+    | '/community/webinars'
+    | '/community/workshops'
     | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -507,11 +623,14 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/events/$id'
+    | '/opportunities/$slug'
     | '/projects/$slug'
     | '/blog/'
+    | '/community/'
     | '/courses/'
     | '/dashboard/'
     | '/events/'
+    | '/opportunities/'
     | '/projects/'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
@@ -542,11 +661,18 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/opportunities'
     | '/admin/reviews'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
     | '/blog/$slug'
+    | '/community/competitions'
+    | '/community/conferences'
+    | '/community/events'
+    | '/community/national-bio-challenge'
+    | '/community/webinars'
+    | '/community/workshops'
     | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -555,11 +681,14 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/events/$id'
+    | '/opportunities/$slug'
     | '/projects/$slug'
     | '/blog'
+    | '/community'
     | '/courses'
     | '/dashboard'
     | '/events'
+    | '/opportunities'
     | '/projects'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
@@ -573,12 +702,14 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/blog'
+    | '/community'
     | '/dashboard'
     | '/disclaimer'
     | '/employees'
     | '/events'
     | '/login'
     | '/onboarding'
+    | '/opportunities'
     | '/privacy-policy'
     | '/refund-policy'
     | '/reset-password'
@@ -594,11 +725,18 @@ export interface FileRouteTypes {
     | '/admin/guidance'
     | '/admin/login'
     | '/admin/mentors'
+    | '/admin/opportunities'
     | '/admin/reviews'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
     | '/blog/$slug'
+    | '/community/competitions'
+    | '/community/conferences'
+    | '/community/events'
+    | '/community/national-bio-challenge'
+    | '/community/webinars'
+    | '/community/workshops'
     | '/courses/$slug'
     | '/dashboard/certificates'
     | '/dashboard/courses'
@@ -607,11 +745,14 @@ export interface FileRouteTypes {
     | '/dashboard/payments'
     | '/dashboard/settings'
     | '/events/$id'
+    | '/opportunities/$slug'
     | '/projects/$slug'
     | '/blog/'
+    | '/community/'
     | '/courses/'
     | '/dashboard/'
     | '/events/'
+    | '/opportunities/'
     | '/projects/'
     | '/admin/courses/new'
     | '/dashboard/book/$mentorId'
@@ -626,12 +767,14 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  CommunityRoute: typeof CommunityRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
   DisclaimerRoute: typeof DisclaimerRoute
   EmployeesRoute: typeof EmployeesRoute
   EventsRoute: typeof EventsRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  OpportunitiesRoute: typeof OpportunitiesRouteWithChildren
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -697,6 +840,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/opportunities': {
+      id: '/opportunities'
+      path: '/opportunities'
+      fullPath: '/opportunities'
+      preLoaderRoute: typeof OpportunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -739,6 +889,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog': {
       id: '/blog'
       path: '/blog'
@@ -774,6 +931,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/opportunities/': {
+      id: '/opportunities/'
+      path: '/'
+      fullPath: '/opportunities/'
+      preLoaderRoute: typeof OpportunitiesIndexRouteImport
+      parentRoute: typeof OpportunitiesRoute
+    }
     '/events/': {
       id: '/events/'
       path: '/'
@@ -795,6 +959,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/community/': {
+      id: '/community/'
+      path: '/'
+      fullPath: '/community/'
+      preLoaderRoute: typeof CommunityIndexRouteImport
+      parentRoute: typeof CommunityRoute
+    }
     '/blog/': {
       id: '/blog/'
       path: '/'
@@ -808,6 +979,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/$slug'
       preLoaderRoute: typeof ProjectsSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/opportunities/$slug': {
+      id: '/opportunities/$slug'
+      path: '/$slug'
+      fullPath: '/opportunities/$slug'
+      preLoaderRoute: typeof OpportunitiesSlugRouteImport
+      parentRoute: typeof OpportunitiesRoute
     }
     '/events/$id': {
       id: '/events/$id'
@@ -865,6 +1043,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/community/workshops': {
+      id: '/community/workshops'
+      path: '/workshops'
+      fullPath: '/community/workshops'
+      preLoaderRoute: typeof CommunityWorkshopsRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/community/webinars': {
+      id: '/community/webinars'
+      path: '/webinars'
+      fullPath: '/community/webinars'
+      preLoaderRoute: typeof CommunityWebinarsRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/community/national-bio-challenge': {
+      id: '/community/national-bio-challenge'
+      path: '/national-bio-challenge'
+      fullPath: '/community/national-bio-challenge'
+      preLoaderRoute: typeof CommunityNationalBioChallengeRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/community/events': {
+      id: '/community/events'
+      path: '/events'
+      fullPath: '/community/events'
+      preLoaderRoute: typeof CommunityEventsRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/community/conferences': {
+      id: '/community/conferences'
+      path: '/conferences'
+      fullPath: '/community/conferences'
+      preLoaderRoute: typeof CommunityConferencesRouteImport
+      parentRoute: typeof CommunityRoute
+    }
+    '/community/competitions': {
+      id: '/community/competitions'
+      path: '/competitions'
+      fullPath: '/community/competitions'
+      preLoaderRoute: typeof CommunityCompetitionsRouteImport
+      parentRoute: typeof CommunityRoute
+    }
     '/blog/$slug': {
       id: '/blog/$slug'
       path: '/$slug'
@@ -898,6 +1118,13 @@ declare module '@tanstack/react-router' {
       path: '/reviews'
       fullPath: '/admin/reviews'
       preLoaderRoute: typeof AdminReviewsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/opportunities': {
+      id: '/admin/opportunities'
+      path: '/opportunities'
+      fullPath: '/admin/opportunities'
+      preLoaderRoute: typeof AdminOpportunitiesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/mentors': {
@@ -1028,6 +1255,7 @@ interface AdminRouteChildren {
   AdminGuidanceRoute: typeof AdminGuidanceRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMentorsRoute: typeof AdminMentorsRoute
+  AdminOpportunitiesRoute: typeof AdminOpportunitiesRoute
   AdminReviewsRoute: typeof AdminReviewsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWebinarsRoute: typeof AdminWebinarsRoute
@@ -1042,6 +1270,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminGuidanceRoute: AdminGuidanceRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMentorsRoute: AdminMentorsRoute,
+  AdminOpportunitiesRoute: AdminOpportunitiesRoute,
   AdminReviewsRoute: AdminReviewsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminWebinarsRoute: AdminWebinarsRoute,
@@ -1060,6 +1289,30 @@ const BlogRouteChildren: BlogRouteChildren = {
 }
 
 const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
+
+interface CommunityRouteChildren {
+  CommunityCompetitionsRoute: typeof CommunityCompetitionsRoute
+  CommunityConferencesRoute: typeof CommunityConferencesRoute
+  CommunityEventsRoute: typeof CommunityEventsRoute
+  CommunityNationalBioChallengeRoute: typeof CommunityNationalBioChallengeRoute
+  CommunityWebinarsRoute: typeof CommunityWebinarsRoute
+  CommunityWorkshopsRoute: typeof CommunityWorkshopsRoute
+  CommunityIndexRoute: typeof CommunityIndexRoute
+}
+
+const CommunityRouteChildren: CommunityRouteChildren = {
+  CommunityCompetitionsRoute: CommunityCompetitionsRoute,
+  CommunityConferencesRoute: CommunityConferencesRoute,
+  CommunityEventsRoute: CommunityEventsRoute,
+  CommunityNationalBioChallengeRoute: CommunityNationalBioChallengeRoute,
+  CommunityWebinarsRoute: CommunityWebinarsRoute,
+  CommunityWorkshopsRoute: CommunityWorkshopsRoute,
+  CommunityIndexRoute: CommunityIndexRoute,
+}
+
+const CommunityRouteWithChildren = CommunityRoute._addFileChildren(
+  CommunityRouteChildren,
+)
 
 interface DashboardRouteChildren {
   DashboardCertificatesRoute: typeof DashboardCertificatesRoute
@@ -1102,17 +1355,33 @@ const EventsRouteChildren: EventsRouteChildren = {
 const EventsRouteWithChildren =
   EventsRoute._addFileChildren(EventsRouteChildren)
 
+interface OpportunitiesRouteChildren {
+  OpportunitiesSlugRoute: typeof OpportunitiesSlugRoute
+  OpportunitiesIndexRoute: typeof OpportunitiesIndexRoute
+}
+
+const OpportunitiesRouteChildren: OpportunitiesRouteChildren = {
+  OpportunitiesSlugRoute: OpportunitiesSlugRoute,
+  OpportunitiesIndexRoute: OpportunitiesIndexRoute,
+}
+
+const OpportunitiesRouteWithChildren = OpportunitiesRoute._addFileChildren(
+  OpportunitiesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  CommunityRoute: CommunityRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
   DisclaimerRoute: DisclaimerRoute,
   EmployeesRoute: EmployeesRoute,
   EventsRoute: EventsRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  OpportunitiesRoute: OpportunitiesRouteWithChildren,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   RefundPolicyRoute: RefundPolicyRoute,
   ResetPasswordRoute: ResetPasswordRoute,

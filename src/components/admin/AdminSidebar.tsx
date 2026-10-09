@@ -12,11 +12,13 @@ import {
   Video,
   Star,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 
 export const adminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", shortLabel: "Home", to: "/admin/dashboard" },
   { icon: BookOpen, label: "Course Management", shortLabel: "Courses", to: "/admin/courses" },
+  { icon: Briefcase, label: "Opportunities", shortLabel: "Opps", to: "/admin/opportunities" },
   { icon: FileText, label: "Blog Management", shortLabel: "Blogs", to: "/admin/blogs" },
   { icon: Video, label: "Webinar Management", shortLabel: "Webinars", to: "/admin/webinars" },
   { icon: Sparkles, label: "Event Management", shortLabel: "Events", to: "/admin/events" },

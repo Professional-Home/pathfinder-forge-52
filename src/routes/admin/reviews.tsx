@@ -385,7 +385,7 @@ function AdminReviewsPage() {
         onOpenChange={setDeleteOpen}
         title="Delete Review"
         description={`Are you sure you want to permanently delete the review submitted by "${deletingReview?.name}"? This action cannot be undone.`}
-        confirmText="Delete Review"
+        confirmLabel="Delete Review"
         onConfirm={confirmDeleteReview}
         destructive
       />

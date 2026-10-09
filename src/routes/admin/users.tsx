@@ -121,9 +121,9 @@ function AdminUsersPage() {
       const serverRes = await deleteUserAdmin({ data: { userId: target.id } });
 
       // 2. Also attempt RPC deletion if procedure exists
-      await supabase.rpc("delete_user", { target_user_id: target.id }).catch(() => {});
-      await supabase.from("profile").delete().eq("id", target.id).catch(() => {});
-      await supabase.from("users").delete().eq("id", target.id).catch(() => {});
+      try { await supabase.rpc("delete_user", { target_user_id: target.id }); } catch {}
+      try { await supabase.from("profile").delete().eq("id", target.id); } catch {}
+      try { await supabase.from("users").delete().eq("id", target.id); } catch {}
 
       if (serverRes.success) {
         toast.success(`User "${target.full_name || target.email}" completely deleted from Supabase.`);
