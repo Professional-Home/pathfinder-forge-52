@@ -18,6 +18,16 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -64,6 +74,14 @@ export function ColonyCounterPage() {
     React.useState<import("@/lib/colony-image-preprocessor").ImageOptimizationSuccess | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [confidenceThreshold, setConfidenceThreshold] = React.useState<number>(0.3);
+  const [appliedThreshold, setAppliedThreshold] = React.useState<number>(0.3);
+  const [showReanalysisConfirm, setShowReanalysisConfirm] = React.useState<boolean>(false);
+  const [pendingReanalysisAction, setPendingReanalysisAction] = React.useState<
+    | { type: "analyze" }
+    | { type: "demo"; demo: DemoPlateItem }
+    | null
+  >(null);
+  const [reanalysisError, setReanalysisError] = React.useState<string | null>(null);
   const [pageState, setPageState] = React.useState<PageState>("EMPTY");
   const [analysisResult, setAnalysisResult] = React.useState<ColonyDetectionSuccessResponse | null>(
     null,
@@ -179,8 +197,10 @@ export function ColonyCounterPage() {
     setUploadPayload(payload ?? file);
     setOptimizationInfo(optimization ?? null);
     setAnalysisResult(null);
+    setAppliedThreshold(0.3);
     setErrorMessage(null);
     setErrorDetails(null);
+    setReanalysisError(null);
     setCfuData(null);
     setAnnotatedReportImageUrl(null);
     setAnalyzingSubStage("initial");
@@ -193,10 +213,21 @@ export function ColonyCounterPage() {
     }
   };
 
-  const handleSelectDemo = async (demo: DemoPlateItem) => {
-    if (pageState === "ANALYZING") return;
+  const handleSelectDemo = (demo: DemoPlateItem) => {
+    if (pageState === "ANALYZING" || isPreprocessing) return;
+    if (pageState === "SUCCESS" && review.hasModifications) {
+      setPendingReanalysisAction({ type: "demo", demo });
+      setShowReanalysisConfirm(true);
+      return;
+    }
+    void executeSelectDemo(demo);
+  };
+
+  const executeSelectDemo = async (demo: DemoPlateItem) => {
+    if (pageState === "ANALYZING" || isPreprocessing) return;
     setLoadingDemoId(demo.id);
     setFailedDemo(null);
+    setReanalysisError(null);
     try {
       const file = await fetchDemoPlateFile(demo);
       setActiveDemo(demo);
@@ -218,15 +249,27 @@ export function ColonyCounterPage() {
     }
   };
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = () => {
+    if (!selectedFile || pageState === "ANALYZING" || isPreprocessing) return;
+    if (pageState === "SUCCESS" && review.hasModifications) {
+      setPendingReanalysisAction({ type: "analyze" });
+      setShowReanalysisConfirm(true);
+      return;
+    }
+    void executeAnalysis();
+  };
+
+  const executeAnalysis = async () => {
     const fileToUpload = uploadPayload || selectedFile;
     if (!fileToUpload || pageState === "ANALYZING" || isPreprocessing) return;
 
+    const previousResult = analysisResult;
     setPageState("ANALYZING");
     setAnalyzingSubStage("initial");
     setMeasuredDurationSec(null);
     setErrorMessage(null);
     setErrorDetails(null);
+    setReanalysisError(null);
 
     const startAnnouncement = activeDemo
       ? "Analyzing demo plate. Analyzing culture plate."
@@ -252,6 +295,8 @@ export function ColonyCounterPage() {
       const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
       setMeasuredDurationSec(elapsed);
       setAnalysisResult(response);
+      setAppliedThreshold(confidenceThreshold);
+      review.resetReview();
       setPageState("SUCCESS");
       setStatusAnnouncement("Analysis complete. Colony detection results are ready.");
     } catch (err: unknown) {
@@ -263,67 +308,64 @@ export function ColonyCounterPage() {
 
       // Ignore user-initiated aborts
       if (err instanceof ColonyDetectionApiError && err.code === "REQUEST_ABORTED") {
-        setPageState(selectedFile ? "READY" : "EMPTY");
-        setStatusAnnouncement("Analysis cancelled.");
+        if (previousResult) {
+          setPageState("SUCCESS");
+          setStatusAnnouncement("Analysis cancelled. Previous detections preserved.");
+        } else {
+          setPageState(selectedFile ? "READY" : "EMPTY");
+          setStatusAnnouncement("Analysis cancelled.");
+        }
         return;
       }
 
-      setPageState("ERROR");
+      let resolvedErrorMsg = "Analysis service returned an error. Please try again.";
+      let resolvedErrorDetails =
+        "An unexpected error occurred while analyzing the image. Your specimen image is still loaded and ready to retry.";
 
       if (err instanceof ColonyDetectionApiError) {
         if (err.code === "NETWORK_ERROR") {
-          setErrorMessage(
-            "We couldn't reach the colony analysis service. Check your connection and try again.",
-          );
-          setErrorDetails(
+          resolvedErrorMsg =
+            "We couldn't reach the colony analysis service. Check your connection and try again.";
+          resolvedErrorDetails =
             (err.message ? `${err.message} ` : "") +
-              "The Colony Detection Python ML service is currently offline or unreachable. Please verify network connectivity and ensure the local backend server is running.",
-          );
-          setStatusAnnouncement(
-            "We couldn't reach the colony analysis service. Check your connection and try again.",
-          );
+            "The Colony Detection Python ML service is currently offline or unreachable. Please verify network connectivity and ensure the local backend server is running.";
         } else if (err.code === "REQUEST_TIMEOUT") {
-          setErrorMessage("Analysis timed out. Please try again.");
-          setErrorDetails(
-            "The colony detection request timed out before receiving a response from the ML microservice. The server may be busy or experiencing high latency. Your uploaded image is still loaded and ready to retry.",
-          );
-          setStatusAnnouncement("Analysis timed out. Please try again.");
+          resolvedErrorMsg = "Analysis timed out. Please try again.";
+          resolvedErrorDetails =
+            "The colony detection request timed out before receiving a response from the ML microservice. The server may be busy or experiencing high latency. Your uploaded image is still loaded and ready to retry.";
         } else if (err.code === "RATE_LIMIT_EXCEEDED" || err.status === 429) {
-          setErrorMessage("Too many analysis requests. Please wait and try again.");
-          setErrorDetails(
-            "Colony analysis requests are throttled to protect shared laboratory compute resources. Please wait a moment before analyzing your next plate. Your uploaded image is still loaded.",
-          );
-          setStatusAnnouncement("Too many analysis requests. Please wait and try again.");
+          resolvedErrorMsg = "Too many analysis requests. Please wait and try again.";
+          resolvedErrorDetails =
+            "Colony analysis requests are throttled to protect shared laboratory compute resources. Please wait a moment before analyzing your next plate. Your uploaded image is still loaded.";
         } else if (err.status === 413 || err.code === "PAYLOAD_TOO_LARGE") {
-          setErrorMessage("The image is too large to process. Try a smaller image.");
-          setErrorDetails(
-            "Image file exceeds maximum upload size. The image file size exceeds the server's maximum upload limit. Please select an image under 10 MB or use an optimized photograph.",
-          );
-          setStatusAnnouncement("The image is too large to process. Try a smaller image.");
+          resolvedErrorMsg = "The image is too large to process. Try a smaller image.";
+          resolvedErrorDetails =
+            "Image file exceeds maximum upload size. The image file size exceeds the server's maximum upload limit. Please select an image under 10 MB or use an optimized photograph.";
         } else if (err.status) {
-          setErrorMessage("Analysis service returned an error. Please try again.");
-          setErrorDetails(
-            `Server returned HTTP ${err.status} (${err.code || "SERVICE_ERROR"}). Your specimen image is still loaded and ready to retry.`,
-          );
-          setStatusAnnouncement("Analysis service returned an error. Please try again.");
+          resolvedErrorMsg = "Analysis service returned an error. Please try again.";
+          resolvedErrorDetails = `Server returned HTTP ${err.status} (${err.code || "SERVICE_ERROR"}). Your specimen image is still loaded and ready to retry.`;
         } else {
-          setErrorMessage("Analysis service returned an error. Please try again.");
-          setErrorDetails(
+          resolvedErrorMsg = "Analysis service returned an error. Please try again.";
+          resolvedErrorDetails =
             err.message ||
-              "An unexpected error occurred while analyzing the image. Your specimen image is still loaded and ready to retry.",
-          );
-          setStatusAnnouncement("Analysis service returned an error. Please try again.");
+            "An unexpected error occurred while analyzing the image. Your specimen image is still loaded and ready to retry.";
         }
       } else if (err instanceof Error) {
-        setErrorMessage("Analysis service returned an error. Please try again.");
-        setErrorDetails(err.message);
-        setStatusAnnouncement("Analysis service returned an error. Please try again.");
-      } else {
-        setErrorMessage("Analysis service returned an error. Please try again.");
-        setErrorDetails(
-          "An unexpected error occurred while analyzing the image. Your specimen image is still loaded. Please try again.",
+        resolvedErrorMsg = "Analysis service returned an error. Please try again.";
+        resolvedErrorDetails = err.message;
+      }
+
+      if (previousResult) {
+        setPageState("SUCCESS");
+        setReanalysisError(resolvedErrorMsg);
+        setStatusAnnouncement(
+          `Re-analysis failed: ${resolvedErrorMsg}. Previous detections and review edits preserved.`,
         );
-        setStatusAnnouncement("Analysis service returned an error. Please try again.");
+      } else {
+        setPageState("ERROR");
+        setErrorMessage(resolvedErrorMsg);
+        setErrorDetails(resolvedErrorDetails);
+        setStatusAnnouncement(resolvedErrorMsg);
       }
     } finally {
       if (waitingTimerRef.current) {
@@ -343,9 +385,14 @@ export function ColonyCounterPage() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    setPageState(selectedFile ? "READY" : "EMPTY");
+    if (analysisResult) {
+      setPageState("SUCCESS");
+      setStatusAnnouncement("Analysis cancelled. Previous detections preserved.");
+    } else {
+      setPageState(selectedFile ? "READY" : "EMPTY");
+      setStatusAnnouncement("Analysis cancelled.");
+    }
     setAnalyzingSubStage("initial");
-    setStatusAnnouncement("Analysis cancelled.");
   };
 
   const handleReset = () => {
@@ -360,6 +407,10 @@ export function ColonyCounterPage() {
     setFailedDemo(null);
     setAnalyzingSubStage("initial");
     setMeasuredDurationSec(null);
+    setAppliedThreshold(0.3);
+    setReanalysisError(null);
+    setShowReanalysisConfirm(false);
+    setPendingReanalysisAction(null);
     handleFileSelect(null);
     setStatusAnnouncement("Workspace reset. No image selected.");
   };
@@ -503,7 +554,7 @@ export function ColonyCounterPage() {
                 onSelectDemo={handleSelectDemo}
                 selectedDemoId={activeDemo?.id}
                 loadingDemoId={loadingDemoId}
-                disabled={pageState === "ANALYZING" || isPreprocessing}
+                disabled={pageState === "ANALYZING" || isPreprocessing || showReanalysisConfirm}
               />
 
               {/* Analysis Parameters Card */}
@@ -514,9 +565,25 @@ export function ColonyCounterPage() {
                       <Sliders className="h-4 w-4 text-researcher" />
                       Detection Parameters
                     </CardTitle>
-                    <span className="font-mono text-xs font-semibold text-foreground bg-surface px-2 py-0.5 rounded border border-border">
-                      {confidencePercentage}%
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {pageState === "SUCCESS" && confidenceThreshold !== appliedThreshold && (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[10px]"
+                          data-testid="pending-threshold-badge"
+                        >
+                          Pending: {confidencePercentage}%
+                        </Badge>
+                      )}
+                      <span
+                        className="font-mono text-xs font-semibold text-foreground bg-surface px-2 py-0.5 rounded border border-border"
+                        data-testid="active-threshold-display"
+                      >
+                        {pageState === "SUCCESS"
+                          ? `Applied: ${Math.round(appliedThreshold * 100)}%`
+                          : `${confidencePercentage}%`}
+                      </span>
+                    </div>
                   </div>
                   <CardDescription className="text-xs">
                     Adjust model sensitivity cutoff for colony classification.
@@ -536,7 +603,7 @@ export function ColonyCounterPage() {
                       min={0.2}
                       max={0.9}
                       step={0.05}
-                      disabled={pageState === "ANALYZING" || isPreprocessing}
+                      disabled={pageState === "ANALYZING" || isPreprocessing || showReanalysisConfirm}
                       onValueChange={(val) => {
                         if (val[0] !== undefined) {
                           setConfidenceThreshold(Number(val[0].toFixed(2)));
@@ -553,6 +620,19 @@ export function ColonyCounterPage() {
                     </div>
                   </div>
 
+                  {pageState === "SUCCESS" && confidenceThreshold !== appliedThreshold && (
+                    <div
+                      className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2"
+                      data-testid="unapplied-threshold-notice"
+                    >
+                      <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-500" aria-hidden="true" />
+                      <div className="leading-relaxed">
+                        <span className="font-semibold">Pending threshold change ({confidencePercentage}%): </span>
+                        <span>Results currently display detections analyzed at {Math.round(appliedThreshold * 100)}%. Click "Re-analyze Plate" to re-run detection at {confidencePercentage}%.</span>
+                      </div>
+                    </div>
+                  )}
+
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     Detections with model confidence below this score are excluded from the total
                     count. Note that 30% is an initial UI default and should be calibrated based on
@@ -565,7 +645,12 @@ export function ColonyCounterPage() {
                       <Button
                         type="button"
                         onClick={handleAnalyze}
-                        disabled={!selectedFile || pageState === "ANALYZING" || isPreprocessing}
+                        disabled={
+                          !selectedFile ||
+                          pageState === "ANALYZING" ||
+                          isPreprocessing ||
+                          showReanalysisConfirm
+                        }
                         aria-busy={pageState === "ANALYZING" || isPreprocessing}
                         aria-label={
                           pageState === "ANALYZING"
@@ -860,6 +945,35 @@ export function ColonyCounterPage() {
               {/* STATE 3: Success with real API response */}
               {pageState === "SUCCESS" && analysisResult && previewUrl && (
                 <div className="space-y-6">
+                  {/* Dismissable Re-analysis Failure Banner */}
+                  {reanalysisError && (
+                    <div
+                      role="alert"
+                      data-testid="colony-reanalysis-error-banner"
+                      className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-xs text-foreground shadow-xs flex items-start justify-between gap-3"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <AlertCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" aria-hidden="true" />
+                        <div>
+                          <span className="font-semibold text-destructive block">Re-analysis Failed</span>
+                          <span className="text-muted-foreground">
+                            {reanalysisError} Previous detections and review edits were preserved.
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => setReanalysisError(null)}
+                        aria-label="Dismiss re-analysis error notice"
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Visual Detection Canvas */}
                   <Card className="border-border/80 bg-surface-elevated overflow-hidden shadow-xs">
                     <CardHeader className="p-4 pb-2">
@@ -902,6 +1016,7 @@ export function ColonyCounterPage() {
                         onRemoveManualColony={review.removeManualColony}
                         onSetActiveTool={review.setActiveTool}
                         reviewedCount={review.reviewedCount}
+                        appliedThreshold={appliedThreshold}
                       />
                     </CardContent>
                   </Card>
@@ -909,7 +1024,7 @@ export function ColonyCounterPage() {
                   {/* Quantification Stats Panel */}
                   <ColonyResultsPanel
                     response={analysisResult}
-                    appliedThreshold={confidenceThreshold}
+                    appliedThreshold={appliedThreshold}
                     reviewedCount={review.reviewedCount}
                     removedCount={review.removedCount}
                     addedCount={review.addedCount}
@@ -1012,7 +1127,7 @@ export function ColonyCounterPage() {
         <ColonyPrintReport
           filename={selectedFile?.name}
           response={analysisResult}
-          appliedThreshold={confidenceThreshold}
+          appliedThreshold={appliedThreshold}
           reviewedCount={review.reviewedCount}
           removedCount={review.removedCount}
           addedCount={review.addedCount}
@@ -1022,6 +1137,51 @@ export function ColonyCounterPage() {
           isDemoPlate={!!activeDemo}
         />
       )}
+
+      {/* Re-analysis Confirmation Dialog when Manual Review Changes Exist */}
+      <AlertDialog open={showReanalysisConfirm} onOpenChange={setShowReanalysisConfirm}>
+        <AlertDialogContent data-testid="reanalysis-confirmation-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard manual review changes?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 text-xs">
+              <span>
+                You have unsaved manual review edits on this plate
+                {review.removedCount > 0 ? ` (${review.removedCount} removed)` : ""}
+                {review.addedCount > 0 ? ` (${review.addedCount} added)` : ""}.
+                Re-analyzing will run fresh AI detection and reset your current review edits.
+                Are you sure you want to proceed?
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowReanalysisConfirm(false);
+                setPendingReanalysisAction(null);
+              }}
+              data-testid="reanalysis-cancel-button"
+            >
+              Keep Edits & Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const action = pendingReanalysisAction;
+                setShowReanalysisConfirm(false);
+                setPendingReanalysisAction(null);
+                if (action?.type === "analyze") {
+                  void executeAnalysis();
+                } else if (action?.type === "demo") {
+                  void executeSelectDemo(action.demo);
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              data-testid="reanalysis-confirm-button"
+            >
+              Discard Edits & Re-analyze
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

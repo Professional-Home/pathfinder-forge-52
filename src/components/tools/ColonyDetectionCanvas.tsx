@@ -40,6 +40,8 @@ export interface ColonyDetectionCanvasProps {
   onSetActiveTool?: (tool: ReviewTool) => void;
   /** Human-reviewed count for status badge */
   reviewedCount?: number;
+  /** Active confidence threshold applied to the current detections */
+  appliedThreshold?: number;
 }
 
 const MIN_ZOOM = 1.0;
@@ -60,6 +62,7 @@ export function ColonyDetectionCanvas({
   onRemoveManualColony,
   onSetActiveTool,
   reviewedCount,
+  appliedThreshold,
 }: ColonyDetectionCanvasProps) {
   const [showBoxes, setShowBoxes] = React.useState(true);
   const [showLabels, setShowLabels] = React.useState(true);
@@ -1260,12 +1263,16 @@ export function ColonyDetectionCanvas({
       {!hasDetections && manualColonies.length === 0 && (
         <div
           role="status"
+          data-testid="canvas-zero-detections-notice"
           className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-surface-elevated p-3 text-xs text-muted-foreground"
         >
           <AlertCircle className="h-4 w-4 shrink-0 text-startup" />
           <span>
-            No colonies were detected at the current confidence threshold. Use "Add Colony" mode
-            to mark colonies manually, or adjust the sensitivity threshold.
+            {typeof appliedThreshold === "number" && appliedThreshold >= 0.7 ? (
+              "No colonies met this high confidence threshold. Try lowering the threshold towards the 30% default and re-analyze."
+            ) : (
+              'No colonies were detected at the current confidence threshold. Use "Add Colony" mode to mark colonies manually, or adjust the sensitivity threshold.'
+            )}
           </span>
         </div>
       )}

@@ -91,7 +91,15 @@ export function useColonyReview({
   const prevDetectionsRef = React.useRef(aiDetections);
   React.useEffect(() => {
     if (prevDetectionsRef.current !== aiDetections) {
+      const wasEmpty = !prevDetectionsRef.current || prevDetectionsRef.current.length === 0;
+      const isEmpty = !aiDetections || aiDetections.length === 0;
       prevDetectionsRef.current = aiDetections;
+
+      // Avoid wiping review state if both previous and current are empty (e.g. unrelated renders on empty state)
+      if (wasEmpty && isEmpty) {
+        return;
+      }
+
       setRemovedAiIndices(new Set());
       setManualColonies([]);
       setActiveTool("select");

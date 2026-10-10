@@ -233,6 +233,25 @@ export function ColonyResultsPanel({
         </div>
       )}
 
+      {/* High-Threshold Zero Detections Guidance */}
+      {count === 0 && typeof appliedThreshold === "number" && appliedThreshold >= 0.7 && (
+        <div
+          role="status"
+          data-testid="high-threshold-zero-detections-guidance"
+          className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-foreground shadow-xs"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" aria-hidden="true" />
+          <div className="space-y-1">
+            <p className="font-semibold text-amber-700 dark:text-amber-400">
+              High Confidence Threshold Advisory
+            </p>
+            <p className="text-foreground/90 leading-relaxed">
+              No colonies met this high confidence threshold. Try lowering the threshold towards the 30% default and re-analyze.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Primary Result Summary & Count Lineage Card */}
       <Card
         className="border-border/80 bg-surface-elevated shadow-xs overflow-hidden"
@@ -580,7 +599,10 @@ export function ColonyResultsPanel({
               <span className="font-medium">Filter Applied</span>
               <Target className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             </div>
-            <div className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl">
+            <div
+              className="mt-2 font-display text-2xl font-bold text-foreground sm:text-3xl"
+              data-testid="filter-applied-value"
+            >
               {typeof appliedThreshold === "number"
                 ? `${Math.round(appliedThreshold * 100)}%`
                 : "Default"}
