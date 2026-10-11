@@ -541,6 +541,117 @@ def test_cors_configuration_resolution():
     print("[PASS] test_cors_configuration_resolution passed successfully.")
 
 
+def test_cors_scoped_vercel_preview_regex():
+    """Verifies that CORS allow_origin_regex strictly permits project-specific Vercel preview origins
+
+    while preserving explicit production origins and rejecting unrelated origins.
+    """
+    import re
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+    from starlette.testclient import TestClient
+    from app.main import (
+        DEFAULT_VERCEL_PREVIEW_ORIGIN_REGEX,
+        get_cors_origin_regex,
+        get_cors_origins,
+    )
+
+    # 1. Verify default regex pattern resolution
+    regex_str = get_cors_origin_regex()
+    assert regex_str == DEFAULT_VERCEL_PREVIEW_ORIGIN_REGEX
+    compiled_rx = re.compile(regex_str)
+
+    current_preview = "https://pathfinder-forge-52-3h9iskv9i-vrajs-projects-ecf0c974.vercel.app"
+    future_preview = "https://pathfinder-forge-52-7k2x91a0b-vrajs-projects-ecf0c974.vercel.app"
+    branch_preview = "https://pathfinder-forge-52-git-feature-preview-vrajs-projects-ecf0c974.vercel.app"
+    no_hash_preview = "https://pathfinder-forge-52-vrajs-projects-ecf0c974.vercel.app"
+
+    production_origin = "https://project.micrylisbiotech.com"
+    unrelated_project_vercel = "https://unrelated-project-vrajs-projects-ecf0c974.vercel.app"
+    other_team_vercel = "https://pathfinder-forge-52-3h9iskv9i-otherteam.vercel.app"
+    generic_vercel = "https://some-other-app.vercel.app"
+    http_preview = "http://pathfinder-forge-52-3h9iskv9i-vrajs-projects-ecf0c974.vercel.app"
+    prefix_spoof = "https://pathfinder-forge-52-3h9iskv9i-vrajs-projects-ecf0c974.vercel.app.attacker.com"
+
+    # Regex unit validations
+    assert compiled_rx.fullmatch(current_preview) is not None, "Must match current preview origin"
+    assert compiled_rx.fullmatch(future_preview) is not None, "Must match future preview origin"
+    assert compiled_rx.fullmatch(branch_preview) is not None, "Must match branch preview origin"
+    assert compiled_rx.fullmatch(no_hash_preview) is not None, "Must match canonical team preview origin"
+
+    assert compiled_rx.fullmatch(production_origin) is None, "Production domain should match via allow_origins list, not regex"
+    assert compiled_rx.fullmatch(unrelated_project_vercel) is None, "Must reject unrelated Vercel project"
+    assert compiled_rx.fullmatch(other_team_vercel) is None, "Must reject other team Vercel origin"
+    assert compiled_rx.fullmatch(generic_vercel) is None, "Must reject generic Vercel domain"
+    assert compiled_rx.fullmatch(http_preview) is None, "Must reject non-HTTPS origin"
+    assert compiled_rx.fullmatch(prefix_spoof) is None, "Must reject spoofed suffix domain"
+
+    # 2. End-to-end CORSMiddleware test with production allow_origins + preview allow_origin_regex
+    test_app = FastAPI()
+    test_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[production_origin],
+        allow_origin_regex=regex_str,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["*"],
+    )
+
+    @test_app.get("/ping")
+    def ping():
+        return {"status": "ok"}
+
+    with TestClient(test_app) as client:
+        # A. Current Preview origin (matches regex) -> Allowed with credentials
+        res_current = client.get("/ping", headers={"Origin": current_preview})
+        assert res_current.status_code == 200
+        assert res_current.headers.get("access-control-allow-origin") == current_preview
+        assert res_current.headers.get("access-control-allow-credentials") == "true"
+
+        # B. Future hash-based Preview origin (matches regex) -> Allowed with credentials
+        res_future = client.get("/ping", headers={"Origin": future_preview})
+        assert res_future.status_code == 200
+        assert res_future.headers.get("access-control-allow-origin") == future_preview
+        assert res_future.headers.get("access-control-allow-credentials") == "true"
+
+        # C. Production domain (matches allow_origins) -> Allowed with credentials
+        res_prod = client.get("/ping", headers={"Origin": production_origin})
+        assert res_prod.status_code == 200
+        assert res_prod.headers.get("access-control-allow-origin") == production_origin
+        assert res_prod.headers.get("access-control-allow-credentials") == "true"
+
+        # D. Unrelated Vercel origin -> Rejected (No Access-Control-Allow-Origin header)
+        res_unrelated = client.get("/ping", headers={"Origin": generic_vercel})
+        assert res_unrelated.status_code == 200
+        assert res_unrelated.headers.get("access-control-allow-origin") is None
+
+        # E. OPTIONS Preflight with current preview -> 200 OK
+        preflight_preview = client.options(
+            "/ping",
+            headers={"Origin": current_preview, "Access-Control-Request-Method": "GET"},
+        )
+        assert preflight_preview.status_code == 200
+        assert preflight_preview.headers.get("access-control-allow-origin") == current_preview
+
+        # F. OPTIONS Preflight with unrelated origin -> 400 Bad Request
+        preflight_unrelated = client.options(
+            "/ping",
+            headers={"Origin": generic_vercel, "Access-Control-Request-Method": "GET"},
+        )
+        assert preflight_unrelated.status_code == 400
+        assert preflight_unrelated.headers.get("access-control-allow-origin") is None
+
+    # 3. Live app instance test client
+    from app.main import app as live_app
+    with TestClient(live_app) as client:
+        res_live = client.get("/health", headers={"Origin": current_preview})
+        assert res_live.status_code == 200
+        assert res_live.headers.get("access-control-allow-origin") == current_preview
+        assert res_live.headers.get("access-control-allow-credentials") == "true"
+
+    print("[PASS] test_cors_scoped_vercel_preview_regex passed successfully.")
+
+
 def test_rel03_zero_byte_upload_rejected():
     """Verifies that 0-byte uploads are rejected with 400 INVALID_IMAGE and never reach detector (REL-03 A)."""
     with patch("app.detector.ColonyDetector.detect") as mock_detect:

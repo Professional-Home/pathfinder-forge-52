@@ -281,6 +281,14 @@ app = FastAPI(
 
 # ─── CORS Configuration ────────────────────────────────────────────────────────
 
+# Scoped specifically to this Vercel project's preview deployment hostnames:
+# e.g. https://pathfinder-forge-52-3h9iskv9i-vrajs-projects-ecf0c974.vercel.app
+# e.g. https://pathfinder-forge-52-vrajs-projects-ecf0c974.vercel.app
+# e.g. https://pathfinder-forge-52-git-<branch>-vrajs-projects-ecf0c974.vercel.app
+DEFAULT_VERCEL_PREVIEW_ORIGIN_REGEX = (
+    r"^https:\/\/pathfinder-forge-52(-[a-zA-Z0-9-]+)?-vrajs-projects-ecf0c974\.vercel\.app$"
+)
+
 
 def get_cors_origins() -> List[str]:
     """Resolves allowed CORS origins based on environment and explicit configuration (DEP-02).
@@ -313,12 +321,28 @@ def get_cors_origins() -> List[str]:
     return ["http://localhost:8080", "http://localhost:5173", "http://localhost:3000"]
 
 
+def get_cors_origin_regex() -> Optional[str]:
+    """Resolves the allowed CORS origin regex for dynamic Vercel preview environments.
+
+    Restricted specifically to the pathfinder-forge-52 project and vrajs-projects-ecf0c974
+    team domain pattern. Disallows open/generic *.vercel.app wildcards.
+    Can be overridden via FRONTEND_ORIGIN_REGEX environment variable if necessary.
+    """
+    raw_regex = os.getenv("FRONTEND_ORIGIN_REGEX", DEFAULT_VERCEL_PREVIEW_ORIGIN_REGEX)
+    cleaned = raw_regex.strip() if raw_regex else ""
+    return cleaned if cleaned else None
+
+
 allowed_origins = get_cors_origins()
-logger.info(f"Configuring CORS for allowed origins: {allowed_origins}")
+allowed_origin_regex = get_cors_origin_regex()
+logger.info(
+    f"Configuring CORS: allowed_origins={allowed_origins}, allow_origin_regex={allowed_origin_regex}"
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=allowed_origin_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
