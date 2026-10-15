@@ -42,6 +42,7 @@ import { ColonyDetectionCanvas } from "@/components/tools/ColonyDetectionCanvas"
 import { ColonyResultsPanel } from "@/components/tools/ColonyResultsPanel";
 import { ColonyPrintReport } from "@/components/tools/ColonyPrintReport";
 import { ColonyWorkflowGuide } from "@/components/tools/ColonyWorkflowGuide";
+import { ThemeToggle } from "@/components/tools/ThemeToggle";
 import { useColonyReview } from "@/hooks/use-colony-review";
 import type { CfuExportData } from "@/lib/colony-export";
 import {
@@ -418,12 +419,12 @@ export function ColonyCounterPage() {
   const confidencePercentage = Math.round(confidenceThreshold * 100);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col w-full max-w-full overflow-x-hidden">
       <div className="print:hidden">
         <SiteHeader />
       </div>
 
-      <main className="flex-1">
+      <main className="flex-1 w-full max-w-full overflow-x-hidden">
         {/* Screen-reader live region for asynchronous workflow status updates */}
         <div
           role="status"
@@ -442,16 +443,21 @@ export function ColonyCounterPage() {
             <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-student/10 blur-3xl" />
           </div>
 
-          <div className="mx-auto max-w-6xl px-4 pb-10 pt-28 sm:px-6 sm:pb-12 sm:pt-32">
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <Badge
-                variant="outline"
-                className="border-researcher/40 text-researcher bg-researcher-soft/40 gap-1.5 py-1 px-3"
-              >
-                <FlaskConical className="h-3.5 w-3.5" />
-                Microbiology AI Suite
-              </Badge>
-              <span className="text-xs text-muted-foreground font-mono">v1.0-preview</span>
+          <div className="mx-auto max-w-6xl px-3 sm:px-6 pb-6 pt-20 sm:pb-10 sm:pt-24 lg:pt-28">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="border-researcher/40 text-researcher bg-researcher-soft/40 gap-1.5 py-1 px-3"
+                >
+                  <FlaskConical className="h-3.5 w-3.5" />
+                  Microbiology AI Suite
+                </Badge>
+                <span className="text-xs text-muted-foreground font-mono">v1.0-preview</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+              </div>
             </div>
 
             <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
@@ -513,7 +519,7 @@ export function ColonyCounterPage() {
         </section>
 
         {/* Main Workspace */}
-        <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 print:hidden">
+        <section className="mx-auto max-w-6xl px-3 sm:px-6 py-4 sm:py-6 lg:py-8 print:hidden">
           {/* Guided Workflow Tracker */}
           <div className="mb-6 sm:mb-8">
             <ColonyWorkflowGuide
@@ -663,11 +669,11 @@ export function ColonyCounterPage() {
                                 ? "Re-analyze Petri dish plate"
                                 : "Analyze Petri dish plate"
                         }
-                        className="flex-1 font-medium text-xs shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground"
+                        className="flex-1 min-h-[44px] h-11 sm:h-10 font-semibold text-xs sm:text-sm shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
                       >
                         {pageState === "ANALYZING" || isPreprocessing ? (
                           <>
-                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin shrink-0" aria-hidden="true" />
+                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin shrink-0" aria-hidden="true" />
                             <span>
                               {isPreprocessing
                                 ? "Preparing image…"
@@ -678,12 +684,12 @@ export function ColonyCounterPage() {
                           </>
                         ) : pageState === "SUCCESS" ? (
                           <>
-                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                            <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
                             Re-analyze Plate
                           </>
                         ) : (
                           <>
-                            <Sparkles className="mr-1.5 h-3.5 w-3.5 text-researcher" aria-hidden="true" />
+                            <Sparkles className="mr-1.5 h-4 w-4 text-researcher" aria-hidden="true" />
                             Analyze Petri Dish
                           </>
                         )}
@@ -696,7 +702,7 @@ export function ColonyCounterPage() {
                           size="sm"
                           onClick={handleCancel}
                           aria-label="Cancel colony analysis"
-                          className="text-xs font-medium border-border/80 shrink-0"
+                          className="min-h-[44px] h-11 sm:h-10 text-xs font-medium border-border/80 shrink-0 px-3"
                         >
                           Cancel Analysis
                         </Button>
@@ -709,7 +715,7 @@ export function ColonyCounterPage() {
                           size="sm"
                           onClick={handleReset}
                           aria-label="Clear image and results"
-                          className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+                          className="min-h-[44px] h-11 sm:h-10 px-3 text-xs text-muted-foreground hover:text-foreground shrink-0"
                           title="Clear image and results"
                         >
                           Reset

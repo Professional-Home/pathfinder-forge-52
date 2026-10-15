@@ -339,15 +339,15 @@ export function ColonyDetectionCanvas({
   return (
     <div className={cn("space-y-3", className)}>
       {/* View, Review Tools & Overlay Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface/60 p-2.5 text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-border bg-card p-2 sm:p-2.5 text-xs shadow-xs">
         <div className="flex flex-wrap items-center gap-2">
           {annotatedImageUrl ? (
-            <div className="inline-flex rounded-lg border border-border/80 bg-surface-elevated p-0.5 shadow-xs">
+            <div className="inline-flex rounded-lg border border-border bg-surface p-0.5 shadow-xs">
               <button
                 type="button"
                 onClick={() => setViewMode("overlay")}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  "rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors",
                   viewMode === "overlay"
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground",
@@ -359,7 +359,7 @@ export function ColonyDetectionCanvas({
                 type="button"
                 onClick={() => setViewMode("server-annotated")}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  "rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors",
                   viewMode === "server-annotated"
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground",
@@ -371,14 +371,14 @@ export function ColonyDetectionCanvas({
           ) : (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Layers className="h-3.5 w-3.5 text-researcher" />
-              <span className="font-medium text-foreground">Colony Detection Overlay</span>
+              <span className="font-semibold text-foreground">Colony Detection Overlay</span>
             </div>
           )}
 
           {/* Phase 6B-2 Review Tools: [ Select ] [ + Add Colony ] */}
           {onSetActiveTool && (
             <div
-              className="inline-flex items-center rounded-lg border border-border/80 bg-surface-elevated p-0.5 shadow-xs"
+              className="inline-flex items-center rounded-lg border border-border bg-surface p-0.5 shadow-xs"
               role="radiogroup"
               aria-label="Colony review tool mode"
             >
@@ -398,7 +398,7 @@ export function ColonyDetectionCanvas({
                   onSetActiveTool("select");
                 }}
                 className={cn(
-                  "h-7 gap-1 px-2.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+                  "h-8 sm:h-7 gap-1 px-2.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
                   activeTool === "select"
                     ? "bg-primary text-primary-foreground shadow-xs hover:bg-primary hover:text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -406,7 +406,7 @@ export function ColonyDetectionCanvas({
                 title="Select tool: click an AI marker to remove/restore, or click a manual colony to remove"
                 aria-label="Select tool mode (Active: select detections to remove or restore)"
               >
-                <MousePointer className="h-3 w-3" aria-hidden="true" />
+                <MousePointer className="h-3.5 w-3.5 sm:h-3 sm:w-3" aria-hidden="true" />
                 <span>Select</span>
                 {activeTool === "select" && (
                   <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground ml-0.5" aria-hidden="true" />
@@ -429,7 +429,7 @@ export function ColonyDetectionCanvas({
                   onSetActiveTool("add");
                 }}
                 className={cn(
-                  "h-7 gap-1 px-2.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1",
+                  "h-8 sm:h-7 gap-1 px-2.5 text-xs font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1",
                   activeTool === "add"
                     ? "bg-violet-600 text-white shadow-xs hover:bg-violet-600 hover:text-white dark:bg-violet-500"
                     : "text-muted-foreground hover:text-foreground",
@@ -437,7 +437,7 @@ export function ColonyDetectionCanvas({
                 title="Add Colony tool: click or tap on agar surface to place a manual colony marker"
                 aria-label="Add Colony tool mode (Active: click or tap plate to place colony marker)"
               >
-                <Plus className="h-3 w-3" aria-hidden="true" />
+                <Plus className="h-3.5 w-3.5 sm:h-3 sm:w-3" aria-hidden="true" />
                 <span>+ Add Colony</span>
                 {activeTool === "add" && (
                   <span className="h-1.5 w-1.5 rounded-full bg-white ml-0.5" aria-hidden="true" />
@@ -448,10 +448,10 @@ export function ColonyDetectionCanvas({
         </div>
 
         {/* Right side: Zoom & Pan Toolbar + Detection Toggles */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 border-t border-border/50 pt-1.5 sm:border-t-0 sm:pt-0">
           {/* Compact Professional Zoom Controls Bar */}
           <div
-            className="inline-flex items-center gap-0.5 rounded-lg border border-border/80 bg-surface-elevated p-0.5 shadow-xs"
+            className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-surface p-0.5 shadow-xs"
             role="toolbar"
             aria-label="Zoom and pan view controls"
           >
@@ -461,7 +461,7 @@ export function ColonyDetectionCanvas({
               size="sm"
               onClick={handleZoomOut}
               disabled={zoom <= MIN_ZOOM}
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-primary"
+              className="h-8 w-8 sm:h-7 sm:w-7 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-primary"
               title="Zoom Out (Mouse wheel down)"
               aria-label="Zoom Out"
             >
@@ -482,14 +482,14 @@ export function ColonyDetectionCanvas({
               size="sm"
               onClick={handleZoomIn}
               disabled={zoom >= MAX_ZOOM}
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-primary"
+              className="h-8 w-8 sm:h-7 sm:w-7 p-0 text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-primary"
               title="Zoom In (Mouse wheel up)"
               aria-label="Zoom In"
             >
               <ZoomIn className="h-3.5 w-3.5" />
             </Button>
 
-            <div className="h-4 w-px bg-border/80 mx-0.5" aria-hidden="true" />
+            <div className="h-4 w-px bg-border mx-0.5" aria-hidden="true" />
 
             <Button
               type="button"
@@ -497,7 +497,7 @@ export function ColonyDetectionCanvas({
               size="sm"
               onClick={handleResetView}
               disabled={zoom === 1 && pan.x === 0 && pan.y === 0}
-              className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-primary"
+              className="h-8 sm:h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground focus-visible:ring-1 focus-visible:ring-primary"
               title="Reset zoom and framing (Fit to view)"
               aria-label="Reset View"
             >
@@ -514,16 +514,16 @@ export function ColonyDetectionCanvas({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowBoxes((prev) => !prev)}
-                className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                className="h-8 sm:h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
               >
                 {showBoxes ? (
                   <>
-                    <Eye className="mr-1 h-3 w-3 text-researcher" />
+                    <Eye className="mr-1 h-3.5 w-3.5 text-researcher" />
                     Boxes On
                   </>
                 ) : (
                   <>
-                    <EyeOff className="mr-1 h-3 w-3" />
+                    <EyeOff className="mr-1 h-3.5 w-3.5" />
                     Boxes Off
                   </>
                 )}
@@ -534,9 +534,9 @@ export function ColonyDetectionCanvas({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowLabels((prev) => !prev)}
-                className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                className="h-8 sm:h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
               >
-                <Tag className={cn("mr-1 h-3 w-3", showLabels ? "text-student" : "")} />
+                <Tag className={cn("mr-1 h-3.5 w-3.5", showLabels ? "text-student" : "")} />
                 {showLabels ? "Labels On" : "Labels Off"}
               </Button>
             </div>
@@ -572,7 +572,7 @@ export function ColonyDetectionCanvas({
       {/* Review Guidance Area (User UX & Interaction Guidance) */}
       {viewMode === "overlay" && (
         <div
-          className="rounded-xl border border-border/70 bg-surface/50 p-2.5 text-xs shadow-xs"
+          className="rounded-xl border border-border/80 bg-surface-elevated/70 p-3 text-xs shadow-xs"
           data-testid="canvas-review-guidance"
           aria-label="How to review colony detections"
         >
@@ -617,7 +617,7 @@ export function ColonyDetectionCanvas({
       {/* Visual Distinction & Accessibility Legend (Phase 6C-3) */}
       {viewMode === "overlay" && (
         <div
-          className="flex flex-wrap items-center justify-between gap-2.5 px-3 py-2 rounded-xl bg-surface/60 border border-border/60 text-xs"
+          className="flex flex-wrap items-center justify-between gap-2.5 px-3 py-2 rounded-xl bg-surface-elevated/80 border border-border/80 text-xs shadow-xs"
           role="region"
           aria-label="Colony review visual legend"
         >
@@ -686,7 +686,7 @@ export function ColonyDetectionCanvas({
       {/* Active tool helper banner for keyboard and screen-reader accessibility (Phase 6C-2) */}
       {viewMode === "overlay" && (
         <div
-          className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-surface/50 border border-border/50 text-[11px] text-muted-foreground"
+          className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-surface-elevated/60 border border-border/70 text-[11px] text-muted-foreground shadow-xs"
           role="status"
           aria-live="polite"
         >
@@ -726,7 +726,7 @@ export function ColonyDetectionCanvas({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className={cn(
-          "relative overflow-hidden rounded-2xl border border-border/80 bg-black/90 shadow-sm touch-none select-none",
+          "relative overflow-hidden rounded-2xl border border-border/80 bg-slate-950 shadow-inner touch-none select-none",
           getViewportCursor(),
         )}
       >
@@ -1221,34 +1221,34 @@ export function ColonyDetectionCanvas({
         </div>
 
         {/* Floating summary badge in bottom-left */}
-        <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-background/90 px-2.5 py-1 text-[11px] font-mono text-foreground backdrop-blur-md shadow-sm border border-border/60">
-          <CheckCircle2 className="h-3.5 w-3.5 text-researcher" />
+        <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-slate-950/85 px-2.5 py-1 text-[11px] font-mono text-slate-100 backdrop-blur-md shadow-md border border-slate-700/60">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           <span>AI: {detections.length}</span>
           {removedAiIndices && removedAiIndices.size > 0 && (
-            <span className="text-rose-500 font-semibold">−{removedAiIndices.size}</span>
+            <span className="text-rose-400 font-semibold">−{removedAiIndices.size}</span>
           )}
           {manualColonies.length > 0 && (
-            <span className="text-violet-500 font-semibold">+{manualColonies.length}</span>
+            <span className="text-violet-400 font-semibold">+{manualColonies.length}</span>
           )}
           {typeof reviewedCount === "number" && (
-            <span className="text-foreground font-bold">· Reviewed: {reviewedCount}</span>
+            <span className="text-slate-100 font-bold">· Reviewed: {reviewedCount}</span>
           )}
-          <span className="text-muted-foreground">
+          <span className="text-slate-400">
             ({imgWidth}×{imgHeight}px)
           </span>
           {zoom > 1 && (
-            <span className="text-researcher font-semibold">
+            <span className="text-teal-400 font-semibold">
               · {Math.round(zoom * 100)}% zoom
             </span>
           )}
         </div>
 
         {/* Dynamic Tool Mode / Navigation Hint */}
-        <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-1 rounded-md bg-background/80 px-2 py-0.5 text-[10px] font-mono text-muted-foreground backdrop-blur-sm border border-border/40">
+        <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-1 rounded-md bg-slate-950/85 px-2.5 py-0.5 text-[10px] font-mono text-slate-300 backdrop-blur-md border border-slate-700/50 shadow-sm">
           {viewMode === "server-annotated" ? (
             <span>Static server output · Switch to Interactive Overlay to edit</span>
           ) : activeTool === "add" ? (
-            <span className="text-violet-500 font-semibold">
+            <span className="text-violet-400 font-semibold">
               Click agar to add colony · Drag to pan
             </span>
           ) : zoom > 1 ? (

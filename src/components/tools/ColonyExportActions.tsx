@@ -139,11 +139,11 @@ export function ColonyExportActions({
             variant="outline"
             size="sm"
             onClick={handleExportSummaryCsv}
-            className="flex-1 justify-center gap-1.5 text-xs font-medium border-border/80 hover:border-researcher hover:text-researcher shadow-xs"
+            className="flex-1 min-h-[42px] sm:min-h-[36px] h-11 sm:h-9 justify-center gap-1.5 text-xs font-semibold sm:font-medium border-border/80 hover:border-researcher hover:text-researcher shadow-xs transition-colors"
             aria-label="Export colony quantification summary to CSV"
             title="Download single-row CSV for LIMS or spreadsheet import"
           >
-            <FileSpreadsheet className="h-3.5 w-3.5 text-researcher shrink-0" />
+            <FileSpreadsheet className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-researcher shrink-0" />
             <span>Export Summary CSV</span>
           </Button>
 
@@ -153,11 +153,11 @@ export function ColonyExportActions({
             variant="outline"
             size="sm"
             onClick={handleExportDetectionsCsv}
-            className="flex-1 justify-center gap-1.5 text-xs font-medium border-border/80 hover:border-student hover:text-student shadow-xs"
+            className="flex-1 min-h-[42px] sm:min-h-[36px] h-11 sm:h-9 justify-center gap-1.5 text-xs font-semibold sm:font-medium border-border/80 hover:border-student hover:text-student shadow-xs transition-colors"
             aria-label="Export granular detection coordinates and confidence scores to CSV"
             title="Download multi-row CSV with individual colony coordinates and review status"
           >
-            <ListFilter className="h-3.5 w-3.5 text-student shrink-0" />
+            <ListFilter className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-student shrink-0" />
             <span>Export Detections</span>
           </Button>
 
@@ -169,18 +169,18 @@ export function ColonyExportActions({
             disabled={isComposingPrint}
             aria-busy={isComposingPrint}
             onClick={handlePrintPdfReport}
-            className="flex-1 justify-center gap-1.5 text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
+            className="flex-1 min-h-[42px] sm:min-h-[36px] h-11 sm:h-9 justify-center gap-1.5 text-xs font-semibold sm:font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs transition-colors"
             aria-label="Print or save PDF assay report"
             title="Generate high-resolution printable report with annotated specimen plate"
           >
             {isComposingPrint ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                <Loader2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 animate-spin" aria-hidden="true" />
                 <span>Preparing PDF...</span>
               </>
             ) : (
               <>
-                <Printer className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <Printer className="h-4 w-4 sm:h-3.5 sm:w-3.5 shrink-0" aria-hidden="true" />
                 <span>Print / Save PDF</span>
               </>
             )}

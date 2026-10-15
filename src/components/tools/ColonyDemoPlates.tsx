@@ -88,42 +88,54 @@ export function ColonyDemoPlates({
         </CardDescription>
       </CardHeader>
       <CardContent className="p-5 pt-2 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {DEMO_PLATES.map((demo) => {
             const isSelected = selectedDemoId === demo.id;
             const isLoadingThis = loadingDemoId === demo.id;
+
+            // Density badge styling
+            const densityBadgeClass =
+              demo.id === "demo-a"
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : demo.id === "demo-b"
+                  ? "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300"
+                  : "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+
             return (
               <div
                 key={demo.id}
                 className={cn(
-                  "relative flex flex-col justify-between rounded-xl border p-3 transition-all",
+                  "relative flex flex-col justify-between rounded-xl border p-3 transition-all duration-200",
                   isSelected
-                    ? "border-researcher bg-researcher-soft/30 shadow-xs ring-1 ring-researcher/50"
-                    : "border-border/70 bg-surface hover:border-researcher/50 hover:bg-surface-elevated",
+                    ? "border-researcher bg-researcher-soft/40 shadow-xs ring-1 ring-researcher/60"
+                    : "border-border/80 bg-surface/80 hover:border-researcher/50 hover:bg-surface-elevated hover:shadow-2xs",
                   disabled && "opacity-60 pointer-events-none",
                 )}
               >
                 <div className="space-y-2">
-                  <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-border/60 bg-muted/20">
+                  <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-border/60 bg-slate-950/20 dark:bg-black/40">
                     <img
                       src={demo.imageUrl}
                       alt={demo.name}
-                      className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                       loading="lazy"
                     />
                     <Badge
-                      variant="secondary"
-                      className="absolute bottom-1.5 left-1.5 text-[9px] font-mono px-1.5 py-0 bg-background/90 backdrop-blur-xs text-foreground border border-border/50"
+                      variant="outline"
+                      className={cn(
+                        "absolute bottom-1.5 left-1.5 text-[9px] font-mono px-1.5 py-0 backdrop-blur-xs font-semibold",
+                        densityBadgeClass,
+                      )}
                     >
                       {demo.densityLabel}
                     </Badge>
                   </div>
 
                   <div>
-                    <h4 className="text-xs font-semibold text-foreground leading-snug">
+                    <h4 className="text-xs font-semibold text-foreground leading-snug tracking-tight">
                       {demo.name}
                     </h4>
-                    <p className="mt-1 text-[11px] text-muted-foreground leading-normal line-clamp-2">
+                    <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
                       {demo.description}
                     </p>
                   </div>
@@ -140,10 +152,10 @@ export function ColonyDemoPlates({
                     aria-pressed={isSelected}
                     aria-label={isLoadingThis ? `Loading ${demo.name}` : `Use ${demo.name}`}
                     className={cn(
-                      "w-full h-8 text-xs font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      "w-full h-8 text-xs font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors",
                       isSelected
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "border-border/80 hover:border-researcher hover:text-researcher",
+                        ? "bg-primary text-primary-foreground shadow-xs hover:bg-primary/95"
+                        : "border-border/80 hover:border-researcher hover:text-researcher bg-surface-elevated hover:bg-surface",
                     )}
                   >
                     {isLoadingThis ? (

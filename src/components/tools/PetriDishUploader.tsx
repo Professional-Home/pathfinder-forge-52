@@ -246,13 +246,19 @@ export function PetriDishUploader({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(
-            "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200",
+            "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-7 text-center transition-all duration-200 lab-reticle",
             dragActive
               ? "border-researcher bg-researcher-soft/40 shadow-inner"
-              : "border-border/80 bg-surface/50 hover:border-researcher/60 hover:bg-surface-elevated",
+              : "border-border/80 bg-surface/60 hover:border-researcher/60 hover:bg-surface-elevated/90",
             (disabled || isPreprocessing) && "pointer-events-none opacity-60",
           )}
         >
+          {/* Subtle laboratory reticle corner marks */}
+          <div className="absolute top-2 left-2 text-[10px] font-mono text-muted-foreground/40 select-none" aria-hidden="true">┌</div>
+          <div className="absolute top-2 right-2 text-[10px] font-mono text-muted-foreground/40 select-none" aria-hidden="true">┐</div>
+          <div className="absolute bottom-2 left-2 text-[10px] font-mono text-muted-foreground/40 select-none" aria-hidden="true">└</div>
+          <div className="absolute bottom-2 right-2 text-[10px] font-mono text-muted-foreground/40 select-none" aria-hidden="true">┘</div>
+
           {isPreprocessing ? (
             <div
               role="status"
@@ -260,23 +266,23 @@ export function PetriDishUploader({
               aria-busy="true"
               className="py-6 flex flex-col items-center justify-center space-y-3"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-researcher-soft text-researcher shadow-sm animate-pulse">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-researcher-soft text-researcher shadow-xs animate-pulse border border-researcher/30">
                 <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
               </div>
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 Preparing image…
               </p>
-              <p className="text-xs text-muted-foreground max-w-xs text-center">
+              <p className="text-xs text-muted-foreground max-w-xs text-center leading-relaxed">
                 Optimizing large image for upload and colony detection.
               </p>
             </div>
           ) : (
             <>
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border/80 bg-surface-elevated text-researcher shadow-sm">
+              <div className="mb-3.5 flex h-13 w-13 items-center justify-center rounded-2xl border border-border/80 bg-surface-elevated text-researcher shadow-xs">
                 <Upload className="h-6 w-6" aria-hidden="true" />
               </div>
 
-              <h3 className="font-display text-base font-semibold text-foreground">
+              <h3 className="font-display text-base font-semibold tracking-tight text-foreground">
                 Upload Petri Dish Image
               </h3>
               <p className="mt-1 max-w-sm text-xs text-muted-foreground leading-relaxed">
@@ -284,7 +290,7 @@ export function PetriDishUploader({
                 or take a photo.
               </p>
 
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
                 <Button
                   type="button"
                   variant="outline"
@@ -293,9 +299,9 @@ export function PetriDishUploader({
                   aria-busy={isPreprocessing}
                   aria-label="Browse files to upload Petri dish image"
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-border/80 hover:border-researcher hover:text-researcher"
+                  className="min-h-[38px] border-border/80 bg-surface-elevated font-medium text-xs text-foreground hover:border-researcher hover:text-researcher hover:bg-surface shadow-2xs"
                 >
-                  <FileImage className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  <FileImage className="mr-1.5 h-4 w-4 text-researcher" aria-hidden="true" />
                   Browse Files
                 </Button>
 
@@ -307,20 +313,25 @@ export function PetriDishUploader({
                   aria-busy={isPreprocessing}
                   aria-label="Capture Petri dish image with mobile camera"
                   onClick={() => cameraInputRef.current?.click()}
-                  className="border-border/80 hover:border-student hover:text-student"
+                  className="min-h-[38px] border-border/80 bg-surface-elevated font-medium text-xs text-foreground hover:border-student hover:text-student hover:bg-surface shadow-2xs"
                 >
-                  <Camera className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  <Camera className="mr-1.5 h-4 w-4 text-student" aria-hidden="true" />
                   Mobile Camera
                 </Button>
               </div>
 
-              <p className="mt-4 text-[11px] text-muted-foreground/80">
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground/90">
+                <span className="font-mono px-2 py-0.5 rounded-md bg-surface border border-border/60">JPG, PNG, WebP</span>
+                <span>•</span>
+                <span>Max 5 MB direct</span>
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground/75">
                 JPG, PNG, or WEBP up to 5 MB (larger camera images are automatically optimized in
                 browser).
               </p>
 
-              <div className="mt-3 pt-2 border-t border-border/50 text-center">
-                <span className="text-[11px] text-muted-foreground">
+              <div className="mt-3.5 pt-2.5 border-t border-border/50 text-center w-full max-w-xs">
+                <span className="text-[11px] text-muted-foreground font-medium">
                   No Petri dish image? Try a demo plate below.
                 </span>
               </div>
@@ -328,15 +339,24 @@ export function PetriDishUploader({
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border/80 bg-surface-elevated shadow-sm">
-          <div className="relative aspect-square max-h-[380px] w-full overflow-hidden bg-muted/20 sm:max-h-[440px]">
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-surface/40">
+          {/* Specimen Observation Stage */}
+          <div className="relative aspect-square max-h-[320px] sm:max-h-[420px] w-full overflow-hidden bg-slate-950/90 dark:bg-black/95 flex items-center justify-center">
+            {/* Subtle alignment reticle */}
+            <div className="absolute inset-4 rounded-full border border-dashed border-white/10 pointer-events-none" aria-hidden="true" />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+              <div className="w-6 h-[1px] bg-white/15" />
+              <div className="h-6 w-[1px] bg-white/15 absolute" />
+            </div>
+
             <img
               src={previewUrl}
               alt="Uploaded Petri dish specimen preview"
-              className="h-full w-full object-contain p-2"
+              className="h-full w-full object-contain p-2 select-none relative z-1"
             />
 
-            <div className="absolute right-3 top-3 flex items-center gap-2">
+            {/* Quick Action Overlay Buttons */}
+            <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
               <Button
                 type="button"
                 variant="secondary"
@@ -345,7 +365,7 @@ export function PetriDishUploader({
                 aria-busy={isPreprocessing}
                 aria-label="Replace image"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-8 rounded-lg bg-background/90 text-xs backdrop-blur-sm hover:bg-background shadow-sm"
+                className="h-8 sm:h-8 min-h-[32px] rounded-lg bg-background/90 text-xs backdrop-blur-md hover:bg-background border border-border/60 shadow-xs text-foreground font-medium px-2.5"
               >
                 <RefreshCw className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
                 Replace
@@ -357,29 +377,31 @@ export function PetriDishUploader({
                 size="sm"
                 disabled={disabled || isPreprocessing}
                 onClick={handleClear}
-                className="h-8 rounded-lg text-xs shadow-sm"
+                className="h-8 sm:h-8 min-h-[32px] w-8 sm:w-8 p-0 rounded-lg text-xs shadow-xs flex items-center justify-center"
                 aria-label="Remove image"
+                title="Remove image"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
 
-          <div className="border-t border-border/60 px-4 py-3 space-y-2 text-xs">
+          {/* Specimen Metadata Footer */}
+          <div className="border-t border-border/60 p-4 space-y-2.5 text-xs bg-surface/30">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 truncate pr-2">
-                <Sparkles className="h-3.5 w-3.5 shrink-0 text-researcher" />
-                <span className="truncate font-medium text-foreground">{selectedFile.name}</span>
+                <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
+                <span className="truncate font-semibold text-foreground">{selectedFile.name}</span>
                 {isDemo && (
                   <Badge
                     variant="outline"
-                    className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] py-0 px-1.5 font-normal shrink-0"
+                    className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] py-0 px-1.5 font-mono shrink-0"
                   >
                     Demo Plate
                   </Badge>
                 )}
               </div>
-              <span className="font-mono text-muted-foreground text-[11px]">
+              <span className="font-mono text-muted-foreground text-[11px] bg-surface px-2 py-0.5 rounded border border-border/50">
                 {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
               </span>
             </div>
@@ -397,15 +419,15 @@ export function PetriDishUploader({
                 role="status"
                 aria-live="polite"
                 data-testid="optimization-feedback"
-                className="rounded-lg bg-surface/80 border border-researcher/30 p-2.5 text-[11px] space-y-1.5"
+                className="rounded-xl bg-surface/80 border border-researcher/30 p-3 text-[11px] space-y-1.5"
               >
-                <div className="flex items-center gap-1.5 font-medium text-researcher">
+                <div className="flex items-center gap-1.5 font-semibold text-researcher">
                   <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <span>{USER_OPTIMIZATION_SUCCESS_MESSAGE}</span>
                 </div>
-                <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-x-2">
+                <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-x-2 font-mono">
                   <span>Upload payload: {activeOptimization.uploadFile.name}</span>
-                  <span className="font-mono font-medium text-foreground">
+                  <span className="font-medium text-foreground">
                     {(activeOptimization.uploadFile.size / (1024 * 1024)).toFixed(2)} MB
                   </span>
                 </div>

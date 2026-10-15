@@ -438,7 +438,7 @@ export function CfuCalculator({
                   type="button"
                   onClick={() => setVolumeUnit("mL")}
                   className={cn(
-                    "rounded px-2 py-0.5 font-medium transition-colors",
+                    "rounded min-h-[30px] sm:min-h-0 min-w-[34px] sm:min-w-0 px-2 py-0.5 font-medium transition-colors flex items-center justify-center",
                     volumeUnit === "mL"
                       ? "bg-primary text-primary-foreground font-semibold"
                       : "text-muted-foreground hover:text-foreground",
@@ -450,7 +450,7 @@ export function CfuCalculator({
                   type="button"
                   onClick={() => setVolumeUnit("uL")}
                   className={cn(
-                    "rounded px-2 py-0.5 font-medium transition-colors",
+                    "rounded min-h-[30px] sm:min-h-0 min-w-[34px] sm:min-w-0 px-2 py-0.5 font-medium transition-colors flex items-center justify-center",
                     volumeUnit === "uL"
                       ? "bg-primary text-primary-foreground font-semibold"
                       : "text-muted-foreground hover:text-foreground",
@@ -479,15 +479,15 @@ export function CfuCalculator({
             </div>
 
             {/* Quick volume preset helpers */}
-            <div className="flex flex-wrap items-center gap-1 pt-0.5">
-              <span className="text-[10px] text-muted-foreground">Presets:</span>
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[10px] text-muted-foreground font-medium">Presets:</span>
               <button
                 type="button"
                 onClick={() => {
                   setVolumeUnit("mL");
                   setVolumeInput("0.1");
                 }}
-                className="rounded border border-border/70 bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:border-primary hover:text-foreground"
+                className="rounded-md border border-border/70 bg-surface min-h-[28px] sm:min-h-0 px-2 py-1 sm:py-0.5 font-mono text-[10px] text-muted-foreground hover:border-primary hover:text-foreground transition-colors flex items-center"
               >
                 0.1 mL (100 µL)
               </button>
@@ -497,7 +497,7 @@ export function CfuCalculator({
                   setVolumeUnit("mL");
                   setVolumeInput("0.05");
                 }}
-                className="rounded border border-border/70 bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:border-primary hover:text-foreground"
+                className="rounded-md border border-border/70 bg-surface min-h-[28px] sm:min-h-0 px-2 py-1 sm:py-0.5 font-mono text-[10px] text-muted-foreground hover:border-primary hover:text-foreground transition-colors flex items-center"
               >
                 0.05 mL (50 µL)
               </button>
@@ -507,7 +507,7 @@ export function CfuCalculator({
                   setVolumeUnit("mL");
                   setVolumeInput("1.0");
                 }}
-                className="rounded border border-border/70 bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:border-primary hover:text-foreground"
+                className="rounded-md border border-border/70 bg-surface min-h-[28px] sm:min-h-0 px-2 py-1 sm:py-0.5 font-mono text-[10px] text-muted-foreground hover:border-primary hover:text-foreground transition-colors flex items-center"
               >
                 1.0 mL (pour)
               </button>
@@ -533,16 +533,16 @@ export function CfuCalculator({
             </div>
 
             {/* Quick Exponent Pills (10^0 through 10^-8) */}
-            <div className="flex flex-wrap gap-1" role="group" aria-label="Serial dilution quick select">
+            <div className="flex flex-wrap gap-1.5 sm:gap-1" role="group" aria-label="Serial dilution quick select">
               {COMMON_DILUTION_EXPONENTS.map((exp) => (
                 <button
                   key={`dilution-exp-${exp}`}
                   type="button"
                   onClick={() => setDilutionExponent(exp)}
                   className={cn(
-                    "h-7 min-w-[34px] rounded px-1.5 font-mono text-[11px] font-medium transition-colors",
+                    "min-h-[34px] sm:min-h-[28px] min-w-[36px] sm:min-w-[34px] rounded-md px-2 sm:px-1.5 font-mono text-[11px] font-medium transition-colors flex items-center justify-center",
                     dilutionExponent === exp
-                      ? "bg-student text-white shadow-xs"
+                      ? "bg-student text-white shadow-xs font-semibold"
                       : "border border-border/70 bg-surface text-muted-foreground hover:border-border hover:text-foreground",
                   )}
                   title={`10${formatSuperscript(-exp)} dilution (factor: 10^${-exp})`}
@@ -572,7 +572,7 @@ export function CfuCalculator({
                     setDilutionExponent(parsed);
                   }
                 }}
-                className="h-7 w-20 font-mono text-xs"
+                className="h-8 w-20 font-mono text-xs"
               />
               <span className="text-[10px] text-muted-foreground font-mono">
                 = 10{formatSuperscript(-dilutionExponent)}
@@ -652,16 +652,16 @@ export function CfuCalculator({
             </div>
 
             {/* Formula Breadcrumb */}
-            <div className="flex flex-wrap items-center gap-1 text-[11px] font-mono text-muted-foreground bg-surface/50 p-2 rounded-md border border-border/50">
-              <span className="text-foreground font-medium">Formula:</span>
-              <span>CFU/mL = Count / (Volume × Dilution)</span>
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-muted-foreground bg-surface/50 p-2.5 rounded-md border border-border/50 break-words leading-relaxed overflow-hidden">
+              <span className="text-foreground font-medium shrink-0">Formula:</span>
+              <span className="break-all sm:break-normal">CFU/mL = Count / (Volume × Dilution)</span>
               <span>=</span>
-              <span>
+              <span className="break-all sm:break-normal">
                 {calculationResult.activeCount} / ({calculationResult.activeVolumeMl} mL × 10
                 {formatSuperscript(-calculationResult.dilutionExponent)})
               </span>
               <span>=</span>
-              <span className="text-foreground font-semibold">
+              <span className="text-foreground font-semibold break-all sm:break-normal">
                 {formatScientificNotation(calculationResult.cfuPerMl)} CFU/mL
               </span>
             </div>
