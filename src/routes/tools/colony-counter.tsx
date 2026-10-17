@@ -42,7 +42,6 @@ import { ColonyDetectionCanvas } from "@/components/tools/ColonyDetectionCanvas"
 import { ColonyResultsPanel } from "@/components/tools/ColonyResultsPanel";
 import { ColonyPrintReport } from "@/components/tools/ColonyPrintReport";
 import { ColonyWorkflowGuide } from "@/components/tools/ColonyWorkflowGuide";
-import { ThemeToggle } from "@/components/tools/ThemeToggle";
 import { useColonyReview } from "@/hooks/use-colony-review";
 import type { CfuExportData } from "@/lib/colony-export";
 import {
@@ -444,20 +443,15 @@ export function ColonyCounterPage() {
           </div>
 
           <div className="mx-auto max-w-6xl px-3 sm:px-6 pb-6 pt-20 sm:pb-10 sm:pt-24 lg:pt-28">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="border-researcher/40 text-researcher bg-researcher-soft/40 gap-1.5 py-1 px-3"
-                >
-                  <FlaskConical className="h-3.5 w-3.5" />
-                  Microbiology AI Suite
-                </Badge>
-                <span className="text-xs text-muted-foreground font-mono">v1.0-preview</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ThemeToggle />
-              </div>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <Badge
+                variant="outline"
+                className="border-researcher/40 text-researcher bg-researcher-soft/40 gap-1.5 py-1 px-3"
+              >
+                <FlaskConical className="h-3.5 w-3.5" />
+                Microbiology AI Suite
+              </Badge>
+              <span className="text-xs text-muted-foreground font-mono">v1.0-preview</span>
             </div>
 
             <h1 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
