@@ -121,9 +121,32 @@ function AdminUsersPage() {
       const serverRes = await deleteUserAdmin({ data: { userId: target.id } });
 
       // 2. Also attempt RPC deletion if procedure exists
-      try { await supabase.rpc("delete_user", { target_user_id: target.id }); } catch {}
-      try { await supabase.from("profile").delete().eq("id", target.id); } catch {}
-      try { await supabase.from("users").delete().eq("id", target.id); } catch {}
+      try {
+        const { error: rpcError } = await supabase.rpc("delete_user", { target_user_id: target.id });
+        if (rpcError) {
+          console.warn("[Client] delete_user RPC note:", rpcError.message);
+        }
+      } catch (err) {
+        console.warn("[Client] delete_user RPC exception:", err);
+      }
+
+      try {
+        const { error: profileError } = await supabase.from("profile").delete().eq("id", target.id);
+        if (profileError) {
+          console.warn("[Client] Delete profile note:", profileError.message);
+        }
+      } catch (err) {
+        console.warn("[Client] Delete profile exception:", err);
+      }
+
+      try {
+        const { error: usersError } = await supabase.from("users").delete().eq("id", target.id);
+        if (usersError) {
+          console.warn("[Client] Delete users table note:", usersError.message);
+        }
+      } catch (err) {
+        console.warn("[Client] Delete users table exception:", err);
+      }
 
       if (serverRes.success) {
         toast.success(`User "${target.full_name || target.email}" completely deleted from Supabase.`);

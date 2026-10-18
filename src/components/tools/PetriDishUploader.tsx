@@ -1,0 +1,463 @@
+import * as React from "react";
+import {
+  Upload,
+  Camera,
+  Trash2,
+  RefreshCw,
+  AlertCircle,
+  FileImage,
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+  Info,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  preprocessSpecimenImage,
+  MAX_UPLOAD_SIZE_BYTES,
+  USER_OPTIMIZATION_SUCCESS_MESSAGE,
+  USER_OPTIMIZATION_FAILURE_MESSAGE,
+  type ImageOptimizationSuccess,
+} from "@/lib/colony-image-preprocessor";
+
+export interface PetriDishUploaderProps {
+  selectedFile: File | null;
+  /** Optional pre-computed preview URL to eliminate duplicate object URL allocations */
+  previewUrl?: string | null;
+  optimizationInfo?: ImageOptimizationSuccess | null;
+  onFileSelect: (
+    originalFile: File | null,
+    uploadPayload?: File | null,
+    optimizationInfo?: ImageOptimizationSuccess | null,
+  ) => void;
+  disabled?: boolean;
+  className?: string;
+  isDemo?: boolean;
+  onPreprocessingChange?: (isPreprocessing: boolean) => void;
+}
+
+const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/tiff",
+  "image/bmp",
+];
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".tif", ".tiff", ".bmp"];
+
+export function PetriDishUploader({
+  selectedFile,
+  previewUrl: propPreviewUrl,
+  optimizationInfo,
+  onFileSelect,
+  disabled = false,
+  className,
+  isDemo = false,
+  onPreprocessingChange,
+}: PetriDishUploaderProps) {
+  const [dragActive, setDragActive] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [internalPreviewUrl, setInternalPreviewUrl] = React.useState<string | null>(null);
+  const [isPreprocessing, setIsPreprocessing] = React.useState<boolean>(false);
+  const [internalOptimizationResult, setInternalOptimizationResult] =
+    React.useState<ImageOptimizationSuccess | null>(null);
+
+  const previewUrl = propPreviewUrl !== undefined ? propPreviewUrl : internalPreviewUrl;
+
+  const activeOptimization =
+    optimizationInfo !== undefined ? optimizationInfo : internalOptimizationResult;
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
+  const prevSelectedFileRef = React.useRef(selectedFile);
+
+  // Manage object URL lifecycle in memory when parent does not provide previewUrl
+  React.useEffect(() => {
+    if (propPreviewUrl !== undefined) {
+      // Parent component manages previewUrl lifecycle, avoiding duplicate object URL allocations
+      return;
+    }
+
+    if (!selectedFile && prevSelectedFileRef.current) {
+      setInternalOptimizationResult(null);
+      setInternalPreviewUrl(null);
+    }
+    prevSelectedFileRef.current = selectedFile;
+
+    const fileToPreview = activeOptimization?.uploadFile || selectedFile;
+    if (!fileToPreview) {
+      setInternalPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(fileToPreview);
+    setInternalPreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedFile, activeOptimization, propPreviewUrl]);
+
+  const validateFormat = (file: File): { valid: boolean; error?: string } => {
+    if (!file) {
+      return { valid: false, error: "No file was selected." };
+    }
+
+    if (file.size === 0) {
+      return {
+        valid: false,
+        error: "The selected file is empty. Choose another image.",
+      };
+    }
+
+    const fileType = (file.type || "").toLowerCase();
+    const fileName = (file.name || "").toLowerCase();
+    const hasValidExt = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
+    const hasValidMime = fileType ? ALLOWED_MIME_TYPES.includes(fileType) : false;
+
+    if (!hasValidMime && !hasValidExt) {
+      return {
+        valid: false,
+        error:
+          "Unsupported format. That file type isn't supported. Choose a JPEG, PNG, WebP, AVIF, or BMP image.",
+      };
+    }
+
+    return { valid: true };
+  };
+
+  const handleFileProcess = async (file: File) => {
+    setErrorMessage(null);
+    setInternalOptimizationResult(null);
+
+    const validation = validateFormat(file);
+    if (!validation.valid) {
+      setErrorMessage(validation.error ?? "Invalid file selected.");
+      return;
+    }
+
+    // 1. Normal path: If already <= 5 MB, upload directly without browser recompression
+    if (file.size <= MAX_UPLOAD_SIZE_BYTES) {
+      setInternalOptimizationResult(null);
+      onFileSelect(file, file, null);
+      return;
+    }
+
+    // 2. High-resolution / Mobile camera path (> 5 MB): preprocess in browser
+    setIsPreprocessing(true);
+    onPreprocessingChange?.(true);
+    try {
+      const result = await preprocessSpecimenImage(file);
+      if (result.success) {
+        setInternalOptimizationResult(result);
+        onFileSelect(file, result.uploadFile, result);
+      } else {
+        const failureMessage =
+          "We couldn't prepare this image for analysis. This image could not be prepared for upload. Try a smaller image or a different file. " +
+          USER_OPTIMIZATION_FAILURE_MESSAGE;
+        setErrorMessage(failureMessage);
+        onFileSelect(null, null, null);
+      }
+    } catch {
+      setErrorMessage(
+        "We couldn't prepare this image for analysis. This image could not be prepared for upload. Try a smaller image or a different file. " +
+          USER_OPTIMIZATION_FAILURE_MESSAGE,
+      );
+      onFileSelect(null, null, null);
+    } finally {
+      setIsPreprocessing(false);
+      onPreprocessingChange?.(false);
+    }
+  };
+
+  const handleNativeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileProcess(file);
+    }
+    // Reset input value so re-selecting the same file fires onChange
+    e.target.value = "";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled && !isPreprocessing) setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (disabled || isPreprocessing) return;
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileProcess(file);
+    }
+  };
+
+  const handleClear = () => {
+    setErrorMessage(null);
+    setInternalOptimizationResult(null);
+    onFileSelect(null, null, null);
+  };
+
+  return (
+    <div className={cn("space-y-4", className)}>
+      {/* Hidden file inputs: standard file picker & native mobile camera */}
+      <input
+        ref={fileInputRef}
+        id="petri-dish-file-input"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/*"
+        onChange={handleNativeInputChange}
+        disabled={disabled || isPreprocessing}
+        className="hidden"
+        aria-label="Upload Petri dish image file"
+      />
+
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleNativeInputChange}
+        disabled={disabled || isPreprocessing}
+        className="hidden"
+        aria-label="Capture Petri dish image using mobile camera"
+      />
+
+      {/* Upload Zone / Preview Area */}
+      {!selectedFile || !previewUrl ? (
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={cn(
+            "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-7 text-center transition-all duration-200 lab-reticle",
+            dragActive
+              ? "border-researcher bg-researcher-soft/40 shadow-inner"
+              : "border-border/80 bg-surface/60 hover:border-researcher/60 hover:bg-surface-elevated/90",
+            (disabled || isPreprocessing) && "pointer-events-none opacity-60",
+          )}
+        >
+          {/* Subtle laboratory reticle corner marks */}
+          <div className="absolute top-2 left-2 text-[10px] font-mono text-muted-foreground/40 select-none" aria-hidden="true">┌</div>
+          <div className="absolute top-2 right-2 text-[10px] font-mono text-muted-foreground/40 select-none" aria-hidden="true">┐</div>
+          <div className="absolute bottom-2 left-2 text-[10px] font-mono text-muted-foreground/40 select-none" aria-hidden="true">└</div>
+          <div className="absolute bottom-2 right-2 text-[10px] font-mono text-muted-foreground/40 select-none" aria-hidden="true">┘</div>
+
+          {isPreprocessing ? (
+            <div
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+              className="py-6 flex flex-col items-center justify-center space-y-3"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-researcher-soft text-researcher shadow-xs animate-pulse border border-researcher/30">
+                <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
+                Preparing image…
+              </p>
+              <p className="text-xs text-muted-foreground max-w-xs text-center leading-relaxed">
+                Optimizing large image for upload and colony detection.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-3.5 flex h-13 w-13 items-center justify-center rounded-2xl border border-border/80 bg-surface-elevated text-researcher shadow-xs">
+                <Upload className="h-6 w-6" aria-hidden="true" />
+              </div>
+
+              <h3 className="font-display text-base font-semibold tracking-tight text-foreground">
+                Upload Petri Dish Image
+              </h3>
+              <p className="mt-1 max-w-sm text-xs text-muted-foreground leading-relaxed">
+                Drag & drop a culture plate photo here, or use the buttons below to browse your files
+                or take a photo.
+              </p>
+
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={disabled || isPreprocessing}
+                  aria-busy={isPreprocessing}
+                  aria-label="Browse files to upload Petri dish image"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="min-h-[38px] border-border/80 bg-surface-elevated font-medium text-xs text-foreground hover:border-researcher hover:text-researcher hover:bg-surface shadow-2xs"
+                >
+                  <FileImage className="mr-1.5 h-4 w-4 text-researcher" aria-hidden="true" />
+                  Browse Files
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={disabled || isPreprocessing}
+                  aria-busy={isPreprocessing}
+                  aria-label="Capture Petri dish image with mobile camera"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="min-h-[38px] border-border/80 bg-surface-elevated font-medium text-xs text-foreground hover:border-student hover:text-student hover:bg-surface shadow-2xs"
+                >
+                  <Camera className="mr-1.5 h-4 w-4 text-student" aria-hidden="true" />
+                  Mobile Camera
+                </Button>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground/90">
+                <span className="font-mono px-2 py-0.5 rounded-md bg-surface border border-border/60">JPG, PNG, WebP</span>
+                <span>•</span>
+                <span>Max 5 MB direct</span>
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground/75">
+                JPG, PNG, or WEBP up to 5 MB (larger camera images are automatically optimized in
+                browser).
+              </p>
+
+              <div className="mt-3.5 pt-2.5 border-t border-border/50 text-center w-full max-w-xs">
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  No Petri dish image? Try a demo plate below.
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-border/70 bg-surface/40">
+          {/* Specimen Observation Stage */}
+          <div className="relative aspect-square max-h-[320px] sm:max-h-[420px] w-full overflow-hidden bg-slate-950/90 dark:bg-black/95 flex items-center justify-center">
+            {/* Subtle alignment reticle */}
+            <div className="absolute inset-4 rounded-full border border-dashed border-white/10 pointer-events-none" aria-hidden="true" />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+              <div className="w-6 h-[1px] bg-white/15" />
+              <div className="h-6 w-[1px] bg-white/15 absolute" />
+            </div>
+
+            <img
+              src={previewUrl}
+              alt="Uploaded Petri dish specimen preview"
+              className="h-full w-full object-contain p-2 select-none relative z-1"
+            />
+
+            {/* Quick Action Overlay Buttons */}
+            <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={disabled || isPreprocessing}
+                aria-busy={isPreprocessing}
+                aria-label="Replace image"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-8 sm:h-8 min-h-[32px] rounded-lg bg-background/90 text-xs backdrop-blur-md hover:bg-background border border-border/60 shadow-xs text-foreground font-medium px-2.5"
+              >
+                <RefreshCw className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                Replace
+              </Button>
+
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={disabled || isPreprocessing}
+                onClick={handleClear}
+                className="h-8 sm:h-8 min-h-[32px] w-8 sm:w-8 p-0 rounded-lg text-xs shadow-xs flex items-center justify-center"
+                aria-label="Remove image"
+                title="Remove image"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Specimen Metadata Footer */}
+          <div className="border-t border-border/60 p-4 space-y-2.5 text-xs bg-surface/30">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 truncate pr-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
+                <span className="truncate font-semibold text-foreground">{selectedFile.name}</span>
+                {isDemo && (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] py-0 px-1.5 font-mono shrink-0"
+                  >
+                    Demo Plate
+                  </Badge>
+                )}
+              </div>
+              <span className="font-mono text-muted-foreground text-[11px] bg-surface px-2 py-0.5 rounded border border-border/50">
+                {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+              </span>
+            </div>
+
+            {isDemo && (
+              <p className="text-[11px] text-amber-600/90 dark:text-amber-400/90 flex items-center gap-1.5 pt-0.5">
+                <Info className="h-3.5 w-3.5 shrink-0" />
+                Synthetic demonstration image. Real production YOLO inference will run upon analysis.
+              </p>
+            )}
+
+            {/* Scientific & UX distinction: Original user file vs optimized upload payload */}
+            {activeOptimization && (
+              <div
+                role="status"
+                aria-live="polite"
+                data-testid="optimization-feedback"
+                className="rounded-xl bg-surface/80 border border-researcher/30 p-3 text-[11px] space-y-1.5"
+              >
+                <div className="flex items-center gap-1.5 font-semibold text-researcher">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span>{USER_OPTIMIZATION_SUCCESS_MESSAGE}</span>
+                </div>
+                <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-x-2 font-mono">
+                  <span>Upload payload: {activeOptimization.uploadFile.name}</span>
+                  <span className="font-medium text-foreground">
+                    {(activeOptimization.uploadFile.size / (1024 * 1024)).toFixed(2)} MB
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground/80 italic">
+                  Original local file is unchanged. Specimen safely downscaled to max 2048px for
+                  analysis.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Error alert with recovery guidance */}
+      {errorMessage && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+          <div className="flex-1 space-y-1">
+            <div className="font-medium">{errorMessage}</div>
+            <p className="text-[11px] text-destructive/80">
+              Please choose another image or use one of the demonstration plates below.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

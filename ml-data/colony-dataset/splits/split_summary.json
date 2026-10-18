@@ -1,0 +1,164 @@
+{
+  "dataset_name": "Annotated dataset for deep-learning-based bacterial colony detection",
+  "doi": "10.6084/m9.figshare.22022540",
+  "random_seed": 42,
+  "leakage_prevention_method": "Culture session / plate pair clustering using EXIF timestamps and metadata",
+  "total_dishes_clustered": 229,
+  "total_images": 369,
+  "total_original_annotations": 56865,
+  "removed_degenerate_boxes": [
+    {
+      "file": "sp22_img09.txt",
+      "line": 146,
+      "original_class": 21,
+      "raw_line": "21 0.574486 0.346397 0.003357 0.000000",
+      "split": "train",
+      "reason": "Known zero-height bounding box anomaly (dropped to prevent training instability)"
+    },
+    {
+      "file": "sp23_img15.txt",
+      "line": 202,
+      "original_class": 22,
+      "raw_line": "22 0.220042 0.777778 0.000422 0.000000",
+      "split": "train",
+      "reason": "Known zero-height bounding box anomaly (dropped to prevent training instability)"
+    },
+    {
+      "file": "sp09_img07.txt",
+      "line": 161,
+      "original_class": 8,
+      "raw_line": "8 0.954749 0.606083 0.000748 0.000000",
+      "split": "test",
+      "reason": "Known zero-height bounding box anomaly (dropped to prevent training instability)"
+    }
+  ],
+  "total_processed_annotations": 56862,
+  "classes": {
+    "0": "colony"
+  },
+  "splits": {
+    "train": {
+      "image_count": 258,
+      "percentage": 69.92,
+      "total_colonies": 40844,
+      "colony_stats": {
+        "min": 2,
+        "max": 747,
+        "mean": 158.31,
+        "median": 111.0,
+        "std_dev": 167.66
+      },
+      "background_distribution": {
+        "black": 138,
+        "white": 120
+      },
+      "species_count": 24,
+      "species_distribution": {
+        "sp01": 8,
+        "sp02": 10,
+        "sp03": 8,
+        "sp04": 2,
+        "sp05": 14,
+        "sp06": 24,
+        "sp07": 8,
+        "sp08": 9,
+        "sp09": 8,
+        "sp10": 15,
+        "sp11": 3,
+        "sp12": 7,
+        "sp13": 4,
+        "sp14": 12,
+        "sp15": 7,
+        "sp16": 11,
+        "sp17": 2,
+        "sp18": 8,
+        "sp19": 18,
+        "sp20": 3,
+        "sp21": 33,
+        "sp22": 16,
+        "sp23": 16,
+        "sp24": 12
+      }
+    },
+    "val": {
+      "image_count": 55,
+      "percentage": 14.91,
+      "total_colonies": 8024,
+      "colony_stats": {
+        "min": 4,
+        "max": 572,
+        "mean": 145.89,
+        "median": 93,
+        "std_dev": 133.38
+      },
+      "background_distribution": {
+        "black": 34,
+        "white": 21
+      },
+      "species_count": 22,
+      "species_distribution": {
+        "sp01": 2,
+        "sp03": 2,
+        "sp04": 2,
+        "sp05": 2,
+        "sp06": 6,
+        "sp07": 2,
+        "sp08": 1,
+        "sp09": 2,
+        "sp10": 3,
+        "sp11": 1,
+        "sp13": 2,
+        "sp14": 2,
+        "sp15": 2,
+        "sp16": 2,
+        "sp17": 1,
+        "sp18": 2,
+        "sp19": 2,
+        "sp20": 2,
+        "sp21": 7,
+        "sp22": 5,
+        "sp23": 3,
+        "sp24": 2
+      }
+    },
+    "test": {
+      "image_count": 56,
+      "percentage": 15.18,
+      "total_colonies": 7994,
+      "colony_stats": {
+        "min": 4,
+        "max": 585,
+        "mean": 142.75,
+        "median": 105.5,
+        "std_dev": 143.56
+      },
+      "background_distribution": {
+        "black": 33,
+        "white": 23
+      },
+      "species_count": 20,
+      "species_distribution": {
+        "sp01": 2,
+        "sp03": 2,
+        "sp04": 2,
+        "sp05": 2,
+        "sp06": 5,
+        "sp07": 2,
+        "sp08": 2,
+        "sp09": 2,
+        "sp10": 3,
+        "sp11": 1,
+        "sp12": 2,
+        "sp14": 4,
+        "sp16": 3,
+        "sp18": 2,
+        "sp19": 4,
+        "sp20": 1,
+        "sp21": 8,
+        "sp22": 3,
+        "sp23": 4,
+        "sp24": 2
+      }
+    }
+  }
+}

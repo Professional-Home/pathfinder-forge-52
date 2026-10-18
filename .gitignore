@@ -14,6 +14,7 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
+.vercel/
 *.local
 
 # Wrangler / Cloudflare
@@ -34,3 +35,44 @@ dist-ssr
 .env.local
 .env.production
 .env.*.local
+
+# ML datasets and weights
+ml-data/colony-dataset/raw/
+ml-data/colony-dataset/inspection/
+ml-data/colony-dataset/processed_yolo/images/
+ml-data/colony-dataset/processed_yolo/labels/
+ml-data/colony-dataset/processed_yolo/samples/
+ml-data/colony-segmentation-poc/
+ml-data/colony-segmentation-phase5i/
+ml-data/colony-training/*
+!ml-data/colony-training/baseline_training_report.json
+!ml-data/colony-training/threshold_optimization_report.json
+!ml-data/colony-training/threshold_optimization_report.md
+!ml-data/colony-training/high_density_experiment_report.json
+!ml-data/colony-training/high_density_experiment_report.md
+!ml-data/colony-training/phase5g_report.json
+!ml-data/colony-training/phase5g_report.md
+!ml-data/colony-training/phase5h_report.json
+!ml-data/colony-training/phase5h_report.md
+!ml-data/colony-training/phase5i_report.json
+!ml-data/colony-training/phase5i_report.md
+!ml-data/colony-training/phase5j_report.json
+!ml-data/colony-training/phase5j_report.md
+!ml-data/colony-training/phase5j_complete.json
+!ml-data/colony-training/phase5k_report.json
+!ml-data/colony-training/phase5k_report.md
+!ml-data/colony-training/phase5k_per_image.json
+!ml-data/colony-training/phase5k_reconciliation.json
+!ml-data/colony-training/phase5k_complete.json
+!ml-data/colony-training/phase5l_report.json
+!ml-data/colony-training/phase5l_report.md
+!ml-data/colony-training/phase5l_per_image.json
+!ml-data/colony-training/phase5l_complete.json
+!ml-data/colony-training/phase5m_report.json
+!ml-data/colony-training/phase5m_report.md
+!ml-data/colony-training/phase5m_per_image.json
+!ml-data/colony-training/phase5m_complete.json
+*.pt
+*.onnx
+__pycache__/
+*.pyc

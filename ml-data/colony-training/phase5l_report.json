@@ -1,0 +1,1113 @@
+{
+  "phase": "5L",
+  "phase_title": "Dynamic Density Router Robustness & Generalization Validation",
+  "timestamp": "2026-09-25T19:03:56.140096",
+  "total_validation_plates": 55,
+  "production_invariants": {
+    "model_path": "F:\\Project\\pathfinder-forge-52\\services\\colony-detector\\models\\best.pt",
+    "expected_sha256": "bc993b664da2bde5123b8a5c34726e4a35357434cb0c49cb523185f8c929064d",
+    "verified": true,
+    "confidence": 0.3,
+    "imgsz": 640,
+    "class_name": "colony"
+  },
+  "phase5k_baseline": {
+    "prod_only_mae": 9.0,
+    "seg_only_mae": 15.27,
+    "candidate_400_mae": 7.49
+  },
+  "borderline_analysis": {
+    "bins_summary": {
+      "300-349": {
+        "count": 2,
+        "plates": [
+          "sp06_img31",
+          "sp21_img36"
+        ]
+      },
+      "350-374": {
+        "count": 0,
+        "plates": []
+      },
+      "375-399": {
+        "count": 0,
+        "plates": []
+      },
+      "400-424": {
+        "count": 0,
+        "plates": []
+      },
+      "425-449": {
+        "count": 0,
+        "plates": []
+      },
+      "450+": {
+        "count": 4,
+        "plates": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      }
+    },
+    "borderline_plates": [
+      {
+        "bin": "300-349",
+        "stem": "sp06_img31",
+        "gt_count": 310,
+        "prod_count": 320,
+        "prod_err": 10,
+        "seg_count": 254,
+        "seg_err": 56,
+        "improvement": -46,
+        "overlap_ratio": 0.197,
+        "confluence_risk": "medium",
+        "density_level": "high",
+        "routing_helps": false,
+        "routing_hurts": true
+      },
+      {
+        "bin": "300-349",
+        "stem": "sp21_img36",
+        "gt_count": 312,
+        "prod_count": 324,
+        "prod_err": 12,
+        "seg_count": 314,
+        "seg_err": 2,
+        "improvement": 10,
+        "overlap_ratio": 0.269,
+        "confluence_risk": "high",
+        "density_level": "high",
+        "routing_helps": true,
+        "routing_hurts": false
+      },
+      {
+        "bin": "450+",
+        "stem": "sp10_img20",
+        "gt_count": 572,
+        "prod_count": 644,
+        "prod_err": 72,
+        "seg_count": 489,
+        "seg_err": 83,
+        "improvement": -11,
+        "overlap_ratio": 0.272,
+        "confluence_risk": "high",
+        "density_level": "ultra_high",
+        "routing_helps": false,
+        "routing_hurts": true
+      },
+      {
+        "bin": "450+",
+        "stem": "sp13_img04",
+        "gt_count": 473,
+        "prod_count": 511,
+        "prod_err": 38,
+        "seg_count": 486,
+        "seg_err": 13,
+        "improvement": 25,
+        "overlap_ratio": 0.566,
+        "confluence_risk": "high",
+        "density_level": "ultra_high",
+        "routing_helps": true,
+        "routing_hurts": false
+      },
+      {
+        "bin": "450+",
+        "stem": "sp22_img19",
+        "gt_count": 449,
+        "prod_count": 488,
+        "prod_err": 39,
+        "seg_count": 460,
+        "seg_err": 11,
+        "improvement": 28,
+        "overlap_ratio": 0.385,
+        "confluence_risk": "high",
+        "density_level": "ultra_high",
+        "routing_helps": true,
+        "routing_hurts": false
+      },
+      {
+        "bin": "450+",
+        "stem": "sp22_img20",
+        "gt_count": 459,
+        "prod_count": 502,
+        "prod_err": 43,
+        "seg_count": 457,
+        "seg_err": 2,
+        "improvement": 41,
+        "overlap_ratio": 0.402,
+        "confluence_risk": "high",
+        "density_level": "ultra_high",
+        "routing_helps": true,
+        "routing_hurts": false
+      }
+    ],
+    "archetypes": {
+      "A_below_400_seg_helps": [
+        {
+          "stem": "sp21_img36",
+          "gt": 312,
+          "prod": 324,
+          "seg": 314,
+          "improvement": 10
+        }
+      ],
+      "B_below_400_seg_hurts": [
+        {
+          "stem": "sp06_img31",
+          "gt": 310,
+          "prod": 320,
+          "seg": 254,
+          "penalty": 46
+        }
+      ],
+      "C_above_400_seg_helps": [
+        {
+          "stem": "sp13_img04",
+          "gt": 473,
+          "prod": 511,
+          "seg": 486,
+          "improvement": 25
+        },
+        {
+          "stem": "sp22_img19",
+          "gt": 449,
+          "prod": 488,
+          "seg": 460,
+          "improvement": 28
+        },
+        {
+          "stem": "sp22_img20",
+          "gt": 459,
+          "prod": 502,
+          "seg": 457,
+          "improvement": 41
+        }
+      ],
+      "D_above_400_seg_hurts": [
+        {
+          "stem": "sp10_img20",
+          "gt": 572,
+          "prod": 644,
+          "seg": 489,
+          "penalty": 11
+        }
+      ]
+    }
+  },
+  "threshold_sensitivity": {
+    "sweep": {
+      "count > 300": {
+        "threshold": 300,
+        "mae": 8.15,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 36,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": -0.44,
+        "plates_routed": 6,
+        "pct_routed": 10.9,
+        "unnecessary_routes": 2,
+        "missed_ultra_cases": 0,
+        "high_routed": 2,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp06_img31",
+          "sp10_img20",
+          "sp13_img04",
+          "sp21_img36",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 320": {
+        "threshold": 320,
+        "mae": 7.31,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 36,
+        "within_10": 44,
+        "max_ae": 83,
+        "signed_bias": 0.76,
+        "plates_routed": 5,
+        "pct_routed": 9.1,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 1,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp21_img36",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 324": {
+        "threshold": 324,
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 325": {
+        "threshold": 325,
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 350": {
+        "threshold": 350,
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 375": {
+        "threshold": 375,
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 400": {
+        "threshold": 400,
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 425": {
+        "threshold": 425,
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 450": {
+        "threshold": 450,
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 487": {
+        "threshold": 487,
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 4,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "count > 488": {
+        "threshold": 488,
+        "mae": 8.0,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 1.45,
+        "plates_routed": 3,
+        "pct_routed": 5.5,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 1,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 3,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img20"
+        ]
+      },
+      "count > 502": {
+        "threshold": 502,
+        "mae": 8.75,
+        "median_ae": 3.0,
+        "exact_count": 10,
+        "within_5": 34,
+        "within_10": 42,
+        "max_ae": 83,
+        "signed_bias": 2.27,
+        "plates_routed": 2,
+        "pct_routed": 3.6,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 2,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 2,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04"
+        ]
+      },
+      "count > 511": {
+        "threshold": 511,
+        "mae": 9.2,
+        "median_ae": 3.0,
+        "exact_count": 10,
+        "within_5": 34,
+        "within_10": 42,
+        "max_ae": 83,
+        "signed_bias": 2.73,
+        "plates_routed": 1,
+        "pct_routed": 1.8,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 3,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 1,
+        "routed_plate_ids": [
+          "sp10_img20"
+        ]
+      },
+      "count > 644": {
+        "threshold": 644,
+        "mae": 9.0,
+        "median_ae": 3.0,
+        "exact_count": 10,
+        "within_5": 34,
+        "within_10": 42,
+        "max_ae": 72,
+        "signed_bias": 5.55,
+        "plates_routed": 0,
+        "pct_routed": 0.0,
+        "unnecessary_routes": 0,
+        "missed_ultra_cases": 4,
+        "high_routed": 0,
+        "med_routed": 0,
+        "low_routed": 0,
+        "ultra_routed": 0,
+        "routed_plate_ids": []
+      }
+    },
+    "stable_region": {
+      "range": "[325, 487]",
+      "explanation": "No validation plates exist in the range 325 <= predicted_count <= 487. Therefore, every threshold in [325, 487] produces identical routing decisions (exactly the 4 Ultra-High plates: sp10_img20, sp13_img04, sp22_img19, sp22_img20) and identical aggregate metrics (MAE 7.49)."
+    },
+    "sensitive_region": {
+      "range": "[300, 324]",
+      "explanation": "Lowering threshold to 320 or 300 causes High-density plates (sp21_img36, sp06_img31) to route. While sp21_img36 benefits (+10), sp06_img31 severely regresses (-46), degrading MAE from 7.49 to 8.15."
+    },
+    "failure_region": {
+      "range": "[< 300]",
+      "explanation": "Lowering threshold below 300 (e.g. 200) triggers small-colony recall collapse across numerous High-density plates (e.g. sp10_img14, sp23_img10, sp06_img30), resulting in MAE exploding to 13.45."
+    },
+    "is_400_isolated": false,
+    "threshold_400_assessment": "Threshold 400 is not a brittle, isolated sweet spot. It sits comfortably in the center of the broad 163-count empirical plateau [325, 487], providing a 76-colony safety margin above the highest sub-400 plate (sp21_img36 at 324) and an 88-colony margin below the lowest routed plate (sp22_img19 at 488)."
+  },
+  "routing_decision_matrix": {
+    "Production better": {
+      "count": 16,
+      "pct": 29.1,
+      "plates": [
+        "sp03_img07",
+        "sp04_img04",
+        "sp05_img11",
+        "sp06_img05",
+        "sp06_img06",
+        "sp06_img25",
+        "sp07_img02",
+        "sp10_img10",
+        "sp17_img03",
+        "sp18_img10",
+        "sp19_img13",
+        "sp20_img03",
+        "sp21_img33",
+        "sp22_img01",
+        "sp23_img01",
+        "sp24_img14"
+      ],
+      "count_min": 4,
+      "count_max": 255,
+      "count_mean": 89.9,
+      "overlap_mean": 0.269,
+      "confluence_risk_dist": {
+        "low": 6,
+        "medium": 5,
+        "high": 5
+      },
+      "density_level_dist": {
+        "low": 6,
+        "medium": 8,
+        "high": 2,
+        "ultra_high": 0
+      }
+    },
+    "Segmentation better": {
+      "count": 13,
+      "pct": 23.6,
+      "plates": [
+        "sp01_img01",
+        "sp03_img08",
+        "sp04_img03",
+        "sp07_img01",
+        "sp08_img12",
+        "sp14_img03",
+        "sp15_img02",
+        "sp19_img12",
+        "sp21_img25",
+        "sp21_img32",
+        "sp22_img03",
+        "sp22_img14",
+        "sp24_img12"
+      ],
+      "count_min": 5,
+      "count_max": 276,
+      "count_mean": 86.2,
+      "overlap_mean": 0.28,
+      "confluence_risk_dist": {
+        "low": 5,
+        "medium": 3,
+        "high": 5
+      },
+      "density_level_dist": {
+        "low": 5,
+        "medium": 6,
+        "high": 2,
+        "ultra_high": 0
+      }
+    },
+    "Approximately equal": {
+      "count": 6,
+      "pct": 10.9,
+      "plates": [
+        "sp01_img02",
+        "sp05_img12",
+        "sp13_img01",
+        "sp14_img01",
+        "sp15_img01",
+        "sp21_img21"
+      ],
+      "count_min": 4,
+      "count_max": 156,
+      "count_mean": 62.2,
+      "overlap_mean": 0.148,
+      "confluence_risk_dist": {
+        "low": 3,
+        "medium": 2,
+        "high": 1
+      },
+      "density_level_dist": {
+        "low": 3,
+        "medium": 3,
+        "high": 0,
+        "ultra_high": 0
+      }
+    },
+    "Segmentation dramatically worse": {
+      "count": 15,
+      "pct": 27.3,
+      "plates": [
+        "sp06_img26",
+        "sp06_img30",
+        "sp06_img31",
+        "sp09_img05",
+        "sp09_img06",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp18_img09",
+        "sp21_img07",
+        "sp21_img13",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "count_min": 43,
+      "count_max": 644,
+      "count_mean": 219.7,
+      "overlap_mean": 0.207,
+      "confluence_risk_dist": {
+        "low": 4,
+        "medium": 8,
+        "high": 3
+      },
+      "density_level_dist": {
+        "low": 1,
+        "medium": 4,
+        "high": 9,
+        "ultra_high": 1
+      }
+    },
+    "Segmentation dramatically better": {
+      "count": 5,
+      "pct": 9.1,
+      "plates": [
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img36",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "count_min": 276,
+      "count_max": 511,
+      "count_mean": 420.2,
+      "overlap_mean": 0.448,
+      "confluence_risk_dist": {
+        "low": 0,
+        "medium": 0,
+        "high": 5
+      },
+      "density_level_dist": {
+        "low": 0,
+        "medium": 0,
+        "high": 2,
+        "ultra_high": 3
+      }
+    }
+  },
+  "false_routing_analysis": {
+    "false_positive_routes": [
+      {
+        "stem": "sp10_img20",
+        "gt_count": 572,
+        "prod_count": 644,
+        "seg_count": 489,
+        "prod_err": 72,
+        "seg_err": 83,
+        "penalty": 11,
+        "overlap_ratio": 0.272
+      }
+    ],
+    "missed_opportunities_10": [
+      {
+        "stem": "sp20_img05",
+        "gt_count": 251,
+        "prod_count": 276,
+        "seg_count": 265,
+        "prod_err": 25,
+        "seg_err": 14,
+        "missed_improvement": 11,
+        "overlap_ratio": 0.616,
+        "density_level": "high"
+      },
+      {
+        "stem": "sp21_img36",
+        "gt_count": 312,
+        "prod_count": 324,
+        "seg_count": 314,
+        "prod_err": 12,
+        "seg_err": 2,
+        "missed_improvement": 10,
+        "overlap_ratio": 0.269,
+        "density_level": "high"
+      }
+    ],
+    "missed_opportunities_5_count": 2,
+    "missed_opportunities_15_count": 0
+  },
+  "ultra_high_analysis": {
+    "cards": [
+      {
+        "stem": "sp10_img20",
+        "gt_count": 572,
+        "prod_count": 644,
+        "prod_err": 72,
+        "seg_count": 489,
+        "seg_err": 83,
+        "improvement": -11,
+        "overlap_ratio": 0.272,
+        "confluence_risk": "high",
+        "density_level": "ultra_high",
+        "routed": true,
+        "status": "Degraded"
+      },
+      {
+        "stem": "sp13_img04",
+        "gt_count": 473,
+        "prod_count": 511,
+        "prod_err": 38,
+        "seg_count": 486,
+        "seg_err": 13,
+        "improvement": 25,
+        "overlap_ratio": 0.566,
+        "confluence_risk": "high",
+        "density_level": "ultra_high",
+        "routed": true,
+        "status": "Significantly Improved"
+      },
+      {
+        "stem": "sp22_img19",
+        "gt_count": 449,
+        "prod_count": 488,
+        "prod_err": 39,
+        "seg_count": 460,
+        "seg_err": 11,
+        "improvement": 28,
+        "overlap_ratio": 0.385,
+        "confluence_risk": "high",
+        "density_level": "ultra_high",
+        "routed": true,
+        "status": "Significantly Improved"
+      },
+      {
+        "stem": "sp22_img20",
+        "gt_count": 459,
+        "prod_count": 502,
+        "prod_err": 43,
+        "seg_count": 457,
+        "seg_err": 2,
+        "improvement": 41,
+        "overlap_ratio": 0.402,
+        "confluence_risk": "high",
+        "density_level": "ultra_high",
+        "routed": true,
+        "status": "Significantly Improved"
+      }
+    ],
+    "sample_size_limitation": "The validation set contains only 4 Ultra-High plates (N=4). While 3 of 4 show large accuracy improvements (mean +31.3 colonies error reduction) and 1 plate experiences minor degradation (-11 colonies), this small sample size cannot prove statistical generalization across diverse lab protocols."
+  },
+  "high_density_safety": {
+    "total_high_tier_plates": 14,
+    "high_between_200_and_400": 14,
+    "seg_worse_in_high_density": 10,
+    "seg_better_in_high_density": 4,
+    "seg_equal_in_high_density": 0,
+    "closest_high_plate_below_400": {
+      "stem": "sp21_img36",
+      "prod_count": 324,
+      "safety_buffer_to_400": 76
+    },
+    "sp10_img14_case_study": {
+      "stem": "sp10_img14",
+      "gt_count": 280,
+      "prod_count": 238,
+      "prod_err": 42,
+      "seg_count": 171,
+      "seg_err": 109,
+      "penalty_if_routed": 67,
+      "explanation": "sp10_img14 exemplifies small-colony recall collapse. While production detector missed 42 colonies, segmentation undercounted by 109 colonies. The 400 threshold safely protects sp10_img14 from false routing by a wide margin (162 counts)."
+    }
+  },
+  "combined_signal_analysis": {
+    "comparison": {
+      "Production Only (Baseline)": {
+        "mae": 9.0,
+        "median_ae": 3.0,
+        "exact_count": 10,
+        "within_5": 34,
+        "within_10": 42,
+        "max_ae": 72,
+        "signed_bias": 5.55,
+        "plates_routed": 0,
+        "pct_routed": 0.0,
+        "unnecessary_routes": 0,
+        "missed_ultra_cases": 4,
+        "routed_plate_ids": []
+      },
+      "Segmentation Only (Baseline)": {
+        "mae": 15.27,
+        "median_ae": 7.0,
+        "exact_count": 8,
+        "within_5": 25,
+        "within_10": 33,
+        "max_ae": 109,
+        "signed_bias": -8.69,
+        "plates_routed": 55,
+        "pct_routed": 100.0,
+        "unnecessary_routes": 31,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp01_img01",
+          "sp01_img02",
+          "sp03_img07",
+          "sp03_img08",
+          "sp04_img03",
+          "sp04_img04",
+          "sp05_img11",
+          "sp05_img12",
+          "sp06_img05",
+          "sp06_img06",
+          "sp06_img25",
+          "sp06_img26",
+          "sp06_img30",
+          "sp06_img31",
+          "sp07_img01",
+          "sp07_img02",
+          "sp08_img12",
+          "sp09_img05",
+          "sp09_img06",
+          "sp10_img10",
+          "sp10_img14",
+          "sp10_img20",
+          "sp11_img04",
+          "sp13_img01",
+          "sp13_img04",
+          "sp14_img01",
+          "sp14_img03",
+          "sp15_img01",
+          "sp15_img02",
+          "sp16_img12",
+          "sp16_img13",
+          "sp17_img03",
+          "sp18_img09",
+          "sp18_img10",
+          "sp19_img12",
+          "sp19_img13",
+          "sp20_img03",
+          "sp20_img05",
+          "sp21_img07",
+          "sp21_img13",
+          "sp21_img21",
+          "sp21_img25",
+          "sp21_img32",
+          "sp21_img33",
+          "sp21_img36",
+          "sp22_img01",
+          "sp22_img03",
+          "sp22_img14",
+          "sp22_img19",
+          "sp22_img20",
+          "sp23_img01",
+          "sp23_img10",
+          "sp23_img11",
+          "sp24_img12",
+          "sp24_img14"
+        ]
+      },
+      "Candidate: count > 400": {
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "Candidate: count > 350": {
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "Alternative: count > 300": {
+        "mae": 8.15,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 36,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": -0.44,
+        "plates_routed": 6,
+        "pct_routed": 10.9,
+        "unnecessary_routes": 2,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp06_img31",
+          "sp10_img20",
+          "sp13_img04",
+          "sp21_img36",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "Conjunctive: count > 300 AND overlap > 0.25": {
+        "mae": 7.31,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 36,
+        "within_10": 44,
+        "max_ae": 83,
+        "signed_bias": 0.76,
+        "plates_routed": 5,
+        "pct_routed": 9.1,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp21_img36",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "Conjunctive: count > 400 AND overlap > 0.25": {
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "Conjunctive: count > 400 AND confluence_risk in ['high', 'medium']": {
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "Categorical: density_level == 'ultra_high'": {
+        "mae": 7.49,
+        "median_ae": 2.0,
+        "exact_count": 10,
+        "within_5": 35,
+        "within_10": 43,
+        "max_ae": 83,
+        "signed_bias": 0.95,
+        "plates_routed": 4,
+        "pct_routed": 7.3,
+        "unnecessary_routes": 1,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp10_img20",
+          "sp13_img04",
+          "sp22_img19",
+          "sp22_img20"
+        ]
+      },
+      "Categorical: review_recommended == True": {
+        "mae": 13.62,
+        "median_ae": 3.0,
+        "exact_count": 9,
+        "within_5": 31,
+        "within_10": 39,
+        "max_ae": 109,
+        "signed_bias": -7.73,
+        "plates_routed": 26,
+        "pct_routed": 47.3,
+        "unnecessary_routes": 15,
+        "missed_ultra_cases": 0,
+        "routed_plate_ids": [
+          "sp04_img03",
+          "sp04_img04",
+          "sp05_img11",
+          "sp05_img12",
+          "sp06_img30",
+          "sp06_img31",
+          "sp08_img12",
+          "sp10_img14",
+          "sp10_img20",
+          "sp11_img04",
+          "sp13_img04",
+          "sp16_img12",
+          "sp16_img13",
+          "sp17_img03",
+          "sp18_img09",
+          "sp18_img10",
+          "sp20_img05",
+          "sp21_img32",
+          "sp21_img33",
+          "sp21_img36",
+          "sp22_img03",
+          "sp22_img14",
+          "sp22_img19",
+          "sp22_img20",
+          "sp23_img10",
+          "sp23_img11"
+        ]
+      }
+    },
+    "conclusion": "Secondary signals (overlap_ratio, confluence_risk, review_recommended) provide zero additive accuracy gain over predicted_count > 400 on the validation set, while introducing fragile dependency couplings. Specifically, density_level == 'ultra_high' is computationally identical to count > 400 because ultra_high is defined as count > 400 in the production service."
+  },
+  "visual_review_sheet": "F:\\Project\\pathfinder-forge-52\\ml-data\\colony-training\\phase5l_analysis\\visual\\phase5l_router_visual_sheet.jpg",
+  "generalization_limitations": [
+    "Sample Size Bound: The validation split contains exactly 55 plates, of which only 4 (7.3%) belong to the Ultra-High density regime.",
+    "Density Gap Artifact: The validation dataset contains zero plates with predicted count between 325 and 487 colonies. True transition curve behavior in this zone is unobserved.",
+    "Small-Colony Sensitivity: Segmentation suffers from small-colony recall collapse on dense dishes with punctate colonies (e.g. sp10_img14), meaning routing thresholds cannot be lowered safely.",
+    "Protected Test Set Untouched: As mandated by protocol, the protected test set was never accessed for tuning or confirmation."
+  ],
+  "deployment_readiness_assessment": {
+    "stable_around_boundary": "Demonstrated on current validation set (wide stability plateau between 325 and 487).",
+    "dangerous_false_routes": "Demonstrated on current validation set (only 1 plate, sp10_img20, exhibits minor degradation of 11 colonies; no catastrophic false routes observed at threshold 400).",
+    "important_missed_opportunities": "Demonstrated on current validation set (only 2 plates below 400 show >= 10 improvement: sp20_img05 with +11 and sp21_img36 with +10. However, routing them would also route sp06_img31 which suffers a -46 penalty).",
+    "secondary_signals_utility": "Not supported by current evidence (adding overlap or confluence risk does not improve over count > 400).",
+    "segmentation_conditional_reliability": "Promising but sample-limited (highly effective for confluent/clumped ultra-dense dishes, but unreliable below 400).",
+    "missing_evidence": "Unobserved empirical performance on dishes with colony counts between 325 and 487 colonies; multi-laboratory cross-protocol diversity.",
+    "exact_next_validation_required": "Formal validation on an independent high/ultra-high calibration suite (or approved Phase 5M benchmark) before production deployment.",
+    "overall_classification": "Promising but sample-limited \u2014 NOT ready for immediate production freeze without independent multi-plate high-density calibration."
+  }
+}

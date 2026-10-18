@@ -1,0 +1,11 @@
+{
+  "phase": "5M",
+  "completed_at": "2026-09-25T19:17:26.019006",
+  "status": "COMPLETED",
+  "decision": "OUTCOME_B",
+  "independent_data_found": false,
+  "eligible_independent_plates": 0,
+  "protected_test_set_untouched": true,
+  "production_sha256_verified": "bc993b664da2bde5123b8a5c34726e4a35357434cb0c49cb523185f8c929064d",
+  "frozen_rule": "predicted_count > 400"
+}

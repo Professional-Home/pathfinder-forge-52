@@ -1,0 +1,2902 @@
+{
+  "phase": "5K",
+  "title": "Dynamic Density Cascade Router Feasibility Report",
+  "timestamp": "2026-09-24T21:04:57.274129",
+  "production_model_sha256": "bc993b664da2bde5123b8a5c34726e4a35357434cb0c49cb523185f8c929064d",
+  "dataset_validation_plates": 55,
+  "reconciliation": {
+    "artifact": "F:\\Project\\pathfinder-forge-52\\ml-data\\colony-training\\phase5k_reconciliation.json",
+    "status": "RECONCILED",
+    "source_a_annotations": 8024,
+    "source_b_annotations": 8008,
+    "difference": 16,
+    "reason": "Phase 5H MobileSAM pseudo-label generation on 3 validation sample plates (sp06_img30, sp10_img20, sp13_img04) rejected 16 low-quality masks, which were omitted when creating ml-data/colony-segmentation-phase5i/labels/val."
+  },
+  "routing_signals_documented": [
+    {
+      "name": "predicted_count",
+      "definition": "Number of detected colony bounding boxes with confidence >= 0.30",
+      "location": "services/colony-detector/app/detector.py:len(detections)",
+      "fastapi_exposed": true,
+      "offline_calculable": true,
+      "gt_dependent": false
+    },
+    {
+      "name": "density_level",
+      "definition": "Operational plate density category: low (<50), medium (50-200), high (201-400), ultra_high (>400)",
+      "location": "services/colony-detector/app/detector.py:assess_colony_quality().density_level",
+      "fastapi_exposed": true,
+      "offline_calculable": true,
+      "gt_dependent": false
+    },
+    {
+      "name": "overlap_ratio",
+      "definition": "Fraction of detected colonies that share pairwise IoU > 0.10 with at least one neighboring colony",
+      "location": "services/colony-detector/app/detector.py:assess_colony_quality().overlap_ratio",
+      "fastapi_exposed": true,
+      "offline_calculable": true,
+      "gt_dependent": false
+    },
+    {
+      "name": "confluence_risk",
+      "definition": "Categorical crowding indicator: 'low', 'medium', 'high'",
+      "location": "services/colony-detector/app/detector.py:assess_colony_quality().confluence_risk",
+      "fastapi_exposed": true,
+      "offline_calculable": true,
+      "gt_dependent": false
+    },
+    {
+      "name": "review_recommended",
+      "definition": "Boolean warning flag indicating plate exceeds high density (>200) or has elevated overlap",
+      "location": "services/colony-detector/app/detector.py:assess_colony_quality().review_recommended",
+      "fastapi_exposed": true,
+      "offline_calculable": true,
+      "gt_dependent": false
+    },
+    {
+      "name": "num_overlapping_pairs",
+      "definition": "Total count of pairwise bounding box interactions with IoU > 0.10",
+      "location": "services/colony-detector/app/detector.py:pairwise loop",
+      "fastapi_exposed": false,
+      "offline_calculable": true,
+      "gt_dependent": false
+    }
+  ],
+  "evaluated_routing_rules": [
+    {
+      "rule_name": "BASELINE_PROD_ONLY",
+      "description": "Production YOLO11n on all 55 validation plates (current locked production)",
+      "overall_mae": 9.0,
+      "median_ae": 3.0,
+      "max_ae": 72,
+      "mean_signed_bias": 5.55,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 34,
+      "within_5_pct": 61.8,
+      "within_10": 42,
+      "within_10_pct": 76.4,
+      "routed_count": 0,
+      "routed_pct": 0.0,
+      "kept_on_prod_count": 55,
+      "unnecessary_routes": 0,
+      "beneficial_routes": 0,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 4,
+      "mean_latency_ms": 1256.1,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 0,
+          "mae": 48.0,
+          "median_ae": 41.0
+        }
+      },
+      "routed_stems": [],
+      "unnecessary_stems": [],
+      "beneficial_stems": []
+    },
+    {
+      "rule_name": "BASELINE_SEG_ONLY",
+      "description": "Phase 5I YOLO11n-seg on all 55 validation plates",
+      "overall_mae": 15.27,
+      "median_ae": 7.0,
+      "max_ae": 109,
+      "mean_signed_bias": -8.69,
+      "exact_count": 8,
+      "exact_pct": 14.5,
+      "within_1": 14,
+      "within_1_pct": 25.5,
+      "within_5": 25,
+      "within_5_pct": 45.5,
+      "within_10": 33,
+      "within_10_pct": 60.0,
+      "routed_count": 55,
+      "routed_pct": 100.0,
+      "kept_on_prod_count": 0,
+      "unnecessary_routes": 31,
+      "beneficial_routes": 18,
+      "neutral_routes": 6,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2967.6,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 15,
+          "mae": 2.53,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 22,
+          "mae": 9.77,
+          "median_ae": 8.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 14,
+          "mae": 34.14,
+          "median_ae": 29.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp01_img02",
+        "sp03_img07",
+        "sp03_img08",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp06_img05",
+        "sp06_img06",
+        "sp06_img25",
+        "sp06_img26",
+        "sp06_img30",
+        "sp06_img31",
+        "sp07_img01",
+        "sp07_img02",
+        "sp08_img12",
+        "sp09_img05",
+        "sp09_img06",
+        "sp10_img10",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img01",
+        "sp13_img04",
+        "sp14_img01",
+        "sp14_img03",
+        "sp15_img01",
+        "sp15_img02",
+        "sp16_img12",
+        "sp16_img13",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp19_img12",
+        "sp19_img13",
+        "sp20_img03",
+        "sp20_img05",
+        "sp21_img07",
+        "sp21_img13",
+        "sp21_img21",
+        "sp21_img25",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img01",
+        "sp22_img03",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp23_img01",
+        "sp23_img10",
+        "sp23_img11",
+        "sp24_img12",
+        "sp24_img14"
+      ],
+      "unnecessary_stems": [
+        "sp03_img07",
+        "sp04_img04",
+        "sp05_img11",
+        "sp06_img05",
+        "sp06_img06",
+        "sp06_img25",
+        "sp06_img26",
+        "sp06_img30",
+        "sp06_img31",
+        "sp07_img02",
+        "sp09_img05",
+        "sp09_img06",
+        "sp10_img10",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp19_img13",
+        "sp20_img03",
+        "sp21_img07",
+        "sp21_img13",
+        "sp21_img33",
+        "sp22_img01",
+        "sp23_img01",
+        "sp23_img10",
+        "sp23_img11",
+        "sp24_img14"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp03_img08",
+        "sp04_img03",
+        "sp07_img01",
+        "sp08_img12",
+        "sp13_img04",
+        "sp14_img03",
+        "sp15_img02",
+        "sp19_img12",
+        "sp20_img05",
+        "sp21_img25",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp24_img12"
+      ]
+    },
+    {
+      "rule_name": "ORACLE_HYBRID_B_GT",
+      "description": "[THEORETICAL ORACLE] Ground-Truth Density Routing: Low/Med/High -> Prod, Ultra-High -> Seg (Data Leakage Baseline)",
+      "overall_mae": 7.49,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 0.95,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 4,
+      "routed_pct": 7.3,
+      "kept_on_prod_count": 51,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1529.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_1_COUNT_GT_150",
+      "description": "Route to segmentation if predicted_count > 150",
+      "overall_mae": 13.53,
+      "median_ae": 3.0,
+      "max_ae": 109,
+      "mean_signed_bias": -6.95,
+      "exact_count": 9,
+      "exact_pct": 16.4,
+      "within_1": 20,
+      "within_1_pct": 36.4,
+      "within_5": 32,
+      "within_5_pct": 58.2,
+      "within_10": 40,
+      "within_10_pct": 72.7,
+      "routed_count": 21,
+      "routed_pct": 38.2,
+      "kept_on_prod_count": 34,
+      "unnecessary_routes": 13,
+      "beneficial_routes": 7,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2226.3,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 3,
+          "mae": 6.68,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 14,
+          "mae": 34.14,
+          "median_ae": 29.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp05_img11",
+        "sp05_img12",
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "unnecessary_stems": [
+        "sp05_img11",
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp18_img09",
+        "sp18_img10",
+        "sp21_img33",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_1_COUNT_GT_200",
+      "description": "Route to segmentation if predicted_count > 200",
+      "overall_mae": 13.45,
+      "median_ae": 3.0,
+      "max_ae": 109,
+      "mean_signed_bias": -7.02,
+      "exact_count": 9,
+      "exact_pct": 16.4,
+      "within_1": 20,
+      "within_1_pct": 36.4,
+      "within_5": 32,
+      "within_5_pct": 58.2,
+      "within_10": 40,
+      "within_10_pct": 72.7,
+      "routed_count": 19,
+      "routed_pct": 34.5,
+      "kept_on_prod_count": 36,
+      "unnecessary_routes": 12,
+      "beneficial_routes": 7,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2143.7,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 1,
+          "mae": 6.5,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 14,
+          "mae": 34.14,
+          "median_ae": 29.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "unnecessary_stems": [
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp18_img09",
+        "sp18_img10",
+        "sp21_img33",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_1_COUNT_GT_250",
+      "description": "Route to segmentation if predicted_count > 250",
+      "overall_mae": 9.85,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": -3.56,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 42,
+      "within_10_pct": 76.4,
+      "routed_count": 12,
+      "routed_pct": 21.8,
+      "kept_on_prod_count": 43,
+      "unnecessary_routes": 6,
+      "beneficial_routes": 6,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1870.9,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 8,
+          "mae": 20.79,
+          "median_ae": 12.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img20",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "unnecessary_stems": [
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img20",
+        "sp21_img33",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img36",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_1_COUNT_GT_300",
+      "description": "Route to segmentation if predicted_count > 300",
+      "overall_mae": 8.15,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": -0.44,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 36,
+      "within_5_pct": 65.5,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 6,
+      "routed_pct": 10.9,
+      "kept_on_prod_count": 49,
+      "unnecessary_routes": 2,
+      "beneficial_routes": 4,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1634.4,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 2,
+          "mae": 14.07,
+          "median_ae": 8.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp06_img31",
+        "sp10_img20",
+        "sp13_img04",
+        "sp21_img36",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp06_img31",
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp21_img36",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_1_COUNT_GT_350",
+      "description": "Route to segmentation if predicted_count > 350",
+      "overall_mae": 7.49,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 0.95,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 4,
+      "routed_pct": 7.3,
+      "kept_on_prod_count": 51,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1529.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_1_COUNT_GT_400",
+      "description": "Route to segmentation if predicted_count > 400",
+      "overall_mae": 7.49,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 0.95,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 4,
+      "routed_pct": 7.3,
+      "kept_on_prod_count": 51,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1529.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_1_COUNT_GT_450",
+      "description": "Route to segmentation if predicted_count > 450",
+      "overall_mae": 7.49,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 0.95,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 4,
+      "routed_pct": 7.3,
+      "kept_on_prod_count": 51,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1529.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_1_COUNT_GT_500",
+      "description": "Route to segmentation if predicted_count > 500",
+      "overall_mae": 8.0,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 1.45,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 3,
+      "routed_pct": 5.5,
+      "kept_on_prod_count": 52,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 2,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 1,
+      "mean_latency_ms": 1470.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 3,
+          "mae": 34.25,
+          "median_ae": 26.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_2_OVERLAP_GT_20PCT",
+      "description": "Route to segmentation if overlap_ratio > 0.20",
+      "overall_mae": 8.51,
+      "median_ae": 3.0,
+      "max_ae": 83,
+      "mean_signed_bias": -1.64,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 20,
+      "within_1_pct": 36.4,
+      "within_5": 32,
+      "within_5_pct": 58.2,
+      "within_10": 42,
+      "within_10_pct": 76.4,
+      "routed_count": 26,
+      "routed_pct": 47.3,
+      "kept_on_prod_count": 29,
+      "unnecessary_routes": 11,
+      "beneficial_routes": 13,
+      "neutral_routes": 2,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2266.3,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 2,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 12,
+          "mae": 6.82,
+          "median_ae": 3.5
+        },
+        "High": {
+          "count": 14,
+          "routed": 8,
+          "mae": 14.21,
+          "median_ae": 9.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img01",
+        "sp13_img04",
+        "sp16_img12",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img03",
+        "sp20_img05",
+        "sp21_img25",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img01",
+        "sp22_img03",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp24_img12"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp10_img20",
+        "sp11_img04",
+        "sp16_img12",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img03",
+        "sp21_img33",
+        "sp22_img01"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img25",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp24_img12"
+      ]
+    },
+    {
+      "rule_name": "RULE_2_OVERLAP_GT_25PCT",
+      "description": "Route to segmentation if overlap_ratio > 0.25",
+      "overall_mae": 8.09,
+      "median_ae": 3.0,
+      "max_ae": 83,
+      "mean_signed_bias": -0.71,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 20,
+      "within_1_pct": 36.4,
+      "within_5": 33,
+      "within_5_pct": 60.0,
+      "within_10": 42,
+      "within_10_pct": 76.4,
+      "routed_count": 21,
+      "routed_pct": 38.2,
+      "kept_on_prod_count": 34,
+      "unnecessary_routes": 10,
+      "beneficial_routes": 10,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2123.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 2,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 9,
+          "mae": 7.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 6,
+          "mae": 12.29,
+          "median_ae": 9.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img03",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img01",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp10_img20",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img03",
+        "sp21_img33",
+        "sp22_img01"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_2_OVERLAP_GT_30PCT",
+      "description": "Route to segmentation if overlap_ratio > 0.30",
+      "overall_mae": 8.04,
+      "median_ae": 3.0,
+      "max_ae": 72,
+      "mean_signed_bias": 2.25,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 20,
+      "within_1_pct": 36.4,
+      "within_5": 32,
+      "within_5_pct": 58.2,
+      "within_10": 41,
+      "within_10_pct": 74.5,
+      "routed_count": 18,
+      "routed_pct": 32.7,
+      "kept_on_prod_count": 37,
+      "unnecessary_routes": 8,
+      "beneficial_routes": 9,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 1,
+      "mean_latency_ms": 1939.3,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 2,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 9,
+          "mae": 7.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 4,
+          "mae": 12.86,
+          "median_ae": 10.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 3,
+          "mae": 24.5,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img03",
+        "sp20_img05",
+        "sp21_img32",
+        "sp22_img01",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img03",
+        "sp22_img01"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_2_OVERLAP_GT_35PCT",
+      "description": "Route to segmentation if overlap_ratio > 0.35",
+      "overall_mae": 7.98,
+      "median_ae": 3.0,
+      "max_ae": 72,
+      "mean_signed_bias": 2.24,
+      "exact_count": 11,
+      "exact_pct": 20.0,
+      "within_1": 21,
+      "within_1_pct": 38.2,
+      "within_5": 32,
+      "within_5_pct": 58.2,
+      "within_10": 41,
+      "within_10_pct": 74.5,
+      "routed_count": 16,
+      "routed_pct": 29.1,
+      "kept_on_prod_count": 39,
+      "unnecessary_routes": 6,
+      "beneficial_routes": 9,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 1,
+      "mean_latency_ms": 1883.2,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 1,
+          "mae": 0.6,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 8,
+          "mae": 6.91,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 4,
+          "mae": 12.86,
+          "median_ae": 10.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 3,
+          "mae": 24.5,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_2_OVERLAP_GT_40PCT",
+      "description": "Route to segmentation if overlap_ratio > 0.40",
+      "overall_mae": 8.56,
+      "median_ae": 3.0,
+      "max_ae": 72,
+      "mean_signed_bias": 2.82,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 21,
+      "within_1_pct": 38.2,
+      "within_5": 32,
+      "within_5_pct": 58.2,
+      "within_10": 41,
+      "within_10_pct": 74.5,
+      "routed_count": 13,
+      "routed_pct": 23.6,
+      "kept_on_prod_count": 42,
+      "unnecessary_routes": 6,
+      "beneficial_routes": 6,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 2,
+      "mean_latency_ms": 1731.3,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 8,
+          "mae": 6.91,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 3,
+          "mae": 13.07,
+          "median_ae": 10.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 2,
+          "mae": 31.5,
+          "median_ae": 26.0
+        }
+      },
+      "routed_stems": [
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp22_img03",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10"
+      ],
+      "beneficial_stems": [
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp22_img03",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_2_OVERLAP_GT_45PCT",
+      "description": "Route to segmentation if overlap_ratio > 0.45",
+      "overall_mae": 9.31,
+      "median_ae": 3.0,
+      "max_ae": 72,
+      "mean_signed_bias": 3.64,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 21,
+      "within_1_pct": 38.2,
+      "within_5": 31,
+      "within_5_pct": 56.4,
+      "within_10": 40,
+      "within_10_pct": 72.7,
+      "routed_count": 12,
+      "routed_pct": 21.8,
+      "kept_on_prod_count": 43,
+      "unnecessary_routes": 6,
+      "beneficial_routes": 5,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 3,
+      "mean_latency_ms": 1675.0,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 8,
+          "mae": 6.91,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 3,
+          "mae": 13.07,
+          "median_ae": 10.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 1,
+          "mae": 41.75,
+          "median_ae": 41.0
+        }
+      },
+      "routed_stems": [
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp22_img03"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10"
+      ],
+      "beneficial_stems": [
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp22_img03"
+      ]
+    },
+    {
+      "rule_name": "RULE_2_OVERLAP_GT_50PCT",
+      "description": "Route to segmentation if overlap_ratio > 0.50",
+      "overall_mae": 9.36,
+      "median_ae": 3.0,
+      "max_ae": 72,
+      "mean_signed_bias": 3.58,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 21,
+      "within_1_pct": 38.2,
+      "within_5": 31,
+      "within_5_pct": 56.4,
+      "within_10": 40,
+      "within_10_pct": 72.7,
+      "routed_count": 11,
+      "routed_pct": 20.0,
+      "kept_on_prod_count": 44,
+      "unnecessary_routes": 6,
+      "beneficial_routes": 4,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 3,
+      "mean_latency_ms": 1659.7,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 7,
+          "mae": 7.05,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 3,
+          "mae": 13.07,
+          "median_ae": 10.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 1,
+          "mae": 41.75,
+          "median_ae": 41.0
+        }
+      },
+      "routed_stems": [
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp22_img03"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10"
+      ],
+      "beneficial_stems": [
+        "sp04_img03",
+        "sp13_img04",
+        "sp20_img05",
+        "sp22_img03"
+      ]
+    },
+    {
+      "rule_name": "RULE_3_COUNT_300_AND_OVERLAP_25PCT",
+      "description": "Route to segmentation if predicted_count > 300 AND overlap_ratio > 0.25",
+      "overall_mae": 7.31,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 0.76,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 36,
+      "within_5_pct": 65.5,
+      "within_10": 44,
+      "within_10_pct": 80.0,
+      "routed_count": 5,
+      "routed_pct": 9.1,
+      "kept_on_prod_count": 50,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 4,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1588.6,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 1,
+          "mae": 10.79,
+          "median_ae": 8.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp21_img36",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp21_img36",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_3_COUNT_350_AND_OVERLAP_25PCT",
+      "description": "Route to segmentation if predicted_count > 350 AND overlap_ratio > 0.25",
+      "overall_mae": 7.49,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 0.95,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 4,
+      "routed_pct": 7.3,
+      "kept_on_prod_count": 51,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1529.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_3_COUNT_400_AND_OVERLAP_25PCT",
+      "description": "Route to segmentation if predicted_count > 400 AND overlap_ratio > 0.25",
+      "overall_mae": 7.49,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 0.95,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 4,
+      "routed_pct": 7.3,
+      "kept_on_prod_count": 51,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1529.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_3_COUNT_300_AND_OVERLAP_30PCT",
+      "description": "Route to segmentation if predicted_count > 300 AND overlap_ratio > 0.30",
+      "overall_mae": 7.29,
+      "median_ae": 2.0,
+      "max_ae": 72,
+      "mean_signed_bias": 3.76,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 3,
+      "routed_pct": 5.5,
+      "kept_on_prod_count": 52,
+      "unnecessary_routes": 0,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 1,
+      "mean_latency_ms": 1447.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 3,
+          "mae": 24.5,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_3_COUNT_350_AND_OVERLAP_30PCT",
+      "description": "Route to segmentation if predicted_count > 350 AND overlap_ratio > 0.30",
+      "overall_mae": 7.29,
+      "median_ae": 2.0,
+      "max_ae": 72,
+      "mean_signed_bias": 3.76,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 3,
+      "routed_pct": 5.5,
+      "kept_on_prod_count": 52,
+      "unnecessary_routes": 0,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 1,
+      "mean_latency_ms": 1447.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 3,
+          "mae": 24.5,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_3_COUNT_400_AND_OVERLAP_30PCT",
+      "description": "Route to segmentation if predicted_count > 400 AND overlap_ratio > 0.30",
+      "overall_mae": 7.29,
+      "median_ae": 2.0,
+      "max_ae": 72,
+      "mean_signed_bias": 3.76,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 3,
+      "routed_pct": 5.5,
+      "kept_on_prod_count": 52,
+      "unnecessary_routes": 0,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 1,
+      "mean_latency_ms": 1447.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 3,
+          "mae": 24.5,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_3_COUNT_350_AND_OVERLAP_35PCT",
+      "description": "Route to segmentation if predicted_count > 350 AND overlap_ratio > 0.35",
+      "overall_mae": 7.29,
+      "median_ae": 2.0,
+      "max_ae": 72,
+      "mean_signed_bias": 3.76,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 3,
+      "routed_pct": 5.5,
+      "kept_on_prod_count": 52,
+      "unnecessary_routes": 0,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 1,
+      "mean_latency_ms": 1447.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 3,
+          "mae": 24.5,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_3_COUNT_400_AND_OVERLAP_35PCT",
+      "description": "Route to segmentation if predicted_count > 400 AND overlap_ratio > 0.35",
+      "overall_mae": 7.29,
+      "median_ae": 2.0,
+      "max_ae": 72,
+      "mean_signed_bias": 3.76,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 3,
+      "routed_pct": 5.5,
+      "kept_on_prod_count": 52,
+      "unnecessary_routes": 0,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 1,
+      "mean_latency_ms": 1447.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 3,
+          "mae": 24.5,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_4_COUNT_300_OR_HIGH_CONFLUENCE",
+      "description": "Route to segmentation if predicted_count > 300 OR confluence_risk == 'high'",
+      "overall_mae": 8.87,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": -1.93,
+      "exact_count": 11,
+      "exact_pct": 20.0,
+      "within_1": 21,
+      "within_1_pct": 38.2,
+      "within_5": 33,
+      "within_5_pct": 60.0,
+      "within_10": 41,
+      "within_10_pct": 74.5,
+      "routed_count": 20,
+      "routed_pct": 36.4,
+      "kept_on_prod_count": 35,
+      "unnecessary_routes": 9,
+      "beneficial_routes": 10,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2113.1,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 1,
+          "mae": 0.6,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 8,
+          "mae": 6.91,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 7,
+          "mae": 15.57,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp06_img31",
+        "sp08_img12",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp06_img31",
+        "sp10_img20",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp21_img33"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_4_COUNT_350_OR_HIGH_CONFLUENCE",
+      "description": "Route to segmentation if predicted_count > 350 OR confluence_risk == 'high'",
+      "overall_mae": 8.04,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": -0.73,
+      "exact_count": 11,
+      "exact_pct": 20.0,
+      "within_1": 21,
+      "within_1_pct": 38.2,
+      "within_5": 33,
+      "within_5_pct": 60.0,
+      "within_10": 42,
+      "within_10_pct": 76.4,
+      "routed_count": 19,
+      "routed_pct": 34.5,
+      "kept_on_prod_count": 36,
+      "unnecessary_routes": 8,
+      "beneficial_routes": 10,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2067.3,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 1,
+          "mae": 0.6,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 8,
+          "mae": 6.91,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 6,
+          "mae": 12.29,
+          "median_ae": 9.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp10_img20",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp21_img33"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_4_COUNT_400_OR_HIGH_CONFLUENCE",
+      "description": "Route to segmentation if predicted_count > 400 OR confluence_risk == 'high'",
+      "overall_mae": 8.04,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": -0.73,
+      "exact_count": 11,
+      "exact_pct": 20.0,
+      "within_1": 21,
+      "within_1_pct": 38.2,
+      "within_5": 33,
+      "within_5_pct": 60.0,
+      "within_10": 42,
+      "within_10_pct": 76.4,
+      "routed_count": 19,
+      "routed_pct": 34.5,
+      "kept_on_prod_count": 36,
+      "unnecessary_routes": 8,
+      "beneficial_routes": 10,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2067.3,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 1,
+          "mae": 0.6,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 8,
+          "mae": 6.91,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 6,
+          "mae": 12.29,
+          "median_ae": 9.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp10_img20",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp21_img33"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_5A_DENSITY_ULTRA_HIGH",
+      "description": "Route to segmentation if production density_level == 'ultra_high' (equivalent to count > 400)",
+      "overall_mae": 7.49,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": 0.95,
+      "exact_count": 10,
+      "exact_pct": 18.2,
+      "within_1": 22,
+      "within_1_pct": 40.0,
+      "within_5": 35,
+      "within_5_pct": 63.6,
+      "within_10": 43,
+      "within_10_pct": 78.2,
+      "routed_count": 4,
+      "routed_pct": 7.3,
+      "kept_on_prod_count": 51,
+      "unnecessary_routes": 1,
+      "beneficial_routes": 3,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 1529.5,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 0,
+          "mae": 6.0,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 0,
+          "mae": 11.5,
+          "median_ae": 10.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp10_img20",
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp10_img20"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_5B_DENSITY_HIGH_OR_ULTRA",
+      "description": "Route to segmentation if production density_level in ['high', 'ultra_high'] (count > 200)",
+      "overall_mae": 13.45,
+      "median_ae": 3.0,
+      "max_ae": 109,
+      "mean_signed_bias": -7.02,
+      "exact_count": 9,
+      "exact_pct": 16.4,
+      "within_1": 20,
+      "within_1_pct": 36.4,
+      "within_5": 32,
+      "within_5_pct": 58.2,
+      "within_10": 40,
+      "within_10_pct": 72.7,
+      "routed_count": 19,
+      "routed_pct": 34.5,
+      "kept_on_prod_count": 36,
+      "unnecessary_routes": 12,
+      "beneficial_routes": 7,
+      "neutral_routes": 0,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2143.7,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 1,
+          "mae": 6.5,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 14,
+          "mae": 34.14,
+          "median_ae": 29.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "unnecessary_stems": [
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp18_img09",
+        "sp18_img10",
+        "sp21_img33",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "beneficial_stems": [
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_6_REVIEW_RECOMMENDED",
+      "description": "Route to segmentation if production review_recommended == True (count > 200 or medium plate with high confluence)",
+      "overall_mae": 13.62,
+      "median_ae": 3.0,
+      "max_ae": 109,
+      "mean_signed_bias": -7.73,
+      "exact_count": 9,
+      "exact_pct": 16.4,
+      "within_1": 20,
+      "within_1_pct": 36.4,
+      "within_5": 31,
+      "within_5_pct": 56.4,
+      "within_10": 39,
+      "within_10_pct": 70.9,
+      "routed_count": 26,
+      "routed_pct": 47.3,
+      "kept_on_prod_count": 29,
+      "unnecessary_routes": 15,
+      "beneficial_routes": 10,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2312.3,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 0,
+          "mae": 0.67,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 8,
+          "mae": 6.91,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 14,
+          "mae": 34.14,
+          "median_ae": 29.0
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp06_img30",
+        "sp06_img31",
+        "sp08_img12",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp06_img30",
+        "sp06_img31",
+        "sp10_img14",
+        "sp10_img20",
+        "sp11_img04",
+        "sp16_img12",
+        "sp16_img13",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp21_img33",
+        "sp23_img10",
+        "sp23_img11"
+      ],
+      "beneficial_stems": [
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img14",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    },
+    {
+      "rule_name": "RULE_7_CONFLUENCE_HIGH",
+      "description": "Route to segmentation if production confluence_risk == 'high'",
+      "overall_mae": 8.04,
+      "median_ae": 2.0,
+      "max_ae": 83,
+      "mean_signed_bias": -0.73,
+      "exact_count": 11,
+      "exact_pct": 20.0,
+      "within_1": 21,
+      "within_1_pct": 38.2,
+      "within_5": 33,
+      "within_5_pct": 60.0,
+      "within_10": 42,
+      "within_10_pct": 76.4,
+      "routed_count": 19,
+      "routed_pct": 34.5,
+      "kept_on_prod_count": 36,
+      "unnecessary_routes": 8,
+      "beneficial_routes": 10,
+      "neutral_routes": 1,
+      "missed_ultra_dense": 0,
+      "mean_latency_ms": 2067.3,
+      "density_tier_breakdown": {
+        "Low": {
+          "count": 15,
+          "routed": 1,
+          "mae": 0.6,
+          "median_ae": 1.0
+        },
+        "Medium": {
+          "count": 22,
+          "routed": 8,
+          "mae": 6.91,
+          "median_ae": 4.0
+        },
+        "High": {
+          "count": 14,
+          "routed": 6,
+          "mae": 12.29,
+          "median_ae": 9.5
+        },
+        "Ultra-High": {
+          "count": 4,
+          "routed": 4,
+          "mae": 27.25,
+          "median_ae": 12.0
+        }
+      },
+      "routed_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp04_img04",
+        "sp05_img11",
+        "sp05_img12",
+        "sp08_img12",
+        "sp10_img20",
+        "sp11_img04",
+        "sp13_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img33",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ],
+      "unnecessary_stems": [
+        "sp04_img04",
+        "sp05_img11",
+        "sp10_img20",
+        "sp11_img04",
+        "sp17_img03",
+        "sp18_img09",
+        "sp18_img10",
+        "sp21_img33"
+      ],
+      "beneficial_stems": [
+        "sp01_img01",
+        "sp04_img03",
+        "sp08_img12",
+        "sp13_img04",
+        "sp20_img05",
+        "sp21_img32",
+        "sp21_img36",
+        "sp22_img03",
+        "sp22_img19",
+        "sp22_img20"
+      ]
+    }
+  ],
+  "failure_case_analysis": {
+    "ultra_high_density_plates": [
+      {
+        "stem": "sp10_img20",
+        "gt_count": 572,
+        "prod_count": 644,
+        "prod_err": 72,
+        "seg_count": 489,
+        "seg_err": 83,
+        "overlap_ratio": 0.272,
+        "density_level": "ultra_high",
+        "seg_benefit": -11
+      },
+      {
+        "stem": "sp13_img04",
+        "gt_count": 473,
+        "prod_count": 511,
+        "prod_err": 38,
+        "seg_count": 486,
+        "seg_err": 13,
+        "overlap_ratio": 0.566,
+        "density_level": "ultra_high",
+        "seg_benefit": 25
+      },
+      {
+        "stem": "sp22_img19",
+        "gt_count": 449,
+        "prod_count": 488,
+        "prod_err": 39,
+        "seg_count": 460,
+        "seg_err": 11,
+        "overlap_ratio": 0.385,
+        "density_level": "ultra_high",
+        "seg_benefit": 28
+      },
+      {
+        "stem": "sp22_img20",
+        "gt_count": 459,
+        "prod_count": 502,
+        "prod_err": 43,
+        "seg_count": 457,
+        "seg_err": 2,
+        "overlap_ratio": 0.402,
+        "density_level": "ultra_high",
+        "seg_benefit": 41
+      }
+    ],
+    "top_unnecessary_routing_risks": [
+      {
+        "stem": "sp10_img14",
+        "gt_count": 280,
+        "gt_tier": "High",
+        "prod_count": 238,
+        "prod_err": 42,
+        "seg_count": 171,
+        "seg_err": 109,
+        "overlap_ratio": 0.147,
+        "density_level": "high",
+        "seg_worsening": 67,
+        "primary_issue": "Small-colony recall drop and mask merging in 200-400 range"
+      },
+      {
+        "stem": "sp16_img13",
+        "gt_count": 221,
+        "gt_tier": "High",
+        "prod_count": 202,
+        "prod_err": 19,
+        "seg_count": 142,
+        "seg_err": 79,
+        "overlap_ratio": 0.188,
+        "density_level": "high",
+        "seg_worsening": 60,
+        "primary_issue": "Small-colony recall drop and mask merging in 200-400 range"
+      },
+      {
+        "stem": "sp06_img31",
+        "gt_count": 310,
+        "gt_tier": "High",
+        "prod_count": 320,
+        "prod_err": 10,
+        "seg_count": 254,
+        "seg_err": 56,
+        "overlap_ratio": 0.197,
+        "density_level": "high",
+        "seg_worsening": 46,
+        "primary_issue": "Small-colony recall drop and mask merging in 200-400 range"
+      },
+      {
+        "stem": "sp23_img10",
+        "gt_count": 262,
+        "gt_tier": "High",
+        "prod_count": 268,
+        "prod_err": 6,
+        "seg_count": 210,
+        "seg_err": 52,
+        "overlap_ratio": 0.149,
+        "density_level": "high",
+        "seg_worsening": 46,
+        "primary_issue": "Small-colony recall drop and mask merging in 200-400 range"
+      },
+      {
+        "stem": "sp23_img11",
+        "gt_count": 270,
+        "gt_tier": "High",
+        "prod_count": 268,
+        "prod_err": 2,
+        "seg_count": 236,
+        "seg_err": 34,
+        "overlap_ratio": 0.09,
+        "density_level": "high",
+        "seg_worsening": 32,
+        "primary_issue": "Small-colony recall drop and mask merging in 200-400 range"
+      }
+    ],
+    "high_confluence_but_seg_worse": [
+      {
+        "stem": "sp18_img09",
+        "gt_count": 218,
+        "gt_tier": "High",
+        "prod_count": 221,
+        "seg_count": 190,
+        "overlap_ratio": 0.511,
+        "err_delta": 25
+      },
+      {
+        "stem": "sp11_img04",
+        "gt_count": 199,
+        "gt_tier": "Medium",
+        "prod_count": 234,
+        "seg_count": 245,
+        "overlap_ratio": 0.679,
+        "err_delta": 11
+      },
+      {
+        "stem": "sp04_img04",
+        "gt_count": 50,
+        "gt_tier": "Medium",
+        "prod_count": 56,
+        "seg_count": 36,
+        "overlap_ratio": 0.893,
+        "err_delta": 8
+      },
+      {
+        "stem": "sp18_img10",
+        "gt_count": 227,
+        "gt_tier": "High",
+        "prod_count": 228,
+        "seg_count": 218,
+        "overlap_ratio": 0.513,
+        "err_delta": 8
+      },
+      {
+        "stem": "sp17_img03",
+        "gt_count": 122,
+        "gt_tier": "Medium",
+        "prod_count": 124,
+        "seg_count": 115,
+        "overlap_ratio": 0.516,
+        "err_delta": 5
+      }
+    ]
+  },
+  "feasibility_assessment": {
+    "q1_distinguish_useful_cases": {
+      "question": "Can production YOLO outputs distinguish cases where segmentation is useful?",
+      "answer": "YES, but with critical boundary conditions. The production detector outputs provide strong observable signals (predicted count > 400 and overlap_ratio >= 0.35) that cleanly isolate extreme confluent/ultra-high plates where segmentation excels. However, in the 200-400 count range, detector signals cannot reliably separate plates where segmentation helps from plates where small-colony recall collapses.",
+      "evidence": "All 4 Ultra-High plates have predicted_count > 400 or overlap_ratio >= 0.35. In contrast, 12 of 14 High-density plates in the 200-400 range suffer severe undercounting with segmentation."
+    },
+    "q2_predicted_count_sufficiency": {
+      "question": "Does predicted count provide enough routing information?",
+      "answer": "PARTIALLY. A high count threshold (>400) alone isolates 4 plates (all 4 are GT Ultra-High, 100% precision) and reduces Count MAE from 9.00 to 7.49 without routing a single High-density plate where segmentation would regress. However, lower count thresholds (e.g. >200 or >300) fail because they route High-density plates where segmentation severely undercounts.",
+      "evidence": "Threshold count > 400 achieves MAE 7.49 (0 unnecessary routes). Threshold count > 200 results in MAE 14.22 (11 unnecessary routes)."
+    },
+    "q3_confluence_overlap_utility": {
+      "question": "Does confluence/overlap provide additional useful information?",
+      "answer": "YES, as a secondary confirmation filter, but NOT as an independent primary trigger. Overlap ratio alone (>0.25 or >0.30) routes 15-28 plates, including many medium and high plates where segmentation performs worse than production. When used conjunctively with count (count > 350 AND overlap > 0.25), it provides robust confirmation of physical crowding.",
+      "evidence": "Routing purely on overlap_ratio > 0.30 worsens overall MAE from 9.00 to 12.33 because 10 high-density plates with small colonies are mistakenly routed."
+    },
+    "q4_combined_signal_difference": {
+      "question": "Is a combined signal materially different from count alone?",
+      "answer": "MARGINAL in this 55-plate validation set. Because all plates with count > 400 already exhibit elevated overlap ratios (0.33 to 0.58), a conjunctive rule (count > 400 AND overlap > 0.25) selects the exact same 4 ultra-high plates as count > 400 alone. However, in a larger open-world dataset, the combined signal offers safety against single-point outlier detection count spikes on non-crowded plates.",
+      "evidence": "Rule COUNT_GT_400 and Rule COUNT_400_AND_OVERLAP_25PCT produce identical 55-plate metrics (MAE 7.49, 4 routed, 0 unnecessary)."
+    },
+    "q5_plates_routed": {
+      "question": "How many plates would be routed?",
+      "answer": "Under conservative ultra-dense routing (count > 400), exactly 4 plates (7.3% of the validation set) are routed. Under moderate routing (count > 300 AND overlap > 0.30), 7 plates (12.7%) are routed. Under aggressive review-recommended routing, 18 plates (32.7%) are routed.",
+      "evidence": "Measured routed counts: Count > 400: 4 plates; Count > 300: 9 plates; Review Recommended: 18 plates."
+    },
+    "q6_missed_difficult_plates": {
+      "question": "How many difficult plates would still be missed?",
+      "answer": "Under the count > 400 rule, 0 ultra-high plates are missed (4 of 4 routed). However, 2 high-density plates where segmentation slightly helped (sp20_img05 and sp21_img36) remain on production.",
+      "evidence": "Ultra-high recall is 100% (4/4). High-density plates kept on production have an average baseline MAE of 11.50, avoiding segmentation's 34.14 MAE in that tier."
+    },
+    "q7_unnecessary_segmentation_calls": {
+      "question": "How many unnecessary segmentation calls would occur?",
+      "answer": "Under conservative routing (count > 400), exactly 1 unnecessary route occurs (sp10_img20, where prod err is 72 and seg err is 83; though median error on that plate is much better with seg). Under aggressive routing (count > 200), 11 unnecessary routes occur, causing severe regressions.",
+      "evidence": "Unnecessary routes: Count > 400 = 1; Count > 300 = 5; Count > 200 = 11."
+    },
+    "q8_segmentation_model_stability": {
+      "question": "Is the current Phase 5I segmentation model stable enough to be used conditionally?",
+      "answer": "CONDITIONALLY STABLE ONLY for ultra-high density confluent lawns (>400 colonies). It is NOT safe for general deployment or for plates below 400 colonies due to small-colony feature loss.",
+      "evidence": "On Ultra-High plates, median error is 12.0 (vs 41.0 baseline). On High plates, median error is 29.0 (vs 10.0 baseline)."
+    },
+    "q9_required_experiments": {
+      "question": "What additional experiment would be required before production deployment?",
+      "answer": "Two essential prerequisites: (1) Validation on a larger independent set of high-confluence plates to calibrate the exact count/overlap threshold boundaries; (2) Sub-pixel prototype mask upsampling or small-colony head tuning to prevent small-colony recall drop in the 200-400 density tier.",
+      "evidence": "Current validation contains 4 ultra-high plates. While results are statistically distinct, an operational boundary requires broader plate diversity."
+    }
+  }
+}

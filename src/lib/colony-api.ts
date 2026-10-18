@@ -1,0 +1,351 @@
+/**
+ * Colony Detection & Counting API Client
+ *
+ * Connects to the external Python FastAPI ML microservice running YOLO
+ * for automated Petri-dish colony detection.
+ */
+
+// ─── Types & Interfaces ────────────────────────────────────────────────────────
+
+/** Bounding box coordinates and confidence for a single detected colony */
+export interface ColonyDetection {
+  /** X coordinate of top-left corner (in pixels) */
+  x1: number;
+  /** Y coordinate of top-left corner (in pixels) */
+  y1: number;
+  /** X coordinate of bottom-right corner (in pixels) */
+  x2: number;
+  /** Y coordinate of bottom-right corner (in pixels) */
+  y2: number;
+  /** Model confidence score between 0.0 and 1.0 */
+  confidence: number;
+  /** Numeric class identifier (default 0 for single-class colony detection) */
+  class_id: number;
+  /** Label name for the detected class (e.g. "colony") */
+  class_name: string;
+}
+
+/** Dimensions of the processed specimen image and source resolution metadata (PRF-01) */
+export interface ColonyImageMetadata {
+  width: number;
+  height: number;
+  original_width?: number;
+  original_height?: number;
+  was_downscaled?: boolean;
+}
+
+/** Error details returned by the ML service or API client */
+export interface ColonyDetectionError {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
+/** Operational plate density, reliability, and confluence quality indicators */
+export interface ColonyQualityAssessment {
+  /** Project-specific density tier: low (<50), medium (50-200), high (201-400), or ultra_high (>400) */
+  density_level: "low" | "medium" | "high" | "ultra_high";
+  /** Flag indicating whether manual plate verification or dilution counting is advised */
+  review_recommended: boolean;
+  /** Scientifically cautious advisory message for high-density or crowded plates */
+  warning_message?: string | null;
+  /** Deterministic crowding/confluence risk indicator: low, medium, or high */
+  confluence_risk: "low" | "medium" | "high";
+  /** Fraction of detected colony boxes exhibiting spatial overlap with adjacent colonies (IoU > 0.10) */
+  overlap_ratio: number;
+  /** Transparent explanation of the quality and reliability assessment */
+  reason: string;
+}
+
+/** Successful detection response from the ML service */
+export interface ColonyDetectionSuccessResponse {
+  success: true;
+  /** Total number of colonies detected above the confidence threshold */
+  count: number;
+  /** Array of individual colony detections with bounding boxes */
+  detections: ColonyDetection[];
+  /** Dimensions of the processed image */
+  image: ColonyImageMetadata;
+  /** Optional URL or data URI to the server-annotated image */
+  annotated_image_url?: string;
+  /** Total backend inference/processing time in milliseconds */
+  processing_time_ms: number;
+  /** Operational plate density, reliability, and confluence quality assessment */
+  quality?: ColonyQualityAssessment;
+}
+
+/** Error response format from the ML service */
+export interface ColonyDetectionErrorResponse {
+  success: false;
+  error: ColonyDetectionError;
+}
+
+/** Discriminated union of all possible API responses */
+export type ColonyDetectionResponse = ColonyDetectionSuccessResponse | ColonyDetectionErrorResponse;
+
+/** Options passed to the colony detection request */
+export interface DetectColoniesOptions {
+  /** Optional confidence cutoff (0.0 to 1.0). Detections below this score are filtered out. */
+  confidenceThreshold?: number;
+  /** Optional AbortSignal to cancel in-flight detection requests */
+  signal?: AbortSignal;
+  /** Optional timeout in milliseconds for the detection request (defaults to 120000ms / 120s) */
+  timeoutMs?: number;
+}
+
+// ─── Custom API Error ─────────────────────────────────────────────────────────
+
+export class ColonyDetectionApiError extends Error {
+  public readonly code: string;
+  public readonly status?: number;
+  public readonly details?: unknown;
+
+  constructor(message: string, code = "API_ERROR", status?: number, details?: unknown) {
+    super(message);
+    this.name = "ColonyDetectionApiError";
+    this.code = code;
+    this.status = status;
+    this.details = details;
+  }
+}
+
+// ─── URL Helper ───────────────────────────────────────────────────────────────
+
+/**
+ * Returns the fully qualified endpoint URL for colony detection:
+ * `${VITE_COLONY_ML_API_URL}/api/v1/detect-colonies`
+ *
+ * In production builds, requires explicit configuration of VITE_COLONY_ML_API_URL
+ * and throws a descriptive ColonyDetectionApiError if unset (DEP-01).
+ * In development, provides a convenient fallback to http://localhost:8000.
+ */
+export function getColonyApiUrl(): string {
+  const envUrl = import.meta.env.VITE_COLONY_ML_API_URL;
+  const hasEnvUrl = typeof envUrl === "string" && envUrl.trim().length > 0;
+
+  if (hasEnvUrl) {
+    const baseUrl = envUrl.trim().replace(/\/+$/, "");
+    return `${baseUrl}/api/v1/detect-colonies`;
+  }
+
+  // In production, do not silently fall back to localhost (DEP-01)
+  if (import.meta.env.PROD) {
+    throw new ColonyDetectionApiError(
+      "Colony detection ML service URL is not configured. Please set the VITE_COLONY_ML_API_URL environment variable in your production deployment.",
+      "CONFIG_ERROR",
+    );
+  }
+
+  // Development convenience fallback
+  return "http://localhost:8000/api/v1/detect-colonies";
+}
+
+/**
+ * Resolves an annotated image artifact URL to ensure it is safely accessible by the client.
+ *
+ * - If a relative path is provided (e.g. "/outputs/annotated_...jpg"), it anchors to the API base URL.
+ * - In production, if an artifact URL contains a development origin (localhost / 127.0.0.1)
+ *   due to internal microservice networking, it re-anchors the path to the configured
+ *   production VITE_COLONY_ML_API_URL (DEP-02 / Section 12).
+ * - Otherwise preserves the original URL.
+ */
+export function resolveAnnotatedImageUrl(rawUrl?: string): string | undefined {
+  if (!rawUrl || typeof rawUrl !== "string") {
+    return undefined;
+  }
+  const trimmed = rawUrl.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  try {
+    let apiBase = "";
+    try {
+      const fullApiUrl = getColonyApiUrl();
+      apiBase = fullApiUrl.replace(/\/api\/v1\/detect-colonies\/?$/, "");
+    } catch {
+      apiBase = "";
+    }
+
+    if (trimmed.startsWith("/")) {
+      return apiBase ? `${apiBase}${trimmed}` : trimmed;
+    }
+
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+      const parsed = new URL(trimmed);
+      if (
+        import.meta.env.PROD &&
+        (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
+        apiBase
+      ) {
+        return `${apiBase}${parsed.pathname}${parsed.search}`;
+      }
+    }
+
+    return trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
+// ─── API Client Function ──────────────────────────────────────────────────────
+
+/**
+ * Sends a Petri-dish image to the Python FastAPI YOLO microservice for colony detection.
+ *
+ * @param file - The image file or Blob to analyze (e.g. from camera or file picker)
+ * @param optionsOrThreshold - Optional confidence threshold (number 0-1) or options object
+ * @returns Promise resolving to the validated ColonyDetectionSuccessResponse
+ *
+ * @throws {ColonyDetectionApiError} If request fails, returns non-2xx status, or returns an error payload
+ */
+export async function detectColonies(
+  file: File | Blob,
+  optionsOrThreshold?: number | DetectColoniesOptions,
+): Promise<ColonyDetectionSuccessResponse> {
+  if (!file) {
+    throw new ColonyDetectionApiError(
+      "No image file provided for colony detection.",
+      "INVALID_ARGUMENT",
+    );
+  }
+
+  // Parse polymorphic options argument
+  const options: DetectColoniesOptions =
+    typeof optionsOrThreshold === "number"
+      ? { confidenceThreshold: optionsOrThreshold }
+      : (optionsOrThreshold ?? {});
+
+  const { confidenceThreshold, signal, timeoutMs = 120_000 } = options;
+
+  if (
+    typeof confidenceThreshold === "number" &&
+    (Number.isNaN(confidenceThreshold) || confidenceThreshold < 0 || confidenceThreshold > 1)
+  ) {
+    throw new ColonyDetectionApiError(
+      "Confidence threshold must be a number between 0.0 and 1.0.",
+      "INVALID_THRESHOLD",
+    );
+  }
+
+  // Setup timeout and abort controller (P0-3)
+  const timeoutController = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let isTimedOut = false;
+
+  if (timeoutMs > 0 && Number.isFinite(timeoutMs)) {
+    timeoutId = setTimeout(() => {
+      isTimedOut = true;
+      timeoutController.abort();
+    }, timeoutMs);
+  }
+
+  const handleExternalAbort = () => {
+    timeoutController.abort();
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      if (timeoutId) clearTimeout(timeoutId);
+      throw new ColonyDetectionApiError(
+        "Colony detection request was aborted.",
+        "REQUEST_ABORTED",
+      );
+    }
+    signal.addEventListener("abort", handleExternalAbort, { once: true });
+  }
+
+  // Prepare multipart form data
+  const formData = new FormData();
+  formData.append("image", file);
+
+  if (typeof confidenceThreshold === "number") {
+    formData.append("confidence_threshold", String(confidenceThreshold));
+  }
+
+  const endpoint = getColonyApiUrl();
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      body: formData,
+      signal: timeoutController.signal,
+      // Do NOT set Content-Type header manually; fetch sets boundary automatically for FormData
+    });
+  } catch (err: unknown) {
+    if (isTimedOut) {
+      const timeoutSec = Math.round(timeoutMs / 1000);
+      throw new ColonyDetectionApiError(
+        `Colony detection request timed out after ${timeoutSec} seconds. Please verify the server is responsive and try again.`,
+        "REQUEST_TIMEOUT",
+      );
+    }
+
+    if (signal?.aborted || (err instanceof DOMException && err.name === "AbortError")) {
+      throw new ColonyDetectionApiError("Colony detection request was aborted.", "REQUEST_ABORTED");
+    }
+
+    const errorMsg =
+      err instanceof Error
+        ? err.message
+        : "Failed to connect to the Colony Detection ML service. Please ensure the backend is running.";
+
+    throw new ColonyDetectionApiError(
+      `Network error communicating with ML service: ${errorMsg}`,
+      "NETWORK_ERROR",
+    );
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    if (signal) {
+      signal.removeEventListener("abort", handleExternalAbort);
+    }
+  }
+
+  // Parse response body as JSON
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    throw new ColonyDetectionApiError(
+      `Colony Detection service responded with status ${response.status}, but response was not valid JSON.`,
+      "INVALID_RESPONSE",
+      response.status,
+    );
+  }
+
+  // Handle non-2xx HTTP status codes
+  if (!response.ok) {
+    const errorPayload = data as Partial<ColonyDetectionErrorResponse>;
+    const code = errorPayload?.error?.code ?? `HTTP_${response.status}`;
+    const message =
+      errorPayload?.error?.message ??
+      `Colony detection failed with status ${response.status} (${response.statusText || "Error"}).`;
+
+    throw new ColonyDetectionApiError(message, code, response.status, errorPayload?.error?.details);
+  }
+
+  // Validate response payload conforms to success contract
+  const payload = data as Partial<ColonyDetectionSuccessResponse>;
+
+  if (
+    payload.success !== true ||
+    typeof payload.count !== "number" ||
+    !Array.isArray(payload.detections) ||
+    !payload.image ||
+    typeof payload.image.width !== "number" ||
+    typeof payload.image.height !== "number"
+  ) {
+    const errorPayload = data as Partial<ColonyDetectionErrorResponse>;
+    const code = errorPayload?.error?.code ?? "INVALID_PAYLOAD";
+    const message =
+      errorPayload?.error?.message ??
+      "Response from Colony Detection service did not match expected schema.";
+
+    throw new ColonyDetectionApiError(message, code, response.status, data);
+  }
+
+  return payload as ColonyDetectionSuccessResponse;
+}

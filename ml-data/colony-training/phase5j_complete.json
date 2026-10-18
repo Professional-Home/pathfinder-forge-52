@@ -1,0 +1,11 @@
+{
+  "status": "COMPLETED",
+  "timestamp": "2026-09-24T15:37:24.051063",
+  "phase": "5J",
+  "dataset_identity": "colony-dataset-val-55",
+  "validation_images_completed": 55,
+  "report_md": "F:\\Project\\pathfinder-forge-52\\ml-data\\colony-training\\phase5j_report.md",
+  "report_json": "F:\\Project\\pathfinder-forge-52\\ml-data\\colony-training\\phase5j_report.json",
+  "visual_qc_sheet": "F:\\Project\\pathfinder-forge-52\\ml-data\\colony-training\\phase5j_analysis\\visual\\phase5j_visual_qc_sheet.jpg",
+  "checkpoint_status": "FINALIZED"
+}
