@@ -44,7 +44,15 @@ export async function uploadToCloudinary(
       throw new Error(message);
     }
 
-    const data: CloudinaryUploadResponse = await response.json();
+    const data: CloudinaryUploadResponse & { delete_token?: string } = await response.json();
+    
+    // Store delete_token if returned by Cloudinary preset
+    if (data.delete_token && data.public_id && typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(`cld_del_${data.public_id}`, data.delete_token);
+      } catch {}
+    }
+
     return data.secure_url;
   } catch (err: any) {
     console.error("Cloudinary upload failed:", err);
@@ -75,12 +83,37 @@ export function getPublicIdFromUrl(url: string): string | null {
 }
 
 /**
- * Attempts to remove image reference or delete from Cloudinary
+ * Attempts to delete image from Cloudinary using delete_by_token or logs removal
  */
 export async function deleteFromCloudinary(url: string): Promise<boolean> {
+  if (!url) return false;
   const publicId = getPublicIdFromUrl(url);
   if (!publicId) return false;
-  console.log(`Cloudinary image removed: public_id=${publicId}`);
+
+  const cName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "nfl8gqbk").trim();
+
+  // Try token-based unsigned deletion if token is available
+  if (typeof window !== "undefined") {
+    try {
+      const deleteToken = sessionStorage.getItem(`cld_del_${publicId}`);
+      if (deleteToken) {
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${cName}/delete_by_token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: deleteToken }),
+        });
+        sessionStorage.removeItem(`cld_del_${publicId}`);
+        if (response.ok) {
+          console.log(`[Cloudinary] Successfully deleted image from Cloudinary: ${publicId}`);
+          return true;
+        }
+      }
+    } catch (e) {
+      console.warn("[Cloudinary] Token deletion attempt error:", e);
+    }
+  }
+
+  console.log(`[Cloudinary] Image reference removed: public_id=${publicId}`);
   return true;
 }
 
