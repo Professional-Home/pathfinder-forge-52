@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import * as Sentry from "@sentry/tanstackstart-react";
 
 function NotFoundComponent() {
   return (
@@ -41,6 +42,9 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    Sentry.captureException(error, {
+      tags: { boundary: "tanstack_root_error_component" },
+    });
   }, [error]);
 
   return (
