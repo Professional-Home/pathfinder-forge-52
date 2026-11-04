@@ -129,8 +129,9 @@ All tools and skills are configured to activate automatically based on intent an
 - **Scope**: Global CLI (`bundle-phobia`)
 - **Verification**: Executed successfully against local dependencies.
 
-### 14. `Sentry CLI`
-- **Package**: `@sentry/cli` (v3.8.2)
-- **Scope**: Global CLI (`sentry-cli`)
-- **Verification**: `sentry-cli -V` -> sentry-cli 3.8.2.
-- **External Configuration Required**: Sentry DSN, Auth Token, Organization, and Project Slugs for live production error streaming.
+### 14. `Sentry CLI & SDK`
+- **Package**: `@sentry/cli` (v3.8.2 global), `@sentry/tanstackstart-react` (v11.10.0 project), `@sentry/vite-plugin` (v11.10.0 project devDep)
+- **Scope**: Global CLI (`sentry-cli`) & Project Full-stack SDK
+- **Verification**: `sentry-cli -V` -> sentry-cli 3.8.2; project build and type check verified.
+- **Application Integration**: Integrated into `src/client.tsx`, `src/instrument.client.ts`, `src/instrument.server.ts`, `src/server.ts` (outer wrapper + h3 error recovery), `src/routes/__root.tsx` (`ErrorComponent`), and `vite.config.ts`.
+- **Environment**: Configured via `VITE_SENTRY_DSN` and `SENTRY_AUTH_TOKEN`.
