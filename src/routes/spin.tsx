@@ -120,10 +120,7 @@ function SpinPage() {
         return;
       }
 
-      if ((sendRes as any).devOtp) {
-        setOtpCode((sendRes as any).devOtp);
-      }
-
+      setOtpCode("");
       setStep("otp");
       setResendCooldown(60);
     } catch (err: any) {
@@ -284,16 +281,16 @@ function SpinPage() {
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
         {/* Header Title */}
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-student/30 bg-student-soft px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-student mb-2">
             <Sparkles className="h-3.5 w-3.5" />
             Official Promotional Event
           </div>
           <div className="mb-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-startup/40 bg-startup-soft px-3 py-1 text-xs font-bold text-startup">
               ⚡ Limited Offer Valid Until {SPIN_EXPIRY_LABEL}
             </span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
+          <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-foreground">
             Micrylis Spin & Win
           </h1>
           <p className="mt-3 text-sm sm:text-base text-muted-foreground">
@@ -302,23 +299,23 @@ function SpinPage() {
         </div>
 
         {/* Content Card */}
-        <div className="rounded-2xl border border-cyan-500/30 bg-[#0b0f19] shadow-2xl p-6 sm:p-10 max-w-xl mx-auto">
+        <div className="rounded-2xl border border-border/90 bg-card text-card-foreground shadow-2xl p-6 sm:p-10 max-w-xl mx-auto">
           {/* EXPIRED STATE (AFTER 20 NOV 2026) */}
           {isSpinOfferExpired() ? (
             <div className="text-center py-6">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-800 text-slate-400">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
                 <AlertCircle className="h-7 w-7" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Promotional Offer Ended</h2>
-              <p className="mt-2 text-xs text-slate-300">
-                This Spin & Win promotional event expired on <strong className="text-amber-400">{SPIN_EXPIRY_LABEL}</strong>.
+              <h2 className="font-display text-2xl font-bold text-foreground">Promotional Offer Ended</h2>
+              <p className="mt-2 text-xs text-muted-foreground">
+                This Spin & Win promotional event expired on <strong className="text-foreground">{SPIN_EXPIRY_LABEL}</strong>.
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Thank you for your interest! Keep an eye on our website for future scholarships and workshop announcements.
               </p>
               <a
                 href="/"
-                className="mt-6 inline-block rounded-lg bg-slate-800 px-6 py-2.5 text-xs font-semibold text-white hover:bg-slate-700"
+                className="mt-6 inline-block rounded-xl border border-border bg-background px-6 py-2.5 text-xs font-semibold text-foreground hover:bg-accent"
               >
                 Return to Home Page
               </a>
@@ -329,15 +326,15 @@ function SpinPage() {
           {step === "intro" && (
             <div>
               <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-white">Participant Verification</h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <h2 className="font-display text-xl font-bold text-foreground">Participant Verification</h2>
+                <p className="text-xs text-muted-foreground mt-1">
                   Enter your details to receive your 6-digit spin access code.
                 </p>
               </div>
 
               <form onSubmit={handleRequestOtp} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Full Name *
                   </label>
                   <input
@@ -346,12 +343,12 @@ function SpinPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Priyanshu Sharma"
-                    className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-student focus:ring-2 focus:ring-student/20 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Email Address *
                   </label>
                   <input
@@ -360,16 +357,16 @@ function SpinPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@domain.com"
-                    className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-student focus:ring-2 focus:ring-student/20 focus:outline-none"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">
+                  <p className="mt-1 text-[11px] text-muted-foreground">
                     Strict policy: Exactly 1 spin per verified email address.
                   </p>
                 </div>
 
                 {errorMsg && (
-                  <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+                  <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
                     <span>{errorMsg}</span>
                   </div>
                 )}
@@ -377,7 +374,7 @@ function SpinPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-cyan-500 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-400 transition disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50"
                 >
                   {loading ? (
                     <>
@@ -399,12 +396,12 @@ function SpinPage() {
           {step === "otp" && (
             <div>
               <div className="text-center mb-6">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-student-soft text-student">
                   <ShieldCheck className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold text-white">Check Your Email</h3>
-                <p className="mt-1 text-xs text-slate-400">
-                  Enter the 6-digit verification code sent to <strong className="text-cyan-300">{email}</strong>.
+                <h3 className="font-display text-xl font-bold text-foreground">Check Your Email</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Enter the 6-digit verification code sent to <strong className="text-foreground">{email}</strong>.
                 </p>
               </div>
 
@@ -416,18 +413,18 @@ function SpinPage() {
                   required
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="••••••"
-                  className="w-full text-center tracking-[12px] font-mono text-3xl font-bold rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-cyan-400 placeholder-slate-600 focus:border-cyan-400 focus:outline-none"
+                  placeholder="• • • • • •"
+                  className="w-full text-center tracking-[12px] font-mono text-3xl font-bold rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground/40 focus:border-student focus:ring-2 focus:ring-student/20 focus:outline-none"
                 />
 
                 {errorMsg && (
-                  <div className="text-xs text-rose-400 text-center">{errorMsg}</div>
+                  <div className="text-xs text-destructive text-center">{errorMsg}</div>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading || otpCode.trim().length !== 6}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-cyan-500 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-400 transition disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -436,14 +433,14 @@ function SpinPage() {
                   )}
                 </button>
 
-                <div className="flex items-center justify-between text-xs text-slate-400 pt-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
                   <button
                     type="button"
                     onClick={() => {
                       setStep("intro");
                       setErrorMsg("");
                     }}
-                    className="hover:text-white"
+                    className="hover:text-foreground underline underline-offset-4"
                   >
                     Change Email
                   </button>
@@ -451,7 +448,7 @@ function SpinPage() {
                     type="button"
                     disabled={resendCooldown > 0 || loading}
                     onClick={handleResendOtp}
-                    className="text-cyan-400 hover:text-cyan-300 disabled:text-slate-600"
+                    className="text-student hover:underline disabled:text-muted-foreground/50 disabled:no-underline"
                   >
                     {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
                   </button>
@@ -463,20 +460,20 @@ function SpinPage() {
           {/* ALREADY SPUN */}
           {step === "already_spun" && existingEntry && (
             <div className="text-center py-4">
-              <h3 className="text-xl font-bold text-white">You've Already Spun!</h3>
-              <p className="mt-2 text-xs text-slate-400">
+              <h3 className="font-display text-xl font-bold text-foreground">You've Already Spun!</h3>
+              <p className="mt-2 text-xs text-muted-foreground">
                 Each verified email can only spin once. Here is the record of your reward:
               </p>
 
-              <div className="my-6 rounded-xl border border-cyan-500/30 bg-slate-900/80 p-5 text-left">
-                <div className="text-xs uppercase tracking-wider text-cyan-400 font-semibold">
+              <div className="my-6 rounded-xl border border-border bg-surface p-5 text-left">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                   Won Prize:
                 </div>
-                <div className="mt-1 text-xl font-black text-white">
+                <div className="mt-1 text-xl font-bold text-foreground font-display">
                   {existingEntry.rewardTitle}
                 </div>
-                <div className="mt-3 flex items-center justify-between rounded-lg bg-slate-950 p-3 border border-slate-800">
-                  <span className="font-mono text-base text-cyan-300 font-bold">
+                <div className="mt-3 flex items-center justify-between rounded-lg bg-background p-3 border border-border">
+                  <span className="font-mono text-base text-foreground font-bold">
                     {existingEntry.voucherCode}
                   </span>
                   <button
@@ -486,20 +483,20 @@ function SpinPage() {
                       setCopiedCode(true);
                       setTimeout(() => setCopiedCode(false), 2000);
                     }}
-                    className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                   >
-                    {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedCode ? <Check className="h-3.5 w-3.5 text-researcher" /> : <Copy className="h-3.5 w-3.5" />}
                     {copiedCode ? "Copied" : "Copy"}
                   </button>
                 </div>
-                <div className="mt-2 text-xs text-slate-400">
-                  Status: <span className="capitalize text-slate-200">{existingEntry.status}</span>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Status: <span className="capitalize font-medium text-foreground">{existingEntry.status}</span>
                 </div>
               </div>
 
               <a
                 href="/"
-                className="inline-block rounded-lg bg-slate-800 px-6 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+                className="inline-block rounded-xl border border-border bg-background px-6 py-2.5 text-xs font-semibold text-foreground hover:bg-accent"
               >
                 Back to Home
               </a>
@@ -510,10 +507,10 @@ function SpinPage() {
           {step === "wheel" && (
             <div className="text-center">
               <div className="mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-student">
                   Participant: {email}
                 </span>
-                <h3 className="text-2xl font-black text-white">
+                <h3 className="font-display text-2xl font-bold text-foreground mt-0.5">
                   Spin to Win Your Reward!
                 </h3>
               </div>
@@ -528,16 +525,16 @@ function SpinPage() {
               </div>
 
               {errorMsg && (
-                <div className="mb-3 text-xs text-rose-400">{errorMsg}</div>
+                <div className="mb-3 text-xs text-destructive">{errorMsg}</div>
               )}
 
               <button
                 type="button"
                 disabled={isSpinning || loading || winningIndex !== null}
                 onClick={handleSpinClick}
-                className="w-full rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 py-4 text-base font-black text-white shadow-xl shadow-rose-500/30 transition hover:brightness-110 disabled:opacity-50"
+                className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition shadow-sm disabled:opacity-50"
               >
-                {isSpinning ? "SPINNING THE WHEEL..." : "★ SPIN THE WHEEL NOW ★"}
+                {isSpinning ? "Spinning..." : "SPIN NOW"}
               </button>
             </div>
           )}
@@ -545,34 +542,34 @@ function SpinPage() {
           {/* STEP 4: WON MODAL WITH 2 BUTTONS: CLAIM FORM & REJECT */}
           {step === "won_modal" && wonReward && (
             <div className="text-center py-2">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-cyan-400">
+              <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-student">
                 Congratulations {name || "Winner"}!
               </span>
-              <h3 className="mt-2 text-2xl sm:text-3xl font-black text-white">
+              <h3 className="font-display mt-1 text-2xl sm:text-3xl font-bold text-foreground">
                 {wonReward.claimHeadline}
               </h3>
-              <p className="mt-1 text-xs text-slate-300">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {wonReward.claimSubtitle}
               </p>
 
               {/* Voucher Box */}
-              <div className="my-6 rounded-xl border border-cyan-500/40 bg-gradient-to-b from-slate-900 to-slate-950 p-5 text-center">
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <div className="my-6 rounded-xl border border-border bg-surface p-5 text-center">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                   Your Voucher Code
                 </div>
                 <div className="mt-2 flex items-center justify-center gap-3">
-                  <span className="font-mono text-2xl font-black text-cyan-300">
+                  <span className="font-mono text-2xl font-black text-foreground">
                     {voucherCode}
                   </span>
                   <button
                     type="button"
                     onClick={handleCopyCode}
-                    className="rounded-md bg-slate-800 p-2 text-slate-300 hover:bg-slate-700 hover:text-white"
+                    className="rounded-md border border-border bg-background p-2 text-muted-foreground hover:text-foreground"
                   >
-                    {copiedCode ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                    {copiedCode ? <Check className="h-4 w-4 text-researcher" /> : <Copy className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="mt-2 text-[11px] text-slate-400">{wonReward.terms}</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">{wonReward.terms}</p>
               </div>
 
               {/* TWO REQUIRED BUTTONS:
@@ -582,7 +579,7 @@ function SpinPage() {
                 <button
                   type="button"
                   onClick={() => setStep("claim_form")}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 py-3.5 text-sm font-bold text-slate-950 hover:brightness-110 shadow-lg shadow-emerald-500/20"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 shadow-sm transition"
                 >
                   Claim Offer & Fill Details
                   <ArrowRight className="h-4 w-4" />
@@ -591,7 +588,7 @@ function SpinPage() {
                 <button
                   type="button"
                   onClick={handleRejectOffer}
-                  className="w-full rounded-lg border border-slate-700 bg-transparent py-2.5 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  className="w-full rounded-xl border border-border bg-background py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition"
                 >
                   No Thanks, Return to Home
                 </button>
@@ -603,39 +600,39 @@ function SpinPage() {
           {step === "claim_form" && wonReward && (
             <div>
               <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-white">Activate Your Reward</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Claiming: <strong className="text-cyan-300">{wonReward.title}</strong> ({voucherCode})
+                <h3 className="font-display text-xl font-bold text-foreground">Activate Your Reward</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Claiming: <strong className="text-foreground">{wonReward.title}</strong> ({voucherCode})
                 </p>
               </div>
 
               <form onSubmit={handleSubmitClaim} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Participant Name
                   </label>
                   <input
                     type="text"
                     disabled
                     value={name}
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-slate-400 cursor-not-allowed"
+                    className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-muted-foreground cursor-not-allowed"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Verified Email
                   </label>
                   <input
                     type="email"
                     disabled
                     value={email}
-                    className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-slate-400 cursor-not-allowed"
+                    className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-muted-foreground cursor-not-allowed"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-foreground">
                     WhatsApp / Phone Number *
                   </label>
                   <input
@@ -644,12 +641,12 @@ function SpinPage() {
                     placeholder="e.g. 9876543210"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-student focus:ring-2 focus:ring-student/20 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-foreground">
                     College / Institution / Organization (Optional)
                   </label>
                   <input
@@ -657,12 +654,12 @@ function SpinPage() {
                     placeholder="e.g. IIT Delhi, BITS Pilani"
                     value={college}
                     onChange={(e) => setCollege(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-student focus:ring-2 focus:ring-student/20 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-foreground">
                     What research area or goal interests you most? (Optional)
                   </label>
                   <input
@@ -670,18 +667,18 @@ function SpinPage() {
                     placeholder="e.g. Bioinformatics, AI Drug Discovery, Career Mentorship"
                     value={claimNotes}
                     onChange={(e) => setClaimNotes(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+                    className="mt-1 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-student focus:ring-2 focus:ring-student/20 focus:outline-none"
                   />
                 </div>
 
                 {errorMsg && (
-                  <div className="text-xs text-rose-400">{errorMsg}</div>
+                  <div className="text-xs text-destructive">{errorMsg}</div>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-lg bg-emerald-500 py-3 text-sm font-bold text-slate-950 hover:bg-emerald-400 transition disabled:opacity-50"
+                  className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin mx-auto" />
@@ -696,12 +693,12 @@ function SpinPage() {
           {/* STEP 6: CLAIM SUCCESS */}
           {step === "claimed_success" && (
             <div className="text-center py-6">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-researcher-soft text-researcher">
                 <CheckCircle2 className="h-8 w-8" />
               </div>
-              <h3 className="text-2xl font-black text-white">Reward Activated!</h3>
-              <p className="mt-2 text-xs text-slate-300">
-                Your voucher <strong className="text-cyan-300">{voucherCode}</strong> has been registered. You can connect with our team immediately on WhatsApp to redeem it.
+              <h3 className="font-display text-2xl font-bold text-foreground">Reward Activated!</h3>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Your voucher <strong className="text-foreground">{voucherCode}</strong> has been registered. You can connect with our team immediately on WhatsApp to redeem it.
               </p>
 
               <div className="my-6 space-y-3">
@@ -709,7 +706,7 @@ function SpinPage() {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 hover:bg-emerald-500"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3.5 text-sm font-bold text-white shadow-sm hover:brightness-105 transition"
                 >
                   Redeem on WhatsApp Now
                   <ExternalLink className="h-4 w-4" />
@@ -717,7 +714,7 @@ function SpinPage() {
 
                 <a
                   href="/"
-                  className="block w-full rounded-lg border border-slate-800 bg-slate-900 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                  className="block w-full rounded-xl border border-border bg-background py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
                 >
                   Explore Micrylis Programs
                 </a>
@@ -730,14 +727,14 @@ function SpinPage() {
 
         {/* Prize Transparency Grid */}
         <div className="mt-16 max-w-4xl mx-auto">
-          <h2 className="text-xl font-bold text-white text-center mb-6">
+          <h2 className="font-display text-xl font-bold text-foreground text-center mb-6">
             Reward Categories & Probability Distribution
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {SPIN_REWARDS.map((r) => (
               <div
                 key={r.id}
-                className="rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-slate-700"
+                className="rounded-xl border border-border bg-card p-4 transition hover:border-border-strong"
               >
                 <div className="flex items-center justify-between">
                   <span
@@ -746,12 +743,12 @@ function SpinPage() {
                   >
                     {r.shortLabel}
                   </span>
-                  <span className="text-xs font-mono font-semibold text-cyan-400">
+                  <span className="text-xs font-mono font-semibold text-student">
                     {r.probability}% Chance
                   </span>
                 </div>
-                <div className="mt-2 font-bold text-white text-sm">{r.title}</div>
-                <div className="mt-1 text-xs text-slate-400">{r.description}</div>
+                <div className="mt-2 font-display font-bold text-foreground text-sm">{r.title}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{r.description}</div>
               </div>
             ))}
           </div>

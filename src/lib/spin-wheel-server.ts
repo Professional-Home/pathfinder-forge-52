@@ -216,19 +216,14 @@ export const sendSpinOtp = createServerFn({ method: "POST" })
 
       return {
         success: true,
-        sentToEmail: true,
-        message: "Verification code sent! Please check your email inbox.",
+        message: `Verification code sent to ${email}! Please check your inbox.`,
       };
     } catch (err: any) {
-      console.warn(
-        `[SPIN] Mail send failed (${err.message}). Falling back to dev OTP code. OTP for ${email} is: ${otp}`
-      );
-      // Fallback allows user to test immediately even if Gmail SMTP password is not configured/expired
+      console.error("[SPIN] Mail send error:", err);
       return {
-        success: true,
-        sentToEmail: false,
-        devOtp: otp,
-        message: `Code: ${otp} (Email server warning: ${err.message})`,
+        success: false,
+        code: "MAIL_FAILED",
+        message: `Unable to send email: ${err.message}. Please verify your Gmail App Password in .env.`,
       };
     }
   });
