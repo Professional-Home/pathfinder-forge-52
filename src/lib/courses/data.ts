@@ -20,9 +20,9 @@ export function getCourseStats(courses: CourseRecord[]) {
   };
 }
 
-export const BIOPLASTIC_APPLY_URL = "https://forms.gle/fo6EevAbEipmnyRg8";
-export const DRUG_DISCOVERY_APPLY_URL = "https://forms.gle/kavwpp29u38LkgDB6";
-export const BIOINFORMATICS_APPLY_URL = "https://forms.gle/pg4VPMaLw5awygzJ9";
+export const BIOPLASTIC_APPLY_URL = "https://forms.gle/UFHoJfhn3SbcGihJ7";
+export const DRUG_DISCOVERY_APPLY_URL = "https://forms.gle/AGfAE49QE5Fgq7Un9";
+export const BIOINFORMATICS_APPLY_URL = " https://forms.gle/ZCBjKPEz92tLo94U8";
 export const COMMON_COURSE_APPLY_URL = BIOINFORMATICS_APPLY_URL;
 
 export const COURSE_APPLY_URLS: Record<string, string> = {
