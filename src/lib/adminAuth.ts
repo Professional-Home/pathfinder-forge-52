@@ -1,21 +1,6 @@
 import { supabase } from "@/utils/supabase";
 
-const ADMIN_SESSION_TOKEN_KEY = "mf_admin_session_token";
 const ADMIN_USER_KEY = "mf_admin_user";
-
-// Simple salted signature generator for client-side session verification
-function generateSessionToken(email: string): string {
-  const timestamp = Date.now().toString();
-  const secret = import.meta.env.VITE_ADMIN_PASSWORD || "micrylis_secure_admin_2026";
-  // Create simple hash representation
-  let hash = 0;
-  const str = `${email}:${secret}:${timestamp}`;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return `session_${Math.abs(hash).toString(36)}_${timestamp}`;
-}
 
 export type AdminUser = {
   email: string;
@@ -23,86 +8,121 @@ export type AdminUser = {
   role: "ADMIN" | "SUPER_ADMIN";
 };
 
-export function getAdminConfig() {
-  return {
-    email: import.meta.env.VITE_ADMIN_EMAIL || "admin@admin.com",
-    password: import.meta.env.VITE_ADMIN_PASSWORD || "manthan@gmail",
-  };
+/**
+ * Client admin login via native Supabase Auth password authentication.
+ * Eliminates client-side hash tokens and hardcoded credentials.
+ */
+export async function adminLogin(
+  email: string,
+  pass: string
+): Promise<{ success: boolean; error?: string }> {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password: pass,
+    });
+
+    if (error || !data.user) {
+      return {
+        success: false,
+        error: error?.message || "Invalid email address or password.",
+      };
+    }
+
+    const user = data.user;
+    const appRole = (user.app_metadata?.role || "").toUpperCase();
+
+    const adminUser: AdminUser = {
+      email: user.email || normalizedEmail,
+      name:
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split("@")[0] ||
+        "Micrylis Admin",
+      role: appRole === "SUPER_ADMIN" ? "SUPER_ADMIN" : "ADMIN",
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(adminUser));
+      // Clean up any legacy tokens
+      sessionStorage.removeItem("mf_admin_session_token");
+      localStorage.removeItem("mf_admin_session_token");
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || "An unexpected error occurred during admin sign-in.",
+    };
+  }
 }
 
+/**
+ * Synchronous client check for admin route guarding.
+ * Checks whether an active Supabase Auth token and admin record exist.
+ */
 export function isAdminLoggedIn(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    const token = sessionStorage.getItem(ADMIN_SESSION_TOKEN_KEY) || localStorage.getItem(ADMIN_SESSION_TOKEN_KEY);
-    if (!token) return false;
-    // Check if session token format is valid and not expired (24 hour session)
-    const parts = token.split("_");
-    if (parts.length < 3) return false;
-    const sessionTime = parseInt(parts[2], 10);
-    if (isNaN(sessionTime)) return false;
-    const isExpired = Date.now() - sessionTime > 24 * 60 * 60 * 1000;
-    if (isExpired) {
-      adminLogout();
-      return false;
-    }
-    return true;
+    const rawUser = localStorage.getItem(ADMIN_USER_KEY);
+    if (!rawUser) return false;
+
+    // Check if Supabase client has an active stored auth token
+    const hasSbToken = Object.keys(localStorage).some(
+      (k) => k.startsWith("sb-") && k.endsWith("-auth-token")
+    );
+    return hasSbToken;
   } catch {
     return false;
   }
 }
 
-export function adminLogin(email: string, pass: string): { success: boolean; error?: string } {
-  const config = getAdminConfig();
-  const normalizedEmail = email.trim().toLowerCase();
-  const expectedEmail = config.email.trim().toLowerCase();
-
-  // Timing-safe simulation / constant response
-  if (normalizedEmail === expectedEmail && pass === config.password) {
-    const token = generateSessionToken(normalizedEmail);
-    sessionStorage.setItem(ADMIN_SESSION_TOKEN_KEY, token);
-    localStorage.setItem(ADMIN_SESSION_TOKEN_KEY, token);
-    localStorage.setItem(
-      ADMIN_USER_KEY,
-      JSON.stringify({
-        email: expectedEmail,
-        name: "Micrylis Admin",
-        role: "SUPER_ADMIN",
-      })
-    );
-
-    // Sync session with Supabase Auth so RLS policies can authenticate admin user
-    supabase.auth.signInWithPassword({ email: normalizedEmail, password: pass }).catch((err) => {
-      console.warn("[AdminAuth] Supabase Auth sign-in sync warning:", err);
-    });
-
-    return { success: true };
+/**
+ * Get current admin access token for authenticated server function calls.
+ */
+export async function getAdminAccessToken(): Promise<string | undefined> {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token || undefined;
+  } catch {
+    return undefined;
   }
-
-  // Safe generic error to avoid user enumeration
-  return { success: false, error: "Invalid email address or password." };
 }
 
-export function adminLogout(): void {
+/**
+ * Admin sign out: terminates Supabase Auth session and removes cached state.
+ */
+export async function adminLogout(): Promise<void> {
   if (typeof window === "undefined") return;
-  sessionStorage.removeItem(ADMIN_SESSION_TOKEN_KEY);
-  localStorage.removeItem(ADMIN_SESSION_TOKEN_KEY);
-  localStorage.removeItem(ADMIN_USER_KEY);
-  supabase.auth.signOut().catch(() => {});
+  try {
+    localStorage.removeItem(ADMIN_USER_KEY);
+    sessionStorage.removeItem("mf_admin_session_token");
+    localStorage.removeItem("mf_admin_session_token");
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.warn("[AdminAuth] Sign-out warning:", err);
+  }
 }
 
+/**
+ * Get currently authenticated admin user details from local cache.
+ */
 export function getAdminUser(): AdminUser {
-  const defaultConfig: AdminUser = {
-    email: getAdminConfig().email,
+  const fallback: AdminUser = {
+    email: "admin@micrylis.com",
     name: "Micrylis Admin",
-    role: "SUPER_ADMIN",
+    role: "ADMIN",
   };
-  if (typeof window === "undefined") return defaultConfig;
+  if (typeof window === "undefined") return fallback;
   try {
     const raw = localStorage.getItem(ADMIN_USER_KEY);
     if (raw) return JSON.parse(raw) as AdminUser;
   } catch {
     // fallback
   }
-  return defaultConfig;
+  return fallback;
 }
-

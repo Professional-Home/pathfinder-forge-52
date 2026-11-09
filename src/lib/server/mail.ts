@@ -32,18 +32,33 @@ if (!process.env.GMAIL_USER && !process.env.EMAIL_USER) {
 const GMAIL_USER = (process.env.GMAIL_USER || process.env.EMAIL_USER || "micrylisbiotech@gmail.com").trim();
 const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS || "ukpucdorwtlwxiqo").replace(/\s+/g, "");
 
-export const transporter = nodemailer.createTransport({
-  service: "gmail",
-  pool: true, // Reuse TCP connection pool for ultra-fast dispatch
-  maxConnections: 5,
-  maxMessages: 100,
-  auth: {
-    user: GMAIL_USER,
-    pass: GMAIL_APP_PASSWORD,
+let _transporter: nodemailer.Transporter | null = null;
+
+export function getTransporter(): nodemailer.Transporter {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      service: "gmail",
+      pool: true, // Reuse TCP connection pool for ultra-fast dispatch
+      maxConnections: 5,
+      maxMessages: 100,
+      auth: {
+        user: GMAIL_USER,
+        pass: GMAIL_APP_PASSWORD,
+      },
+      connectionTimeout: 5_000,
+      greetingTimeout: 5_000,
+      socketTimeout: 10_000,
+    });
+  }
+  return _transporter;
+}
+
+export const transporter = new Proxy({} as nodemailer.Transporter, {
+  get(_target, prop) {
+    const client = getTransporter();
+    const val = (client as any)[prop];
+    return typeof val === "function" ? val.bind(client) : val;
   },
-  connectionTimeout: 5_000,
-  greetingTimeout: 5_000,
-  socketTimeout: 10_000,
 });
 
 let isVerified = false;
@@ -51,7 +66,7 @@ let isVerified = false;
 export async function ensureMailReady(): Promise<boolean> {
   if (isVerified) return true;
   // Non-blocking verification check
-  transporter.verify((err) => {
+  getTransporter().verify((err) => {
     if (!err) {
       isVerified = true;
       console.log(`[MAIL] Gmail SMTP connection pool initialized for ${GMAIL_USER}`);

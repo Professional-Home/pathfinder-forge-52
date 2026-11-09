@@ -1,3 +1,6 @@
+export type RewardStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "REDEEMED" | "EXPIRED";
+export type FormStatus = "NOT_APPLICABLE" | "FORM_PENDING" | "FORM_SUBMITTED" | "FORM_VERIFIED";
+
 export interface SpinReward {
   id: string;
   title: string;
@@ -23,9 +26,19 @@ export interface SpinWheelEntry {
   voucherCode: string;
   probabilityPct: number;
   status: "won" | "claimed" | "rejected";
+  rewardStatus?: RewardStatus;
+  formStatus?: FormStatus;
+  formUrl?: string;
+  formOpenedAt?: string;
+  formSubmittedAt?: string;
+  formVerifiedAt?: string;
+  formResponseId?: string;
   isClaimed: boolean;
   claimedAt?: string;
   claimNotes?: string;
+  redeemedAt?: string;
+  redeemedByAdmin?: string;
+  redemptionNotes?: string;
   ipAddress?: string;
   createdAt: string;
 }
