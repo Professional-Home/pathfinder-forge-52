@@ -16,6 +16,7 @@ import {
   Phone,
   School,
   Mail,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SpinWheelCanvas } from "./SpinWheelCanvas";
@@ -28,12 +29,12 @@ import type { SpinReward, SpinWheelEntry } from "@/lib/spin-wheel/types";
 import { fireConfetti } from "@/lib/spin-wheel/confetti";
 import {
   checkEmailSpun,
-  sendSpinOtp,
-  verifySpinOtp,
   executeSpinRoll,
   claimSpinReward,
   rejectSpinReward,
+  acceptSpinReward,
 } from "@/lib/spin-wheel-server";
+import { supabase } from "@/utils/supabase";
 
 const SESSION_DISMISSED_KEY = "micrylis_spin_modal_dismissed";
 const SESSION_COMPLETED_KEY = "micrylis_spin_modal_completed";
@@ -41,7 +42,14 @@ const SESSION_COMPLETED_KEY = "micrylis_spin_modal_completed";
 export function SpinWinPopupModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<
-    "intro" | "otp" | "already_spun" | "wheel" | "won_modal" | "claim_form" | "claimed_success"
+    | "intro"
+    | "otp"
+    | "already_spun"
+    | "wheel"
+    | "won_modal"
+    | "claim_form"
+    | "claimed_success"
+    | "accepted_form"
   >("intro");
 
   // Form State (strictly empty initial OTP)
@@ -51,6 +59,7 @@ export function SpinWinPopupModal() {
   const [college, setCollege] = useState("");
   const [claimNotes, setClaimNotes] = useState("");
   const [otpCode, setOtpCode] = useState("");
+  const [formUrl, setFormUrl] = useState("");
 
   // Loading & Error States
   const [loading, setLoading] = useState(false);
@@ -63,6 +72,7 @@ export function SpinWinPopupModal() {
   const [winningIndex, setWinningIndex] = useState<number | null>(null);
   const [wonReward, setWonReward] = useState<SpinReward | null>(null);
   const [voucherCode, setVoucherCode] = useState<string>("");
+  const [spinAuthToken, setSpinAuthToken] = useState<string>("");
   const [existingEntry, setExistingEntry] = useState<SpinWheelEntry | null>(null);
 
   // Auto-open once per session if not expired
@@ -114,22 +124,37 @@ export function SpinWinPopupModal() {
 
     setLoading(true);
     try {
-      // 1. Guard against duplicate spin
+      // 1. Guard against duplicate spin (without leaking participant PII)
       const checkRes = await checkEmailSpun({ data: { email: trimmedEmail } });
-      if (checkRes.alreadySpun && checkRes.entry) {
-        setExistingEntry(checkRes.entry);
+      if (checkRes.alreadySpun) {
+        setExistingEntry({
+          id: "already-spun",
+          name: trimmedName,
+          email: trimmedEmail,
+          rewardId: "won-reward",
+          rewardTitle: checkRes.rewardTitle || "Promotional Reward",
+          voucherCode: "Recorded in campaign system",
+          probabilityPct: 0,
+          status: "won",
+          isClaimed: false,
+          createdAt: new Date().toISOString(),
+        });
         setStep("already_spun");
         setLoading(false);
         return;
       }
 
-      // 2. Request OTP to user's real email
-      const sendRes = await sendSpinOtp({
-        data: { name: trimmedName, email: trimmedEmail },
+      // 2. Request OTP via native Supabase Auth Email OTP
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: trimmedEmail,
+        options: {
+          data: { full_name: trimmedName },
+          shouldCreateUser: true,
+        },
       });
 
-      if (!sendRes.success) {
-        setErrorMsg(sendRes.message || "Failed to send verification email.");
+      if (otpError) {
+        setErrorMsg(otpError.message || "Failed to send verification email. Please try again.");
         return;
       }
 
@@ -144,12 +169,14 @@ export function SpinWinPopupModal() {
     }
   };
 
-  // Step 2: Verify OTP
+  // Step 2: Verify OTP via native Supabase Auth
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
     const trimmedOtp = otpCode.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
     if (trimmedOtp.length !== 6) {
       setErrorMsg("Please enter the complete 6-digit verification code from your email.");
       return;
@@ -157,36 +184,57 @@ export function SpinWinPopupModal() {
 
     setLoading(true);
     try {
-      const res = await verifySpinOtp({
-        data: { email: email.trim().toLowerCase(), otp: trimmedOtp },
+      const { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
+        email: normalizedEmail,
+        token: trimmedOtp,
+        type: "email",
       });
 
-      if (!res.success) {
-        setErrorMsg(res.message || "Invalid verification code.");
+      if (verifyErr || !verifyData?.session?.access_token) {
+        setErrorMsg(
+          verifyErr?.message ||
+            "Invalid or expired verification code. Please check your inbox and try again."
+        );
         return;
       }
 
+      // Confirm verified email matches entered email
+      const verifiedUserEmail = verifyData.user?.email?.trim().toLowerCase();
+      if (verifiedUserEmail && verifiedUserEmail !== normalizedEmail) {
+        setErrorMsg("Verified email does not match entered email. Please verify again.");
+        return;
+      }
+
+      setSpinAuthToken(verifyData.session.access_token);
       setStep("wheel");
     } catch (err: any) {
-      setErrorMsg(err.message || "Verification failed.");
+      setErrorMsg(err.message || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Resend OTP
+  // Resend OTP via native Supabase Auth
   const handleResendOtp = async () => {
     if (resendCooldown > 0 || loading) return;
     setErrorMsg("");
     setLoading(true);
     try {
-      const res = await sendSpinOtp({
-        data: { name: name.trim(), email: email.trim().toLowerCase() },
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim().toLowerCase();
+
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: trimmedEmail,
+        options: {
+          data: { full_name: trimmedName },
+          shouldCreateUser: true,
+        },
       });
-      if (res.success) {
-        setResendCooldown(60);
+
+      if (otpError) {
+        setErrorMsg(otpError.message || "Unable to resend verification code.");
       } else {
-        setErrorMsg(res.message);
+        setResendCooldown(60);
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Unable to resend.");
@@ -195,7 +243,7 @@ export function SpinWinPopupModal() {
     }
   };
 
-  // Step 3: Trigger Server Spin
+  // Step 3: Trigger Server Spin (Zero-Trust Session Authenticated)
   const handleSpinClick = async () => {
     if (isSpinning || wonReward) return;
 
@@ -203,11 +251,22 @@ export function SpinWinPopupModal() {
     setLoading(true);
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const tokenToSend = sessionData?.session?.access_token || spinAuthToken;
+
       const rollRes = await executeSpinRoll({
-        data: { name: name.trim(), email: email.trim().toLowerCase() },
+        data: {
+          authToken: tokenToSend,
+          name: name.trim(),
+        },
       });
 
       if (!rollRes.success) {
+        if (rollRes.code === "AUTH_REQUIRED") {
+          setErrorMsg("Verification required. A verified email session is required to spin.");
+          setStep("intro");
+          return;
+        }
         setErrorMsg(rollRes.message || "Spin failed.");
         if (rollRes.code === "ALREADY_SPUN" && rollRes.entry) {
           setExistingEntry(rollRes.entry as any);
@@ -216,10 +275,16 @@ export function SpinWinPopupModal() {
         return;
       }
 
-      setWinningIndex(rollRes.winningIndex);
-      setWonReward(rollRes.reward);
-      setVoucherCode(rollRes.voucherCode);
-      setIsSpinning(true);
+      if (
+        typeof rollRes.winningIndex === "number" &&
+        rollRes.reward &&
+        rollRes.voucherCode
+      ) {
+        setWinningIndex(rollRes.winningIndex);
+        setWonReward(rollRes.reward);
+        setVoucherCode(rollRes.voucherCode);
+        setIsSpinning(true);
+      }
     } catch (err: any) {
       setErrorMsg(err.message || "Could not roll wheel.");
     } finally {
@@ -236,10 +301,50 @@ export function SpinWinPopupModal() {
     }, 600);
   };
 
-  // Step 4: Reject Offer
+  // Step 4A: Accept Offer & Open Pre-filled Google Form
+  const handleAcceptOffer = async () => {
+    setErrorMsg("");
+    setLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || spinAuthToken;
+
+      const res = await acceptSpinReward({
+        data: {
+          authToken: token,
+        },
+      });
+
+      if (!res.success) {
+        setErrorMsg(res.message || "Unable to accept reward.");
+        return;
+      }
+
+      if (res.formUrl) {
+        setFormUrl(res.formUrl);
+        try {
+          window.open(res.formUrl, "_blank", "noopener,noreferrer");
+        } catch {}
+      }
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(SESSION_COMPLETED_KEY, "true");
+      }
+      setStep("accepted_form");
+      fireConfetti();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to accept reward offer.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 4B: Reject Offer
   const handleRejectOffer = async () => {
     try {
-      await rejectSpinReward({ data: { email: email.trim().toLowerCase() } });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || spinAuthToken;
+      await rejectSpinReward({ data: { authToken: token } });
     } catch {}
     if (typeof window !== "undefined") {
       sessionStorage.setItem(SESSION_COMPLETED_KEY, "true");
@@ -260,9 +365,12 @@ export function SpinWinPopupModal() {
 
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || spinAuthToken;
+
       const res = await claimSpinReward({
         data: {
-          email: email.trim().toLowerCase(),
+          authToken: token,
           phone: trimmedPhone,
           college: college.trim(),
           claimNotes: claimNotes.trim(),
@@ -582,9 +690,37 @@ export function SpinWinPopupModal() {
                               {copiedCode ? "Copied" : "Copy"}
                             </button>
                           </div>
-                          <div className="mt-2 text-[11px] text-muted-foreground">
-                            Status: <span className="capitalize font-medium text-foreground">{existingEntry.status}</span>
+                          <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+                            <div>
+                              Reward Status:{" "}
+                              <span className="font-semibold text-foreground">
+                                {existingEntry.rewardStatus || existingEntry.status}
+                              </span>
+                            </div>
+                            {existingEntry.formStatus && existingEntry.formStatus !== "NOT_APPLICABLE" && (
+                              <div>
+                                • Form Status:{" "}
+                                <span className="font-semibold text-foreground">
+                                  {existingEntry.formStatus}
+                                </span>
+                              </div>
+                            )}
                           </div>
+
+                          {existingEntry.formUrl && existingEntry.rewardStatus === "ACCEPTED" && (
+                            <div className="mt-2.5 pt-2 border-t border-border">
+                              <a
+                                href={existingEntry.formUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-student hover:underline"
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                Open Verification Form
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </div>
+                          )}
                         </div>
 
                         <button
@@ -673,24 +809,107 @@ export function SpinWinPopupModal() {
                         </div>
 
                         {/* TWO REQUIRED BUTTONS:
-                            1. Form fill to claim offer
+                            1. Accept Offer & Open Pre-filled Google Form
                             2. Reject / decline button */}
                         <div className="space-y-2.5">
                           <button
                             type="button"
-                            onClick={() => setStep("claim_form")}
-                            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 shadow-sm transition"
+                            disabled={loading}
+                            onClick={handleAcceptOffer}
+                            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary/90 shadow-md transition disabled:opacity-50"
                           >
-                            Claim Offer & Fill Details
-                            <ArrowRight className="h-4 w-4" />
+                            {loading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Accepting Reward...
+                              </>
+                            ) : (
+                              <>
+                                Accept Offer & Fill Google Form
+                                <ExternalLink className="h-4 w-4" />
+                              </>
+                            )}
                           </button>
 
                           <button
                             type="button"
+                            disabled={loading}
                             onClick={handleRejectOffer}
-                            className="w-full rounded-xl border border-border bg-background py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition"
+                            className="w-full rounded-xl border border-border bg-background py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition disabled:opacity-50"
                           >
                             No Thanks, Return to Landing Page
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ─── STEP 4B: ACCEPTED FORM STATUS (GOOGLE FORMS WORKFLOW) ─── */}
+                    {step === "accepted_form" && wonReward && (
+                      <div className="text-center py-2">
+                        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-student-soft text-student">
+                          <FileText className="h-6 w-6" />
+                        </div>
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-500 mb-1.5">
+                          Form Verification Pending
+                        </div>
+                        <h3 className="font-display text-2xl font-bold text-foreground">
+                          Reward Accepted!
+                        </h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Please complete your pre-filled Google Form submission for <strong className="text-foreground">{wonReward.title}</strong>.
+                        </p>
+
+                        {/* Voucher Card */}
+                        <div className="my-4 rounded-xl border border-border bg-surface p-3.5 text-center">
+                          <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                            Your Voucher Code
+                          </div>
+                          <div className="mt-1 flex items-center justify-center gap-2">
+                            <span className="font-mono text-xl font-black text-foreground">
+                              {voucherCode}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleCopyCode}
+                              className="rounded-md border border-border bg-background p-1 text-muted-foreground hover:text-foreground"
+                              title="Copy Code"
+                            >
+                              {copiedCode ? <Check className="h-3.5 w-3.5 text-researcher" /> : <Copy className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                          <p className="mt-1 text-[11px] text-muted-foreground">{wonReward.terms}</p>
+                        </div>
+
+                        {/* Automated Webhook & Next Steps Notice */}
+                        <div className="rounded-xl border border-border/80 bg-background/50 p-3 text-left text-xs text-muted-foreground mb-4">
+                          <div className="font-semibold text-foreground flex items-center gap-1 mb-0.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-student" />
+                            Automated Webhook Verification
+                          </div>
+                          <p className="text-[11px] leading-relaxed">
+                            Once you submit the Google Form, our secure webhook will automatically register your verification. An administrator will review your redemption.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          {formUrl && (
+                            <a
+                              href={formUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 shadow-sm transition"
+                            >
+                              Open Google Form Again
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={handleClose}
+                            className="w-full rounded-xl border border-border bg-background py-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition"
+                          >
+                            Close & Continue Browsing
                           </button>
                         </div>
                       </div>

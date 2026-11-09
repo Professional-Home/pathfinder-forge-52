@@ -170,10 +170,10 @@ export function SpinWheelCanvas({
                 strokeWidth="2"
               />
 
-              {/* Text & Probability Label */}
+              {/* Reward Name Label */}
               <g
                 transform={`rotate(${midAngle}, ${center}, ${center}) translate(${center}, ${
-                  center - radius + 32
+                  center - radius + 38
                 })`}
               >
                 {/* Short Label */}
@@ -181,6 +181,7 @@ export function SpinWheelCanvas({
                   x="0"
                   y="0"
                   textAnchor="middle"
+                  dominantBaseline="central"
                   fill="#ffffff"
                   fontSize="12.5"
                   fontWeight="800"
@@ -191,20 +192,6 @@ export function SpinWheelCanvas({
                   }}
                 >
                   {reward.shortLabel}
-                </text>
-
-                {/* Probability Tag */}
-                <text
-                  x="0"
-                  y="15"
-                  textAnchor="middle"
-                  fill="rgba(255,255,255,0.85)"
-                  fontSize="9.5"
-                  fontWeight="600"
-                  fontFamily="'Geist Mono', monospace"
-                  style={{ textShadow: "0 1px 2px rgba(0,0,0,0.7)" }}
-                >
-                  {reward.probability}%
                 </text>
               </g>
             </g>

@@ -14,13 +14,25 @@ import {
   Mail,
   Copy,
   Check,
+  AlertTriangle,
+  ShieldAlert,
+  Eye,
+  EyeOff,
+  Award,
+  FileCheck,
+  ExternalLink,
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminCard, AdminDataTable, AdminToolbar } from "@/components/admin/admin-shared";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { PrintQrModal } from "@/components/spin-wheel/PrintQrModal";
 import type { SpinWheelEntry } from "@/lib/spin-wheel/types";
-import { fetchAdminSpinEntries } from "@/lib/spin-wheel-server";
+import {
+  fetchAdminSpinEntries,
+  redeemSpinRewardAdmin,
+  verifyFormManualAdmin,
+} from "@/lib/spin-wheel-server";
+import { supabase } from "@/utils/supabase";
 
 export const Route = createFileRoute("/admin/spin-wheel")({
   component: AdminSpinWheelPage,
@@ -29,27 +41,109 @@ export const Route = createFileRoute("/admin/spin-wheel")({
 function AdminSpinWheelPage() {
   const [entries, setEntries] = useState<SpinWheelEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [formFilter, setFormFilter] = useState<string>("all");
+  const [unmaskPii, setUnmaskPii] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Load entries
-  const loadData = async () => {
+  const loadData = async (shouldUnmask = unmaskPii) => {
     setLoading(true);
+    setAuthError(null);
     try {
-      const res = await fetchAdminSpinEntries();
-      setEntries(res.entries || []);
-    } catch (e) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || undefined;
+
+      const res = await fetchAdminSpinEntries({
+        data: { authToken: token, unmask: shouldUnmask },
+      });
+
+      if (!res.success && res.code === "UNAUTHORIZED") {
+        setAuthError(
+          res.error || "Admin authentication required. Please sign in as an administrator."
+        );
+        setEntries([]);
+      } else {
+        setEntries(res.entries || []);
+      }
+    } catch (e: any) {
       console.error("Failed to load spin wheel entries:", e);
+      setAuthError(e.message || "Failed to load spin wheel entries.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(unmaskPii);
+  }, [unmaskPii]);
+
+  const toggleUnmask = () => {
+    setUnmaskPii((prev) => !prev);
+  };
+
+  // Actions
+  const handleRedeem = async (entry: SpinWheelEntry) => {
+    const notes = window.prompt(
+      `Confirm redemption fulfillment for "${entry.name}" (${entry.voucherCode}).\nOptional fulfillment notes:`,
+      ""
+    );
+    if (notes === null) return;
+
+    setActionLoadingId(entry.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await redeemSpinRewardAdmin({
+        data: { authToken: token, entryId: entry.id, notes: notes || undefined },
+      });
+      if (res.success) {
+        await loadData();
+      } else {
+        alert(res.message || "Failed to mark as redeemed.");
+      }
+    } catch (e: any) {
+      alert(e.message || "Redemption request failed.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleManualVerify = async (entry: SpinWheelEntry) => {
+    if (
+      !window.confirm(
+        `Manually mark Google Form as VERIFIED for "${entry.name}" (${entry.voucherCode})?`
+      )
+    ) {
+      return;
+    }
+
+    setActionLoadingId(entry.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const res = await verifyFormManualAdmin({
+        data: {
+          authToken: token,
+          entryId: entry.id,
+          notes: "Manually verified in admin dashboard",
+        },
+      });
+      if (res.success) {
+        await loadData();
+      } else {
+        alert(res.message || "Failed to verify form.");
+      }
+    } catch (e: any) {
+      alert(e.message || "Verification request failed.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   // Filtered entries
   const filtered = useMemo(() => {
@@ -62,20 +156,31 @@ function AdminSpinWheelPage() {
         item.voucherCode.toLowerCase().includes(search.toLowerCase()) ||
         item.rewardTitle.toLowerCase().includes(search.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === "all" || item.status === statusFilter;
+      const rStatus = item.rewardStatus || (item.status === "claimed" ? "REDEEMED" : item.status === "rejected" ? "REJECTED" : "PENDING");
+      const fStatus = item.formStatus || (item.status === "claimed" ? "FORM_VERIFIED" : "NOT_APPLICABLE");
 
-      return matchesSearch && matchesStatus;
+      const matchesRewardStatus =
+        statusFilter === "all" ||
+        rStatus.toLowerCase() === statusFilter.toLowerCase() ||
+        item.status === statusFilter;
+
+      const matchesFormStatus =
+        formFilter === "all" ||
+        fStatus.toLowerCase() === formFilter.toLowerCase();
+
+      return matchesSearch && matchesRewardStatus && matchesFormStatus;
     });
-  }, [entries, search, statusFilter]);
+  }, [entries, search, statusFilter, formFilter]);
 
   // Statistics
   const stats = useMemo(() => {
     const total = entries.length;
-    const claimed = entries.filter((e) => e.isClaimed || e.status === "claimed").length;
-    const rejected = entries.filter((e) => e.status === "rejected").length;
-    const won = total - claimed - rejected;
-    return { total, claimed, won, rejected };
+    const redeemed = entries.filter((e) => (e.rewardStatus === "REDEEMED" || e.status === "claimed")).length;
+    const formVerified = entries.filter((e) => e.formStatus === "FORM_VERIFIED").length;
+    const formPending = entries.filter((e) => e.formStatus === "FORM_PENDING" || e.formStatus === "FORM_SUBMITTED").length;
+    const rejected = entries.filter((e) => e.rewardStatus === "REJECTED" || e.status === "rejected").length;
+    const pending = total - redeemed - rejected;
+    return { total, redeemed, formVerified, formPending, pending, rejected };
   }, [entries]);
 
   // CSV Export
@@ -91,9 +196,15 @@ function AdminSpinWheelPage() {
       "Reward Title",
       "Voucher Code",
       "Probability %",
-      "Status",
-      "Claimed",
-      "Claim Notes",
+      "Reward Status",
+      "Form Status",
+      "Form URL",
+      "Form Opened At",
+      "Form Submitted At",
+      "Form Verified At",
+      "Redeemed At",
+      "Redeemed By Admin",
+      "Redemption Notes",
       "Created At",
     ];
 
@@ -106,9 +217,15 @@ function AdminSpinWheelPage() {
       `"${e.rewardTitle || ""}"`,
       `"${e.voucherCode || ""}"`,
       `"${e.probabilityPct || ""}"`,
-      `"${e.status || ""}"`,
-      `"${e.isClaimed ? "YES" : "NO"}"`,
-      `"${(e.claimNotes || "").replace(/"/g, '""')}"`,
+      `"${e.rewardStatus || e.status || "PENDING"}"`,
+      `"${e.formStatus || "NOT_APPLICABLE"}"`,
+      `"${e.formUrl || ""}"`,
+      `"${e.formOpenedAt || ""}"`,
+      `"${e.formSubmittedAt || ""}"`,
+      `"${e.formVerifiedAt || ""}"`,
+      `"${e.redeemedAt || ""}"`,
+      `"${e.redeemedByAdmin || ""}"`,
+      `"${(e.redemptionNotes || e.claimNotes || "").replace(/"/g, '""')}"`,
       `"${e.createdAt || ""}"`,
     ]);
 
@@ -132,10 +249,27 @@ function AdminSpinWheelPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <AdminPageHeader
-        title="Spin & Win Participants"
-        description="Monitor promotional wheel spins, participant details, won rewards, and claims."
+        title="Spin & Win Participants & Google Forms"
+        description="Monitor promotional wheel spins, Google Form submissions, webhooks, and reward redemptions."
         actions={
           <div className="flex items-center gap-2">
+            <button
+              onClick={toggleUnmask}
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition"
+              title={unmaskPii ? "Mask PII" : "Unmask PII (Audit Logged)"}
+            >
+              {unmaskPii ? (
+                <>
+                  <EyeOff className="h-4 w-4 text-amber-500" />
+                  Mask PII
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4 text-cyan-500" />
+                  Reveal PII
+                </>
+              )}
+            </button>
             <button
               onClick={() => setQrModalOpen(true)}
               className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition"
@@ -155,8 +289,22 @@ function AdminSpinWheelPage() {
         }
       />
 
+      {/* Security Auth Warning Banner */}
+      {authError && (
+        <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive">
+          <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
+          <div className="space-y-1">
+            <div className="font-bold text-sm text-destructive">Admin Authorization Required</div>
+            <p className="text-destructive/90">{authError}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Participant PII, won rewards, and claims are protected. Please sign in via the Admin Login portal.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Analytics KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
             Total Spins
@@ -165,19 +313,25 @@ function AdminSpinWheelPage() {
         </div>
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
           <div className="text-xs text-emerald-400 uppercase tracking-wider font-medium">
-            Claimed Rewards
+            Redeemed
           </div>
-          <div className="text-2xl font-black text-emerald-400 mt-1">{stats.claimed}</div>
+          <div className="text-2xl font-black text-emerald-400 mt-1">{stats.redeemed}</div>
+        </div>
+        <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+          <div className="text-xs text-cyan-400 uppercase tracking-wider font-medium">
+            Form Verified
+          </div>
+          <div className="text-2xl font-black text-cyan-400 mt-1">{stats.formVerified}</div>
         </div>
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
           <div className="text-xs text-amber-400 uppercase tracking-wider font-medium">
-            Pending / Unclaimed
+            Form Pending
           </div>
-          <div className="text-2xl font-black text-amber-400 mt-1">{stats.won}</div>
+          <div className="text-2xl font-black text-amber-400 mt-1">{stats.formPending}</div>
         </div>
         <div className="rounded-xl border border-slate-700 bg-card p-4">
           <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-            Declined / Rejected
+            Rejected
           </div>
           <div className="text-2xl font-black text-muted-foreground mt-1">{stats.rejected}</div>
         </div>
@@ -196,25 +350,43 @@ function AdminSpinWheelPage() {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+          {/* Reward Status Filter */}
           <div className="flex rounded-lg border border-border p-0.5 bg-background text-xs">
-            {["all", "won", "claimed", "rejected"].map((tab) => (
+            {["all", "PENDING", "ACCEPTED", "REDEEMED", "REJECTED"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setStatusFilter(tab)}
-                className={`px-3 py-1 rounded-md capitalize transition ${
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
                   statusFilter === tab
                     ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {tab}
+                {tab === "all" ? "All Rewards" : tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Form Status Filter */}
+          <div className="flex rounded-lg border border-border p-0.5 bg-background text-xs">
+            {["all", "FORM_PENDING", "FORM_VERIFIED"].map((fTab) => (
+              <button
+                key={fTab}
+                onClick={() => setFormFilter(fTab)}
+                className={`px-2 py-1 rounded-md text-[11px] font-medium transition ${
+                  formFilter === fTab
+                    ? "bg-cyan-600 text-white font-semibold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {fTab === "all" ? "All Forms" : fTab === "FORM_PENDING" ? "Pending Form" : "Verified Form"}
               </button>
             ))}
           </div>
 
           <button
-            onClick={loadData}
+            onClick={() => loadData(unmaskPii)}
             title="Refresh"
             className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
           >
@@ -230,88 +402,194 @@ function AdminSpinWheelPage() {
             <thead className="bg-muted/50 border-b border-border text-muted-foreground font-semibold uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3">Participant</th>
-                <th className="px-4 py-3">Contact</th>
                 <th className="px-4 py-3">Reward Won</th>
-                <th className="px-4 py-3">Voucher Code</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Timestamp</th>
+                <th className="px-4 py-3">Voucher</th>
+                <th className="px-4 py-3">Reward State</th>
+                <th className="px-4 py-3">Google Form State</th>
+                <th className="px-4 py-3">Timestamps</th>
+                <th className="px-4 py-3 text-right">Admin Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
                     Loading participant records...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
                     No spin entries found matching your criteria.
                   </td>
                 </tr>
               ) : (
-                filtered.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/20 transition">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-foreground">{item.name}</div>
-                      {item.college && (
-                        <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">
-                          {item.college}
+                filtered.map((item) => {
+                  const rStatus = item.rewardStatus || (item.status === "claimed" ? "REDEEMED" : item.status === "rejected" ? "REJECTED" : "PENDING");
+                  const fStatus = item.formStatus || (item.status === "claimed" ? "FORM_VERIFIED" : "NOT_APPLICABLE");
+                  const isLoading = actionLoadingId === item.id;
+
+                  return (
+                    <tr key={item.id} className="hover:bg-muted/20 transition">
+                      {/* Participant */}
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-foreground">{item.name}</div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] mt-0.5">
+                          <Mail className="h-3 w-3" />
+                          <span>{item.email}</span>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 text-foreground">
-                        <Mail className="h-3 w-3 text-muted-foreground" />
-                        <span>{item.email}</span>
-                      </div>
-                      {item.phone && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          <span>{item.phone}</span>
+                        {item.phone && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+                            <Phone className="h-3 w-3" />
+                            <span>{item.phone}</span>
+                          </div>
+                        )}
+                        {item.college && (
+                          <div className="text-[10px] text-muted-foreground/80 truncate max-w-[170px] mt-0.5">
+                            {item.college}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Reward Won */}
+                      <td className="px-4 py-3">
+                        <span className="font-medium text-foreground">{item.rewardTitle}</span>
+                        <div className="text-[10px] text-cyan-400 font-mono mt-0.5">
+                          Probability: {item.probabilityPct}%
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-foreground">{item.rewardTitle}</span>
-                      <span className="ml-1.5 text-[10px] text-cyan-400 font-mono">
-                        ({item.probabilityPct}%)
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="inline-flex items-center gap-1.5 rounded bg-muted px-2 py-0.5 font-mono font-bold text-foreground">
-                        <span>{item.voucherCode}</span>
-                        <button
-                          onClick={() => copyVoucher(item.voucherCode)}
-                          className="text-muted-foreground hover:text-foreground"
+                      </td>
+
+                      {/* Voucher Code */}
+                      <td className="px-4 py-3">
+                        <div className="inline-flex items-center gap-1.5 rounded bg-muted px-2 py-0.5 font-mono font-bold text-foreground">
+                          <span>{item.voucherCode}</span>
+                          <button
+                            onClick={() => copyVoucher(item.voucherCode)}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            {copiedId === item.voucherCode ? (
+                              <Check className="h-3 w-3 text-emerald-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+
+                      {/* Reward Lifecycle Status */}
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            rStatus === "REDEEMED"
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : rStatus === "ACCEPTED"
+                              ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                              : rStatus === "REJECTED"
+                              ? "bg-slate-700/20 text-muted-foreground border border-slate-700"
+                              : rStatus === "EXPIRED"
+                              ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          }`}
                         >
-                          {copiedId === item.voucherCode ? (
-                            <Check className="h-3 w-3 text-emerald-500" />
-                          ) : (
-                            <Copy className="h-3 w-3" />
+                          {rStatus}
+                        </span>
+                        {item.redeemedAt && (
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            Redeemed: {new Date(item.redeemedAt).toLocaleDateString()}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Google Form Status */}
+                      <td className="px-4 py-3">
+                        <div className="space-y-1">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              fStatus === "FORM_VERIFIED"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                : fStatus === "FORM_SUBMITTED"
+                                ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                : fStatus === "FORM_PENDING"
+                                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                : "bg-muted text-muted-foreground border border-border"
+                            }`}
+                          >
+                            {fStatus}
+                          </span>
+                          {item.formUrl && (
+                            <div>
+                              <a
+                                href={item.formUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
+                              >
+                                <span>Form Link</span>
+                                <ExternalLink className="h-2.5 w-2.5" />
+                              </a>
+                            </div>
                           )}
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          item.status === "claimed"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : item.status === "rejected"
-                            ? "bg-slate-700/20 text-muted-foreground border border-slate-700"
-                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground font-mono text-[11px]">
-                      {new Date(item.createdAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))
+                          {item.formVerifiedAt && (
+                            <div className="text-[10px] text-muted-foreground">
+                              Verified: {new Date(item.formVerifiedAt).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Timestamps */}
+                      <td className="px-4 py-3 text-muted-foreground font-mono text-[11px]">
+                        <div>Spun: {new Date(item.createdAt).toLocaleDateString()}</div>
+                        <div className="text-[10px]">
+                          {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </td>
+
+                      {/* Admin Actions */}
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Manual Verify Form button */}
+                          {fStatus !== "FORM_VERIFIED" && rStatus !== "REJECTED" && (
+                            <button
+                              onClick={() => handleManualVerify(item)}
+                              disabled={isLoading}
+                              className="inline-flex items-center gap-1 rounded bg-muted hover:bg-muted/80 px-2 py-1 text-[10px] font-medium text-foreground border border-border transition disabled:opacity-50"
+                              title="Manually mark form submission as verified"
+                            >
+                              <FileCheck className="h-3 w-3 text-cyan-400" />
+                              Verify Form
+                            </button>
+                          )}
+
+                          {/* Redeem button (active only when form verified and not yet redeemed) */}
+                          {rStatus !== "REDEEMED" && rStatus !== "REJECTED" ? (
+                            <button
+                              onClick={() => handleRedeem(item)}
+                              disabled={isLoading || fStatus !== "FORM_VERIFIED"}
+                              className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-[10px] font-bold transition disabled:opacity-40 disabled:cursor-not-allowed ${
+                                fStatus === "FORM_VERIFIED"
+                                  ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-xs"
+                                  : "bg-muted text-muted-foreground border border-border"
+                              }`}
+                              title={
+                                fStatus === "FORM_VERIFIED"
+                                  ? "Fulfill & Mark Redeemed"
+                                  : "Requires Form Verification before redemption"
+                              }
+                            >
+                              <Award className="h-3 w-3" />
+                              Redeem
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground italic px-2">
+                              {rStatus === "REDEEMED" ? "Fitted / Done" : "Dismissed"}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
