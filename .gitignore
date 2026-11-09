@@ -76,3 +76,6 @@ ml-data/colony-training/*
 *.onnx
 __pycache__/
 *.pyc
+.vercel
+.env*
+supabase/.temp/
