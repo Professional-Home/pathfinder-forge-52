@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback, type ReactNode, useRef } from "react"
 import { motion, useTransform, type Variants, useInView, animate, useMotionValue, AnimatePresence } from "framer-motion";
 import { supabase } from "@/utils/supabase";
 import type { Session } from "@supabase/supabase-js";
+import { SpinWinPopupModal } from "@/components/spin-wheel/SpinWinPopupModal";
 
 function RevealWrapper({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
@@ -78,6 +79,7 @@ function Landing() {
       <RevealWrapper><ReviewFormSection onSubmitted={handleReviewSubmitted} /></RevealWrapper>
       <RevealWrapper><WhyMicrylis /></RevealWrapper>
       <SiteFooter />
+      <SpinWinPopupModal />
     </div>
   );
 }

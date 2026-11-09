@@ -40,7 +40,7 @@ function AdminLoginPage() {
     }
   }, [navigate]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
       setError("Please fill in all fields.");
@@ -49,15 +49,18 @@ function AdminLoginPage() {
     setLoading(true);
     setError("");
 
-    setTimeout(() => {
-      const result = adminLogin(email, password);
+    try {
+      const result = await adminLogin(email, password);
       if (result.success) {
         navigate({ to: "/admin/dashboard" });
       } else {
         setError(result.error || "Invalid credentials. Access denied.");
       }
+    } catch (err: any) {
+      setError(err?.message || "Invalid credentials. Access denied.");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   }
 
   const orbs = [

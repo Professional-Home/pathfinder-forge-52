@@ -85,18 +85,10 @@ function AdminUsersPage() {
     setLoading(true);
     setError("");
 
-    // 1. Try RPC get_all_users
-    const { data, error } = await supabase.rpc("get_all_users");
-
-    if (!error && data && data.length > 0) {
-      setUsers(data);
-      setLoading(false);
-      return;
-    }
-
-    // 2. Fallback to server function using Supabase Admin API
     try {
-      const res = await listUsersAdmin();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData?.session?.access_token;
+      const res = await listUsersAdmin({ data: { authToken } });
       if (res.success && res.users) {
         setUsers(res.users);
       } else {
@@ -117,36 +109,11 @@ function AdminUsersPage() {
     setUsers((prev) => prev.filter((u) => u.id !== target.id));
     
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData?.session?.access_token;
+
       // 1. Permanent deletion from Supabase Auth & public tables via Server Admin API
-      const serverRes = await deleteUserAdmin({ data: { userId: target.id } });
-
-      // 2. Also attempt RPC deletion if procedure exists
-      try {
-        const { error: rpcError } = await supabase.rpc("delete_user", { target_user_id: target.id });
-        if (rpcError) {
-          console.warn("[Client] delete_user RPC note:", rpcError.message);
-        }
-      } catch (err) {
-        console.warn("[Client] delete_user RPC exception:", err);
-      }
-
-      try {
-        const { error: profileError } = await supabase.from("profile").delete().eq("id", target.id);
-        if (profileError) {
-          console.warn("[Client] Delete profile note:", profileError.message);
-        }
-      } catch (err) {
-        console.warn("[Client] Delete profile exception:", err);
-      }
-
-      try {
-        const { error: usersError } = await supabase.from("users").delete().eq("id", target.id);
-        if (usersError) {
-          console.warn("[Client] Delete users table note:", usersError.message);
-        }
-      } catch (err) {
-        console.warn("[Client] Delete users table exception:", err);
-      }
+      const serverRes = await deleteUserAdmin({ data: { userId: target.id, authToken } });
 
       if (serverRes.success) {
         toast.success(`User "${target.full_name || target.email}" completely deleted from Supabase.`);

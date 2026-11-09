@@ -28,6 +28,7 @@ import {
 } from "@/lib/adminMockData";
 import { getAdminUser } from "@/lib/adminAuth";
 import { supabase } from "@/utils/supabase";
+import { listUsersAdmin } from "@/lib/auth-server";
 import { getAllCourses, initializeCourseStore } from "@/lib/courses/store";
 import { getCourseStats } from "@/lib/courses/data";
 import { getOptimizedImageUrl } from "@/utils/cloudinary";
@@ -67,13 +68,16 @@ function AdminDashboardPage() {
 
   useEffect(() => {
     async function fetchDashboardData() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData?.session?.access_token;
+
       const [userRes, googleRes, mentorRes, enrollmentsRes, latestCoursesRes, newUsersRes] = await Promise.all([
         supabase.from("users").select("id", { count: 'exact' }),
         supabase.rpc('get_google_user_count'),
         supabase.from("mentors").select("id", { count: 'exact' }),
         supabase.from("enrollments").select("*, courses(title)").order("enrollment_date", { ascending: false }).limit(4),
         supabase.from("courses").select("id, title, category, duration, thumbnail").order("created_at", { ascending: false }).limit(3),
-        supabase.rpc("get_all_users"),
+        listUsersAdmin({ data: { authToken } }).catch(() => ({ success: false, users: [] })),
       ]);
 
       if (!userRes.error) setUserCount(userRes.count || 0);
@@ -81,7 +85,9 @@ function AdminDashboardPage() {
       if (!mentorRes.error) setMentorsCount(mentorRes.count || 0);
       if (enrollmentsRes.data) setRecentEnrollments(enrollmentsRes.data);
       if (latestCoursesRes.data) setLatestCourses(latestCoursesRes.data);
-      if (newUsersRes.data) setRecentUsers(newUsersRes.data);
+      if (newUsersRes && "users" in newUsersRes && Array.isArray(newUsersRes.users)) {
+        setRecentUsers(newUsersRes.users);
+      }
     }
 
     fetchDashboardData();

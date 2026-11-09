@@ -13,10 +13,12 @@ import {
   Star,
   Sparkles,
   Briefcase,
+  Gift,
 } from "lucide-react";
 
 export const adminNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", shortLabel: "Home", to: "/admin/dashboard" },
+  { icon: Gift, label: "Spin & Win Leads", shortLabel: "Spin", to: "/admin/spin-wheel" },
   { icon: BookOpen, label: "Course Management", shortLabel: "Courses", to: "/admin/courses" },
   { icon: Briefcase, label: "Opportunities", shortLabel: "Opps", to: "/admin/opportunities" },
   { icon: FileText, label: "Blog Management", shortLabel: "Blogs", to: "/admin/blogs" },

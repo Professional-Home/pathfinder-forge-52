@@ -26,6 +26,7 @@ import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReturnPolicyRouteImport } from './routes/return-policy'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SpinRouteImport } from './routes/spin'
 import { Route as WebinarRouteImport } from './routes/webinar'
 import { Route as WebinarsRouteImport } from './routes/webinars'
 import { Route as AdminBlogsRouteImport } from './routes/admin/blogs'
@@ -38,6 +39,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
 import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
 import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
+import { Route as AdminSpinWheelRouteImport } from './routes/admin/spin-wheel'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminWebinarsRouteImport } from './routes/admin/webinars'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -158,6 +160,11 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SpinRoute = SpinRouteImport.update({
+  id: '/spin',
+  path: '/spin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WebinarRoute = WebinarRouteImport.update({
   id: '/webinar',
   path: '/webinar',
@@ -216,6 +223,11 @@ const AdminOpportunitiesRoute = AdminOpportunitiesRouteImport.update({
 const AdminReviewsRoute = AdminReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSpinWheelRoute = AdminSpinWheelRouteImport.update({
+  id: '/spin-wheel',
+  path: '/spin-wheel',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
@@ -410,6 +422,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/spin': typeof SpinRoute
   '/webinar': typeof WebinarRoute
   '/webinars': typeof WebinarsRoute
   '/admin/blogs': typeof AdminBlogsRoute
@@ -422,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/spin-wheel': typeof AdminSpinWheelRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -470,6 +484,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/spin': typeof SpinRoute
   '/webinar': typeof WebinarRoute
   '/webinars': typeof WebinarsRoute
   '/admin/blogs': typeof AdminBlogsRoute
@@ -481,6 +496,7 @@ export interface FileRoutesByTo {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/spin-wheel': typeof AdminSpinWheelRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -535,6 +551,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/return-policy': typeof ReturnPolicyRoute
   '/signup': typeof SignupRoute
+  '/spin': typeof SpinRoute
   '/webinar': typeof WebinarRoute
   '/webinars': typeof WebinarsRoute
   '/admin/blogs': typeof AdminBlogsRoute
@@ -547,6 +564,7 @@ export interface FileRoutesById {
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRoute
   '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/spin-wheel': typeof AdminSpinWheelRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/webinars': typeof AdminWebinarsRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -602,6 +620,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/return-policy'
     | '/signup'
+    | '/spin'
     | '/webinar'
     | '/webinars'
     | '/admin/blogs'
@@ -614,6 +633,7 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/opportunities'
     | '/admin/reviews'
+    | '/admin/spin-wheel'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
@@ -662,6 +682,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/return-policy'
     | '/signup'
+    | '/spin'
     | '/webinar'
     | '/webinars'
     | '/admin/blogs'
@@ -673,6 +694,7 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/opportunities'
     | '/admin/reviews'
+    | '/admin/spin-wheel'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
@@ -726,6 +748,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/return-policy'
     | '/signup'
+    | '/spin'
     | '/webinar'
     | '/webinars'
     | '/admin/blogs'
@@ -738,6 +761,7 @@ export interface FileRouteTypes {
     | '/admin/mentors'
     | '/admin/opportunities'
     | '/admin/reviews'
+    | '/admin/spin-wheel'
     | '/admin/users'
     | '/admin/webinars'
     | '/auth/callback'
@@ -792,6 +816,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ReturnPolicyRoute: typeof ReturnPolicyRoute
   SignupRoute: typeof SignupRoute
+  SpinRoute: typeof SpinRoute
   WebinarRoute: typeof WebinarRoute
   WebinarsRoute: typeof WebinarsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -923,6 +948,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/spin': {
+      id: '/spin'
+      path: '/spin'
+      fullPath: '/spin'
+      preLoaderRoute: typeof SpinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/webinar': {
       id: '/webinar'
       path: '/webinar'
@@ -1005,6 +1037,13 @@ declare module '@tanstack/react-router' {
       path: '/reviews'
       fullPath: '/admin/reviews'
       preLoaderRoute: typeof AdminReviewsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/spin-wheel': {
+      id: '/admin/spin-wheel'
+      path: '/spin-wheel'
+      fullPath: '/admin/spin-wheel'
+      preLoaderRoute: typeof AdminSpinWheelRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/users': {
@@ -1277,6 +1316,7 @@ interface AdminRouteChildren {
   AdminMentorsRoute: typeof AdminMentorsRoute
   AdminOpportunitiesRoute: typeof AdminOpportunitiesRoute
   AdminReviewsRoute: typeof AdminReviewsRoute
+  AdminSpinWheelRoute: typeof AdminSpinWheelRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminWebinarsRoute: typeof AdminWebinarsRoute
 }
@@ -1292,6 +1332,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMentorsRoute: AdminMentorsRoute,
   AdminOpportunitiesRoute: AdminOpportunitiesRoute,
   AdminReviewsRoute: AdminReviewsRoute,
+  AdminSpinWheelRoute: AdminSpinWheelRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminWebinarsRoute: AdminWebinarsRoute,
 }
@@ -1407,6 +1448,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ReturnPolicyRoute: ReturnPolicyRoute,
   SignupRoute: SignupRoute,
+  SpinRoute: SpinRoute,
   WebinarRoute: WebinarRoute,
   WebinarsRoute: WebinarsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
