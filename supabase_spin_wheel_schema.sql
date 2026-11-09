@@ -54,23 +54,22 @@ CREATE TRIGGER on_spin_wheel_updated
 ALTER TABLE public.spin_wheel_entries ENABLE ROW LEVEL SECURITY;
 
 -- 5. RLS Policies
--- Allow public select of their own entry by matching email
+-- Enforce strict deny-by-default policy for direct browser access.
+-- All legitimate operations execute server-side via supabaseAdmin (service_role).
 DROP POLICY IF EXISTS "Public check own spin status" ON public.spin_wheel_entries;
-CREATE POLICY "Public check own spin status" ON public.spin_wheel_entries
-    FOR SELECT USING (true);
-
--- Allow server function / service role / admin to insert and update
 DROP POLICY IF EXISTS "Allow spin inserts" ON public.spin_wheel_entries;
-CREATE POLICY "Allow spin inserts" ON public.spin_wheel_entries
-    FOR INSERT WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Allow spin updates" ON public.spin_wheel_entries;
-CREATE POLICY "Allow spin updates" ON public.spin_wheel_entries
-    FOR UPDATE USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Allow spin delete" ON public.spin_wheel_entries;
-CREATE POLICY "Allow spin delete" ON public.spin_wheel_entries
-    FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Deny direct public access" ON public.spin_wheel_entries;
+
+CREATE POLICY "Deny direct public access" ON public.spin_wheel_entries
+    FOR ALL
+    TO public, anon, authenticated
+    USING (false)
+    WITH CHECK (false);
+
+REVOKE ALL ON TABLE public.spin_wheel_entries FROM anon, authenticated, public;
+GRANT ALL ON TABLE public.spin_wheel_entries TO service_role;
 
 -- 6. Comments for schema documentation
 COMMENT ON TABLE public.spin_wheel_entries IS 'Tracks promotional spin & win participants, verified emails, rewards won, and claim status.';
