@@ -34,6 +34,7 @@ import {
   rejectSpinReward,
   acceptSpinReward,
 } from "@/lib/spin-wheel-server";
+import { formatAuthErrorMessage } from "@/lib/spin-wheel/auth-error";
 import { supabase } from "@/utils/supabase";
 
 const SESSION_DISMISSED_KEY = "micrylis_spin_modal_dismissed";
@@ -154,7 +155,12 @@ export function SpinWinPopupModal() {
       });
 
       if (otpError) {
-        setErrorMsg(otpError.message || "Failed to send verification email. Please try again.");
+        setErrorMsg(
+          formatAuthErrorMessage(
+            otpError,
+            "Failed to send verification email. Please try again."
+          )
+        );
         return;
       }
 
@@ -163,7 +169,12 @@ export function SpinWinPopupModal() {
       setStep("otp");
       setResendCooldown(60);
     } catch (err: any) {
-      setErrorMsg(err.message || "Something went wrong. Please try again.");
+      setErrorMsg(
+        formatAuthErrorMessage(
+          err,
+          "Failed to send verification email. Please try again."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -192,8 +203,10 @@ export function SpinWinPopupModal() {
 
       if (verifyErr || !verifyData?.session?.access_token) {
         setErrorMsg(
-          verifyErr?.message ||
+          formatAuthErrorMessage(
+            verifyErr,
             "Invalid or expired verification code. Please check your inbox and try again."
+          )
         );
         return;
       }
@@ -208,7 +221,12 @@ export function SpinWinPopupModal() {
       setSpinAuthToken(verifyData.session.access_token);
       setStep("wheel");
     } catch (err: any) {
-      setErrorMsg(err.message || "Verification failed. Please try again.");
+      setErrorMsg(
+        formatAuthErrorMessage(
+          err,
+          "Verification failed. Please try again."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -232,12 +250,22 @@ export function SpinWinPopupModal() {
       });
 
       if (otpError) {
-        setErrorMsg(otpError.message || "Unable to resend verification code.");
+        setErrorMsg(
+          formatAuthErrorMessage(
+            otpError,
+            "Unable to resend verification code. Please try again."
+          )
+        );
       } else {
         setResendCooldown(60);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || "Unable to resend.");
+      setErrorMsg(
+        formatAuthErrorMessage(
+          err,
+          "Unable to resend verification code. Please try again."
+        )
+      );
     } finally {
       setLoading(false);
     }
