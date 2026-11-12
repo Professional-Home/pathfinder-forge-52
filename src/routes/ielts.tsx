@@ -27,6 +27,7 @@ import {
   type IELTSBatch,
   type IELTSMentor,
 } from "@/lib/ielts/types";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/ielts")({
   component: IELTSApplyPage,
@@ -112,22 +113,22 @@ function IELTSApplyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-dvh bg-background text-foreground">
       <SiteHeader />
 
       {!submitted ? (
         <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-student/10 px-3 py-1.5 text-xs font-semibold text-student uppercase tracking-widest">
-              <Target className="h-3.5 w-3.5" /> IELTS Coaching
+              <Target className="size-3.5" /> IELTS Coaching
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl leading-tight mb-6">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl leading-tight mb-6 text-balance">
               Master IELTS with{" "}
               <span className="bg-gradient-to-r from-student via-researcher to-startup bg-clip-text text-transparent">
                 Expert Mentors
               </span>
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground max-w-lg">
+            <p className="mt-4 text-lg text-muted-foreground max-w-lg text-pretty">
               Personalized IELTS Academic and General Training coaching. Achieve your target band score
               with certified mentors and proven strategies.
             </p>
@@ -135,8 +136,8 @@ function IELTSApplyPage() {
             <div className="mt-12 grid gap-8 md:grid-cols-3">
               {/* Info cards */}
               <div className="rounded-xl border border-border bg-surface-elevated p-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-student/10 text-student mb-4">
-                  <Globe className="h-5 w-5" />
+                <div className="flex size-10 items-center justify-center rounded-lg bg-student/10 text-student mb-4">
+                  <Globe className="size-5" />
                 </div>
                 <h3 className="text-sm font-semibold mb-2">Global Reach</h3>
                 <p className="text-sm text-muted-foreground">
@@ -144,8 +145,8 @@ function IELTSApplyPage() {
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-surface-elevated p-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-researcher/10 text-researcher mb-4">
-                  <Clock className="h-5 w-5" />
+                <div className="flex size-10 items-center justify-center rounded-lg bg-researcher/10 text-researcher mb-4">
+                  <Clock className="size-5" />
                 </div>
                 <h3 className="text-sm font-semibold mb-2">Flexible Batches</h3>
                 <p className="text-sm text-muted-foreground">
@@ -153,8 +154,8 @@ function IELTSApplyPage() {
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-surface-elevated p-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-startup/10 text-startup mb-4">
-                  <Mail className="h-5 w-5" />
+                <div className="flex size-10 items-center justify-center rounded-lg bg-startup/10 text-startup mb-4">
+                  <Mail className="size-5" />
                 </div>
                 <h3 className="text-sm font-semibold mb-2">Google Form Apply</h3>
                 <p className="text-sm text-muted-foreground">
@@ -169,12 +170,12 @@ function IELTSApplyPage() {
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-border bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 uppercase tracking-widest mb-3">
-                    <Trophy className="h-3.5 w-3.5" /> Top Ranked
+                    <Trophy className="size-3.5" /> Top Ranked
                   </div>
-                  <h2 className="font-display text-3xl sm:text-4xl leading-tight">
+                  <h2 className="font-display text-3xl sm:text-4xl leading-tight text-balance">
                     Meet Our Expert Mentors
                   </h2>
-                  <p className="mt-2 text-muted-foreground max-w-lg">
+                  <p className="mt-2 text-muted-foreground max-w-lg text-pretty">
                     Certified IELTS trainers ranked by student ratings and results. Learn from the
                     best to hit your target band.
                   </p>
@@ -195,10 +196,11 @@ function IELTSApplyPage() {
             >
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="ielts-name" className="block text-sm font-medium text-foreground">
                     Full Name
                   </label>
                   <input
+                    id="ielts-name"
                     type="text"
                     required
                     value={formData.full_name}
@@ -210,10 +212,11 @@ function IELTSApplyPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="ielts-email" className="block text-sm font-medium text-foreground">
                     Email Address
                   </label>
                   <input
+                    id="ielts-email"
                     type="email"
                     required
                     value={formData.email}
@@ -228,10 +231,11 @@ function IELTSApplyPage() {
 
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="ielts-phone" className="block text-sm font-medium text-foreground">
                     Phone Number
                   </label>
                   <input
+                    id="ielts-phone"
                     type="tel"
                     required
                     value={formData.phone}
@@ -243,10 +247,11 @@ function IELTSApplyPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="ielts-country" className="block text-sm font-medium text-foreground">
                     Country
                   </label>
                   <select
+                    id="ielts-country"
                     required
                     value={formData.country}
                     onChange={(e) =>
@@ -265,10 +270,11 @@ function IELTSApplyPage() {
 
               <div className="grid gap-6 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="ielts-level" className="block text-sm font-medium text-foreground">
                     Current Level
                   </label>
                   <select
+                    id="ielts-level"
                     required
                     value={formData.current_level}
                     onChange={(e) =>
@@ -287,10 +293,11 @@ function IELTSApplyPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="ielts-band" className="block text-sm font-medium text-foreground">
                     Target Band Score
                   </label>
                   <select
+                    id="ielts-band"
                     required
                     value={formData.target_band_score}
                     onChange={(e) =>
@@ -309,10 +316,11 @@ function IELTSApplyPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="ielts-batch" className="block text-sm font-medium text-foreground">
                     Preferred Batch
                   </label>
                   <select
+                    id="ielts-batch"
                     required
                     value={formData.preferred_batch}
                     onChange={(e) =>
@@ -333,10 +341,11 @@ function IELTSApplyPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">
+                <label htmlFor="ielts-message" className="block text-sm font-medium text-foreground">
                   Additional Message
                 </label>
                 <textarea
+                  id="ielts-message"
                   rows={3}
                   value={formData.message}
                   onChange={(e) =>
@@ -348,7 +357,10 @@ function IELTSApplyPage() {
               </div>
 
               {error && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                <div
+                  role="alert"
+                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                >
                   {error}
                 </div>
               )}
@@ -356,12 +368,13 @@ function IELTSApplyPage() {
               <button
                 type="submit"
                 disabled={loading}
+                aria-busy={loading}
                 className="w-full flex items-center justify-center gap-2 rounded-xl bg-foreground px-8 py-4 text-sm font-semibold text-background transition hover:bg-foreground/90 disabled:opacity-60"
               >
                 {loading ? (
                   <>
                     <svg
-                      className="animate-spin h-5 w-5"
+                      className="animate-spin size-5"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -384,7 +397,7 @@ function IELTSApplyPage() {
                   </>
                 ) : (
                   <>
-                    Apply Now <ArrowRight className="h-4 w-4" />
+                    Apply Now <ArrowRight className="size-4" />
                   </>
                 )}
               </button>
@@ -393,11 +406,11 @@ function IELTSApplyPage() {
         </section>
       ) : (
         // Success state - redirect to Google Form
-        <section className="min-h-screen flex items-center justify-center bg-background">
+        <section className="min-h-dvh flex items-center justify-center bg-background">
           <div className="px-4 sm:px-6 lg:px-8 max-w-md w-full">
             <div className="rounded-2xl border border-border bg-surface-elevated p-8 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 mx-auto mb-6">
-                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex size-16 items-center justify-center rounded-full bg-green-100 text-green-600 mx-auto mb-6">
+                <svg className="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -406,14 +419,14 @@ function IELTSApplyPage() {
                   ></path>
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">Application Submitted!</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2 text-balance">Application Submitted!</h2>
               <p className="text-muted-foreground mb-8">
                 Thank you for applying for IELTS coaching. Your application has been recorded successfully.
               </p>
 
               <div className="bg-white rounded-xl border border-border p-6 mb-8">
                 <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Phone className="h-4 w-4" /> Next Step
+                  <Phone className="size-4" /> Next Step
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Please complete the Google Form to finalize your IELTS application. Our team will review
@@ -425,7 +438,7 @@ function IELTSApplyPage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-student px-8 py-4 text-sm font-semibold text-background transition hover:bg-student/90"
                 >
-                  Open Google Form <ArrowRight className="h-4 w-4" />
+                  Open Google Form <ArrowRight className="size-4" />
                 </a>
               </div>
 
@@ -478,7 +491,7 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
         <span
           className={`absolute right-5 top-5 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${rankStyle.badge}`}
         >
-          <RankIcon className="h-3 w-3" /> {rankStyle.label}
+          <RankIcon className="size-3" /> {rankStyle.label}
         </span>
       )}
 
@@ -489,10 +502,10 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
             src={mentor.avatar_url}
             alt={mentor.name}
             loading="lazy"
-            className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-border"
+            className="size-14 shrink-0 rounded-full object-cover ring-2 ring-border"
           />
         ) : (
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-student/20 via-researcher/20 to-startup/20 font-display text-base font-semibold text-foreground ring-2 ring-border">
+          <div className="grid size-14 shrink-0 place-items-center rounded-full bg-student/10 font-display text-base font-semibold text-student ring-2 ring-border">
             {initials}
           </div>
         )}
@@ -503,15 +516,18 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`h-3.5 w-3.5 ${
+                  className={cn(
+                    "size-3.5",
                     star <= Math.round(rating)
                       ? "fill-amber-400 text-amber-400"
                       : "text-muted-foreground/40"
-                  }`}
+                  )}
                 />
               ))}
             </div>
-            <span className="text-xs font-semibold text-foreground">{rating.toFixed(1)}</span>
+            <span className="text-xs font-semibold tabular-nums text-foreground">
+              {rating.toFixed(1)}
+            </span>
           </div>
         </div>
       </div>
@@ -519,14 +535,14 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
       {/* Qualification */}
       {mentor.qualification && (
         <p className="mt-4 flex items-start gap-1.5 text-xs text-muted-foreground">
-          <BadgeCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-student" />
+          <BadgeCheck className="mt-0.5 size-3.5 shrink-0 text-student" />
           <span>{mentor.qualification}</span>
         </p>
       )}
 
       {/* Bio */}
       {mentor.bio && (
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground text-pretty">
           {mentor.bio}
         </p>
       )}
@@ -537,7 +553,7 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             Experience
           </p>
-          <p className="mt-0.5 text-sm font-semibold text-foreground">
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
             {mentor.experience_years}+ yrs
           </p>
         </div>
@@ -545,7 +561,7 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             Students
           </p>
-          <p className="mt-0.5 text-sm font-semibold text-foreground">
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
             {mentor.students_taught != null ? mentor.students_taught.toLocaleString() + "+" : "—"}
           </p>
         </div>
@@ -590,7 +606,7 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
           >
-            <Phone className="h-3.5 w-3.5" /> WhatsApp
+            <Phone className="size-3.5" /> WhatsApp
           </a>
         )}
       </div>
