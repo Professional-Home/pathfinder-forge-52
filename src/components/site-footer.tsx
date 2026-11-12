@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { name: "Community", to: "/community" as const },
   { name: "Opportunities", to: "/opportunities" as const },
   { name: "Blog", to: "/blog" as const },
+  { name: "IELTS", to: "/ielts" as const },
 ] as const;
 
 const COMPANY_LINKS = [

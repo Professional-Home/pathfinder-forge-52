@@ -434,6 +434,17 @@ function SiteHeaderComponent() {
                 <span className="relative z-10">Blog</span>
                 <NavPill active={isLinkActive("/blog")} />
               </Link>
+
+              {/* 7. IELTS */}
+              <Link
+                to="/ielts"
+                className={`relative shrink-0 rounded-full px-2.5 py-1.5 transition-colors ${
+                  isLinkActive("/ielts") ? "text-foreground" : "hover:text-foreground"
+                }`}
+              >
+                <span className="relative z-10">IELTS</span>
+                <NavPill active={isLinkActive("/ielts")} />
+              </Link>
             </nav>
 
             {/* Right Action Buttons */}
@@ -703,6 +714,17 @@ function SiteHeaderComponent() {
                     }`}
                   >
                     Blog
+                  </Link>
+
+                  {/* IELTS */}
+                  <Link
+                    to="/ielts"
+                    onClick={() => setMenuOpen(false)}
+                    className={`py-2 transition-colors ${
+                      isLinkActive("/ielts") ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    IELTS
                   </Link>
                 </div>
 

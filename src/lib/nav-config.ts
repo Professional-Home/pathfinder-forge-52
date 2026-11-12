@@ -77,6 +77,7 @@ export const PUBLIC_NAV_LINKS = [
     items: OPPORTUNITIES_DROPDOWN_ITEMS,
   },
   { name: "Blog", href: "/blog", isRoute: true as const, matchPath: "/blog" },
+  { name: "IELTS", href: "/ielts", isRoute: true as const, matchPath: "/ielts" },
 ] as const;
 
 export const SCROLL_SPY_OFFSET = 120;

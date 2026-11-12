@@ -14,6 +14,8 @@ import {
   Sparkles,
   Briefcase,
   Gift,
+  Target,
+  Mail,
 } from "lucide-react";
 
 export const adminNavItems = [
@@ -24,6 +26,8 @@ export const adminNavItems = [
   { icon: FileText, label: "Blog Management", shortLabel: "Blogs", to: "/admin/blogs" },
   { icon: Video, label: "Webinar Management", shortLabel: "Webinars", to: "/admin/webinars" },
   { icon: Sparkles, label: "Event Management", shortLabel: "Events", to: "/admin/events" },
+  { icon: Target, label: "IELTS Mentors", shortLabel: "IELTS", to: "/admin/ielts-mentors" },
+  { icon: Mail, label: "IELTS Applications", shortLabel: "IELTS Apps", to: "/admin/ielts-applications" },
   { icon: GraduationCap, label: "Course Enrollments", shortLabel: "Students", to: "/admin/enrollments" },
   { icon: Users, label: "Users", shortLabel: "Users", to: "/admin/users" },
   { icon: Star, label: "Reviews Moderation", shortLabel: "Reviews", to: "/admin/reviews" },

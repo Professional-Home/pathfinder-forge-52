@@ -98,6 +98,7 @@ const STATIC_ROUTES = [
   { path: '/tools/colony-counter', changefreq: 'monthly', priority: 0.6 },
   { path: '/webinars', changefreq: 'monthly', priority: 0.7 },
   { path: '/webinar', changefreq: 'monthly', priority: 0.6 },
+  { path: '/ielts', changefreq: 'weekly', priority: 0.8 },
   { path: '/spin', changefreq: 'monthly', priority: 0.5 },
   { path: '/disclaimer', changefreq: 'yearly', priority: 0.3 },
   { path: '/employees', changefreq: 'monthly', priority: 0.4 },

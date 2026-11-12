@@ -20,6 +20,7 @@ import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as OpportunitiesRouteImport } from './routes/opportunities'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as IeltsRouteImport } from './routes/ielts'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as EmployeesRouteImport } from './routes/employees'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
@@ -62,6 +63,8 @@ import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
 import { Route as AdminOpportunitiesRouteImport } from './routes/admin/opportunities'
 import { Route as AdminMentorsRouteImport } from './routes/admin/mentors'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminIeltsMentorsRouteImport } from './routes/admin/ielts-mentors'
+import { Route as AdminIeltsApplicationsRouteImport } from './routes/admin/ielts-applications'
 import { Route as AdminGuidanceRouteImport } from './routes/admin/guidance'
 import { Route as AdminEventsRouteImport } from './routes/admin/events'
 import { Route as AdminEnrollmentsRouteImport } from './routes/admin/enrollments'
@@ -128,6 +131,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IeltsRoute = IeltsRouteImport.update({
+  id: '/ielts',
+  path: '/ielts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsRoute = EventsRouteImport.update({
@@ -341,6 +349,16 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminIeltsMentorsRoute = AdminIeltsMentorsRouteImport.update({
+  id: '/ielts-mentors',
+  path: '/ielts-mentors',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminIeltsApplicationsRoute = AdminIeltsApplicationsRouteImport.update({
+  id: '/ielts-applications',
+  path: '/ielts-applications',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminGuidanceRoute = AdminGuidanceRouteImport.update({
   id: '/guidance',
   path: '/guidance',
@@ -414,6 +432,7 @@ export interface FileRoutesByFullPath {
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
   '/events': typeof EventsRouteWithChildren
+  '/ielts': typeof IeltsRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/opportunities': typeof OpportunitiesRouteWithChildren
@@ -431,6 +450,8 @@ export interface FileRoutesByFullPath {
   '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/guidance': typeof AdminGuidanceRoute
+  '/admin/ielts-applications': typeof AdminIeltsApplicationsRoute
+  '/admin/ielts-mentors': typeof AdminIeltsMentorsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRoute
@@ -477,6 +498,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
+  '/ielts': typeof IeltsRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
@@ -492,6 +514,8 @@ export interface FileRoutesByTo {
   '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/guidance': typeof AdminGuidanceRoute
+  '/admin/ielts-applications': typeof AdminIeltsApplicationsRoute
+  '/admin/ielts-mentors': typeof AdminIeltsMentorsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRoute
@@ -543,6 +567,7 @@ export interface FileRoutesById {
   '/disclaimer': typeof DisclaimerRoute
   '/employees': typeof EmployeesRoute
   '/events': typeof EventsRouteWithChildren
+  '/ielts': typeof IeltsRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/opportunities': typeof OpportunitiesRouteWithChildren
@@ -560,6 +585,8 @@ export interface FileRoutesById {
   '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/events': typeof AdminEventsRoute
   '/admin/guidance': typeof AdminGuidanceRoute
+  '/admin/ielts-applications': typeof AdminIeltsApplicationsRoute
+  '/admin/ielts-mentors': typeof AdminIeltsMentorsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/mentors': typeof AdminMentorsRoute
   '/admin/opportunities': typeof AdminOpportunitiesRoute
@@ -612,6 +639,7 @@ export interface FileRouteTypes {
     | '/disclaimer'
     | '/employees'
     | '/events'
+    | '/ielts'
     | '/login'
     | '/onboarding'
     | '/opportunities'
@@ -629,6 +657,8 @@ export interface FileRouteTypes {
     | '/admin/enrollments'
     | '/admin/events'
     | '/admin/guidance'
+    | '/admin/ielts-applications'
+    | '/admin/ielts-mentors'
     | '/admin/login'
     | '/admin/mentors'
     | '/admin/opportunities'
@@ -675,6 +705,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/disclaimer'
     | '/employees'
+    | '/ielts'
     | '/login'
     | '/onboarding'
     | '/privacy-policy'
@@ -690,6 +721,8 @@ export interface FileRouteTypes {
     | '/admin/enrollments'
     | '/admin/events'
     | '/admin/guidance'
+    | '/admin/ielts-applications'
+    | '/admin/ielts-mentors'
     | '/admin/login'
     | '/admin/mentors'
     | '/admin/opportunities'
@@ -740,6 +773,7 @@ export interface FileRouteTypes {
     | '/disclaimer'
     | '/employees'
     | '/events'
+    | '/ielts'
     | '/login'
     | '/onboarding'
     | '/opportunities'
@@ -757,6 +791,8 @@ export interface FileRouteTypes {
     | '/admin/enrollments'
     | '/admin/events'
     | '/admin/guidance'
+    | '/admin/ielts-applications'
+    | '/admin/ielts-mentors'
     | '/admin/login'
     | '/admin/mentors'
     | '/admin/opportunities'
@@ -808,6 +844,7 @@ export interface RootRouteChildren {
   DisclaimerRoute: typeof DisclaimerRoute
   EmployeesRoute: typeof EmployeesRoute
   EventsRoute: typeof EventsRouteWithChildren
+  IeltsRoute: typeof IeltsRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   OpportunitiesRoute: typeof OpportunitiesRouteWithChildren
@@ -904,6 +941,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ielts': {
+      id: '/ielts'
+      path: '/ielts'
+      fullPath: '/ielts'
+      preLoaderRoute: typeof IeltsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events': {
@@ -1200,6 +1244,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ielts-mentors': {
+      id: '/admin/ielts-mentors'
+      path: '/ielts-mentors'
+      fullPath: '/admin/ielts-mentors'
+      preLoaderRoute: typeof AdminIeltsMentorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ielts-applications': {
+      id: '/admin/ielts-applications'
+      path: '/ielts-applications'
+      fullPath: '/admin/ielts-applications'
+      preLoaderRoute: typeof AdminIeltsApplicationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/guidance': {
       id: '/admin/guidance'
       path: '/guidance'
@@ -1312,6 +1370,8 @@ interface AdminRouteChildren {
   AdminEnrollmentsRoute: typeof AdminEnrollmentsRoute
   AdminEventsRoute: typeof AdminEventsRoute
   AdminGuidanceRoute: typeof AdminGuidanceRoute
+  AdminIeltsApplicationsRoute: typeof AdminIeltsApplicationsRoute
+  AdminIeltsMentorsRoute: typeof AdminIeltsMentorsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMentorsRoute: typeof AdminMentorsRoute
   AdminOpportunitiesRoute: typeof AdminOpportunitiesRoute
@@ -1328,6 +1388,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEnrollmentsRoute: AdminEnrollmentsRoute,
   AdminEventsRoute: AdminEventsRoute,
   AdminGuidanceRoute: AdminGuidanceRoute,
+  AdminIeltsApplicationsRoute: AdminIeltsApplicationsRoute,
+  AdminIeltsMentorsRoute: AdminIeltsMentorsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMentorsRoute: AdminMentorsRoute,
   AdminOpportunitiesRoute: AdminOpportunitiesRoute,
@@ -1440,6 +1502,7 @@ const rootRouteChildren: RootRouteChildren = {
   DisclaimerRoute: DisclaimerRoute,
   EmployeesRoute: EmployeesRoute,
   EventsRoute: EventsRouteWithChildren,
+  IeltsRoute: IeltsRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   OpportunitiesRoute: OpportunitiesRouteWithChildren,

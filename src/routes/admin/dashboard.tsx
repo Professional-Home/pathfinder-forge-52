@@ -11,6 +11,7 @@ import {
   Mail,
   Star,
   Briefcase,
+  Target,
 } from "lucide-react";
 import { AdminGreeting, AdminCard, AdminListRow, AdminLinkRow } from "@/components/admin/admin-shared";
 import { DashboardCard } from "@/components/admin/DashboardCard";
@@ -45,6 +46,8 @@ const quickActions = [
   { icon: Plus, label: "Add Course", desc: "Create new course", to: "/admin/courses", accent: "text-student bg-student/10" },
   { icon: Briefcase, label: "Opportunities", desc: "Manage CMS", to: "/admin/opportunities", accent: "text-student bg-student/10" },
   { icon: Users, label: "Add Mentor", desc: "Onboard mentor", to: "/admin/mentors", accent: "text-startup bg-startup/10" },
+  { icon: Target, label: "IELTS Mentors", desc: "Manage IELTS coaches", to: "/admin/ielts-mentors", accent: "text-researcher bg-researcher/10" },
+  { icon: Mail, label: "IELTS Applications", desc: "Review applications", to: "/admin/ielts-applications", accent: "text-student bg-student/10" },
   { icon: Calendar, label: "Schedule Session", desc: "Book guidance", to: "/admin/guidance", accent: "text-researcher bg-researcher/10" },
   { icon: TrendingUp, label: "View Enrollments", desc: "Track progress", to: "/admin/enrollments", accent: "text-student bg-student/10" },
 ];
