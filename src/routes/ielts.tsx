@@ -11,8 +11,6 @@ import {
   Trophy,
   Award,
   Medal,
-  Users,
-  GraduationCap,
   BadgeCheck,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
@@ -164,9 +162,10 @@ function IELTSApplyPage() {
                 </p>
               </div>
             </div>
+          </div>
 
             {/* Mentors Showcase */}
-            <div className="mt-20">
+            <div className="mx-auto mt-20 w-full max-w-6xl">
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-border bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-600 uppercase tracking-widest mb-3">
@@ -189,6 +188,7 @@ function IELTSApplyPage() {
               </div>
             </div>
 
+            <div className="mx-auto max-w-2xl">
             <form
               onSubmit={handleSubmit}
               className="mt-16 rounded-2xl border border-border bg-surface-elevated p-8 sm:p-12 space-y-8"
@@ -450,9 +450,9 @@ function IELTSApplyPage() {
 /* ------------------------------------------------------------------ */
 
 const RANK_STYLES = [
-  { icon: Trophy, label: "#1 Top Mentor", badge: "bg-amber-400/15 text-amber-600 border-amber-400/30", ring: "ring-amber-400/50" },
-  { icon: Award, label: "#2 Rank", badge: "bg-slate-400/15 text-slate-500 border-slate-400/30", ring: "ring-slate-400/40" },
-  { icon: Medal, label: "#3 Rank", badge: "bg-orange-500/10 text-orange-600 border-orange-500/25", ring: "ring-orange-400/40" },
+  { icon: Trophy, label: "#1 Mentor", badge: "bg-amber-400/15 text-amber-600 border-amber-400/30" },
+  { icon: Award, label: "#2 Mentor", badge: "bg-slate-400/15 text-slate-500 border-slate-400/30" },
+  { icon: Medal, label: "#3 Mentor", badge: "bg-orange-500/10 text-orange-600 border-orange-500/25" },
 ] as const;
 
 function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
@@ -465,50 +465,40 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
     .join("")
     .toUpperCase();
   const rating = mentor.rating ?? 0;
+  const expertise = mentor.expertise || [];
+  const extraCount = expertise.length - 3;
   const whatsappHref = mentor.phone
     ? `https://wa.me/${mentor.phone.replace(/[^0-9]/g, "")}`
     : null;
 
   return (
-    <div
-      className={`group relative flex flex-col rounded-2xl border border-border bg-surface-elevated p-6 transition-shadow hover:shadow-lg ${
-        rankStyle ? `ring-2 ${rankStyle.ring}` : ""
-      }`}
-    >
-      {/* Rank badge */}
+    <div className="relative flex h-full flex-col rounded-2xl border border-border bg-surface-elevated p-6 transition-shadow hover:shadow-md">
+      {/* Rank badge — top-right corner, inside the card */}
       {rankStyle && RankIcon && (
         <span
-          className={`absolute -top-3 left-5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${rankStyle.badge}`}
+          className={`absolute right-5 top-5 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${rankStyle.badge}`}
         >
-          <RankIcon className="h-3.5 w-3.5" /> {rankStyle.label}
+          <RankIcon className="h-3 w-3" /> {rankStyle.label}
         </span>
       )}
 
       {/* Photo + name + rating */}
-      <div className="flex items-start gap-4 mt-2">
+      <div className="flex items-center gap-4 pr-24">
         {mentor.avatar_url ? (
           <img
             src={mentor.avatar_url}
             alt={mentor.name}
             loading="lazy"
-            className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-border"
+            className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-border"
           />
         ) : (
-          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gradient-to-br from-student/20 via-researcher/20 to-startup/20 font-display text-lg font-semibold text-foreground ring-2 ring-border">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-student/20 via-researcher/20 to-startup/20 font-display text-base font-semibold text-foreground ring-2 ring-border">
             {initials}
           </div>
         )}
         <div className="min-w-0">
-          <h3 className="truncate font-display text-lg font-semibold leading-snug">
-            {mentor.name}
-          </h3>
-          {mentor.qualification && (
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-student" />
-              <span className="truncate">{mentor.qualification}</span>
-            </p>
-          )}
-          <div className="mt-1.5 flex items-center gap-1">
+          <h3 className="font-display text-lg font-semibold leading-tight">{mentor.name}</h3>
+          <div className="mt-1 flex items-center gap-1.5">
             <div className="flex" aria-label={`Rated ${rating} out of 5`}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
@@ -526,39 +516,45 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
         </div>
       </div>
 
-      {/* Bio */}
-      {mentor.bio && (
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{mentor.bio}</p>
+      {/* Qualification */}
+      {mentor.qualification && (
+        <p className="mt-4 flex items-start gap-1.5 text-xs text-muted-foreground">
+          <BadgeCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-student" />
+          <span>{mentor.qualification}</span>
+        </p>
       )}
 
-      {/* Stats row */}
-      <div className="mt-4 grid grid-cols-2 gap-3">
+      {/* Bio */}
+      {mentor.bio && (
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          {mentor.bio}
+        </p>
+      )}
+
+      {/* Stats */}
+      <div className="mt-5 grid grid-cols-2 gap-3">
         <div className="rounded-lg border border-border bg-background px-3 py-2">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <GraduationCap className="h-3.5 w-3.5" />
-            <span className="text-[10px] font-semibold uppercase tracking-wide">Experience</span>
-          </div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Experience
+          </p>
           <p className="mt-0.5 text-sm font-semibold text-foreground">
             {mentor.experience_years}+ yrs
           </p>
         </div>
         <div className="rounded-lg border border-border bg-background px-3 py-2">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Users className="h-3.5 w-3.5" />
-            <span className="text-[10px] font-semibold uppercase tracking-wide">Students</span>
-          </div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Students
+          </p>
           <p className="mt-0.5 text-sm font-semibold text-foreground">
-            {mentor.students_taught != null
-              ? mentor.students_taught.toLocaleString() + "+"
-              : "—"}
+            {mentor.students_taught != null ? mentor.students_taught.toLocaleString() + "+" : "—"}
           </p>
         </div>
       </div>
 
-      {/* Expertise chips */}
-      {mentor.expertise?.length > 0 && (
+      {/* Expertise */}
+      {expertise.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {mentor.expertise.slice(0, 4).map((tag) => (
+          {expertise.slice(0, 3).map((tag) => (
             <span
               key={tag}
               className="rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] font-medium text-foreground"
@@ -566,23 +562,33 @@ function MentorCard({ mentor, rank }: { mentor: IELTSMentor; rank: number }) {
               {tag}
             </span>
           ))}
+          {extraCount > 0 && (
+            <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              +{extraCount}
+            </span>
+          )}
         </div>
       )}
 
+      {/* Spacer pushes the footer to the bottom so all cards align */}
+      <div className="flex-1" aria-hidden />
+
       {/* Footer: rate + contact */}
-      <div className="mt-auto flex items-center justify-between gap-3 border-t border-border pt-4">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-4">
+        <div className="min-w-0">
+          <p className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             Session Rate
           </p>
-          <p className="text-sm font-semibold text-foreground">{mentor.hourly_rate || "—"}</p>
+          <p className="truncate text-sm font-semibold text-foreground">
+            {mentor.hourly_rate || "—"}
+          </p>
         </div>
         {whatsappHref && (
           <a
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-full bg-green-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
           >
             <Phone className="h-3.5 w-3.5" /> WhatsApp
           </a>
