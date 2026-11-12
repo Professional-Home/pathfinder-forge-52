@@ -16,9 +16,17 @@ CREATE TABLE IF NOT EXISTS public.ielts_mentors (
     avatar_url TEXT,
     is_active BOOLEAN DEFAULT true,
     hourly_rate TEXT,
+    -- Ranking / reputation fields
+    rating NUMERIC(2,1) DEFAULT 4.5 CHECK (rating >= 0 AND rating <= 5),
+    students_taught INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- If you already ran the OLD version of this file, these ALTERs add the new
+-- columns without touching your existing data. Safe to run either way.
+ALTER TABLE public.ielts_mentors ADD COLUMN IF NOT EXISTS rating NUMERIC(2,1) DEFAULT 4.5;
+ALTER TABLE public.ielts_mentors ADD COLUMN IF NOT EXISTS students_taught INTEGER DEFAULT 0;
 
 -- 2. IELTS Applications table (User applications)
 CREATE TABLE IF NOT EXISTS public.ielts_applications (
@@ -73,10 +81,11 @@ CREATE INDEX IF NOT EXISTS idx_ielts_applications_created ON public.ielts_applic
 CREATE INDEX IF NOT EXISTS idx_ielts_applications_mentor ON public.ielts_applications (mentor_id);
 
 -- 7. Seed some default IELTS mentors (optional - you can add more via admin panel)
-INSERT INTO public.ielts_mentors (name, email, phone, expertise, experience_years, qualification, bio, is_active, hourly_rate) VALUES
-    ('Sarah Johnson', 'sarah.johnson@micrylisbiotech.com', '+91 98765 43210', ARRAY['IELTS Academic', 'IELTS General', 'Speaking'], 8, 'MA TESOL, Cambridge CELTA', 'Expert IELTS trainer with 8+ years experience helping students achieve Band 7+ scores.', true, '₹1,500/hr'),
-    ('Michael Chen', 'michael.chen@micrylisbiotech.com', '+91 98765 43211', ARRAY['IELTS Academic', 'Writing', 'Reading'], 6, 'M.Ed, British Council Certified', 'Specialized in Academic IELTS writing and reading modules. Proven track record of Band 8+ results.', true, '₹1,200/hr'),
-    ('Emma Rodriguez', 'emma.rodriguez@micrylisbiotech.com', '+91 98765 43212', ARRAY['IELTS General', 'Listening', 'Speaking'], 5, 'BA Linguistics, IDP Certified', 'General IELTS specialist focusing on immigration and work visa candidates.', true, '₹1,000/hr')
+-- avatar_url: replace with real photos from Supabase Storage or any image URL via the Admin panel
+INSERT INTO public.ielts_mentors (name, email, phone, expertise, experience_years, qualification, bio, is_active, hourly_rate, rating, students_taught) VALUES
+    ('Sarah Johnson', 'sarah.johnson@micrylisbiotech.com', '+91 98765 43210', ARRAY['IELTS Academic', 'IELTS General', 'Speaking'], 8, 'MA TESOL, Cambridge CELTA', 'Expert IELTS trainer with 8+ years experience helping students achieve Band 7+ scores.', true, '₹1,500/hr', 4.9, 1200),
+    ('Michael Chen', 'michael.chen@micrylisbiotech.com', '+91 98765 43211', ARRAY['IELTS Academic', 'Writing', 'Reading'], 6, 'M.Ed, British Council Certified', 'Specialized in Academic IELTS writing and reading modules. Proven track record of Band 8+ results.', true, '₹1,200/hr', 4.8, 950),
+    ('Emma Rodriguez', 'emma.rodriguez@micrylisbiotech.com', '+91 98765 43212', ARRAY['IELTS General', 'Listening', 'Speaking'], 5, 'BA Linguistics, IDP Certified', 'General IELTS specialist focusing on immigration and work visa candidates.', true, '₹1,000/hr', 4.7, 780)
 ON CONFLICT (email) DO NOTHING;
 
 -- ====================================================================

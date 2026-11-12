@@ -10,6 +10,7 @@ import {
   Phone,
   Users,
   Clock,
+  Star,
 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
@@ -57,6 +58,8 @@ interface AdminIELTSMentor {
   avatar_url?: string | null;
   is_active: boolean;
   hourly_rate?: string | null;
+  rating?: number | null;
+  students_taught?: number | null;
   created_at: string;
 }
 
@@ -79,6 +82,8 @@ function AdminIELTSMentorsPage() {
     avatar_url: "",
     is_active: true,
     hourly_rate: "",
+    rating: 4.5,
+    students_taught: 0,
   });
   const [loading, setLoading] = useState(false);
 
@@ -129,6 +134,8 @@ function AdminIELTSMentorsPage() {
       avatar_url: "",
       is_active: true,
       hourly_rate: "",
+      rating: 4.5,
+      students_taught: 0,
     });
     setDialogOpen(true);
   }
@@ -146,6 +153,8 @@ function AdminIELTSMentorsPage() {
       avatar_url: mentor.avatar_url || "",
       is_active: mentor.is_active,
       hourly_rate: mentor.hourly_rate || "",
+      rating: mentor.rating ?? 4.5,
+      students_taught: mentor.students_taught ?? 0,
     });
     setDialogOpen(true);
   }
@@ -166,6 +175,8 @@ function AdminIELTSMentorsPage() {
       avatar_url: form.avatar_url || null,
       is_active: form.is_active,
       hourly_rate: form.hourly_rate || null,
+      rating: Math.min(5, Math.max(0, Number(form.rating) || 0)),
+      students_taught: Number(form.students_taught) || 0,
     };
 
     setLoading(true);
@@ -250,6 +261,7 @@ function AdminIELTSMentorsPage() {
                         <TableHead className="hidden sm:table-cell">Email</TableHead>
                         <TableHead className="hidden sm:table-cell">Expertise</TableHead>
                         <TableHead className="hidden lg:table-cell">Experience</TableHead>
+                        <TableHead className="hidden lg:table-cell">Rating</TableHead>
                         <TableHead className="hidden sm:table-cell">Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -294,6 +306,12 @@ function AdminIELTSMentorsPage() {
                           </TableCell>
                           <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                             {mentor.experience_years} years
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <span className="inline-flex items-center gap-1 text-sm font-medium">
+                              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                              {(mentor.rating ?? 0).toFixed(1)}
+                            </span>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
                             <button
@@ -435,6 +453,45 @@ function AdminIELTSMentorsPage() {
                 onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
                 className="border-border"
                 placeholder="₹1,500/hr"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Rating (0–5)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min={0}
+                  max={5}
+                  value={form.rating}
+                  onChange={(e) =>
+                    setForm({ ...form, rating: Number(e.target.value) || 0 })
+                  }
+                  className="border-border"
+                  placeholder="4.9"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Students Taught</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={form.students_taught}
+                  onChange={(e) =>
+                    setForm({ ...form, students_taught: Number(e.target.value) || 0 })
+                  }
+                  className="border-border"
+                  placeholder="1200"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Photo URL</Label>
+              <Input
+                value={form.avatar_url}
+                onChange={(e) => setForm({ ...form, avatar_url: e.target.value })}
+                className="border-border"
+                placeholder="https://... (mentor photo)"
               />
             </div>
             <div className="flex items-center gap-2">

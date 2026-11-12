@@ -194,6 +194,8 @@ export async function createIELTSMentor(
         avatar_url: data.avatar_url || null,
         is_active: data.is_active,
         hourly_rate: data.hourly_rate || null,
+        rating: data.rating ?? 4.5,
+        students_taught: data.students_taught ?? 0,
       },
     ]);
 

@@ -22,6 +22,10 @@ export interface IELTSMentor {
   avatar_url?: string;
   is_active: boolean;
   hourly_rate?: string;
+  /** Reputation score 0–5, used for mentor ranking on the public page */
+  rating?: number;
+  /** Total students mentored, shown on the public mentor cards */
+  students_taught?: number;
   created_at: string;
   updated_at: string;
 }
@@ -65,6 +69,8 @@ export interface IELTSMentorFormData {
   avatar_url?: string;
   is_active: boolean;
   hourly_rate?: string;
+  rating?: number;
+  students_taught?: number;
 }
 
 export interface IELTSApplyResult {
@@ -114,3 +120,68 @@ export const IELTS_STATUS_LABELS: Record<IELTSApplicationStatus, { label: string
   enrolled: { label: "Enrolled", color: "text-green-600 bg-green-50" },
   rejected: { label: "Rejected", color: "text-red-600 bg-red-50" },
 };
+
+// Fallback mentors shown on the public /ielts page when Supabase is empty/unreachable
+export const SEED_MENTORS: IELTSMentor[] = [
+  {
+    id: "seed-1",
+    name: "Sarah Johnson",
+    email: "sarah.johnson@micrylisbiotech.com",
+    phone: "+91 98765 43210",
+    expertise: ["IELTS Academic", "IELTS General", "Speaking"],
+    experience_years: 8,
+    qualification: "MA TESOL, Cambridge CELTA",
+    bio: "Expert IELTS trainer with 8+ years experience helping students achieve Band 7+ scores.",
+    is_active: true,
+    hourly_rate: "₹1,500/hr",
+    rating: 4.9,
+    students_taught: 1200,
+    created_at: "",
+    updated_at: "",
+  },
+  {
+    id: "seed-2",
+    name: "Michael Chen",
+    email: "michael.chen@micrylisbiotech.com",
+    phone: "+91 98765 43211",
+    expertise: ["IELTS Academic", "Writing", "Reading"],
+    experience_years: 6,
+    qualification: "M.Ed, British Council Certified",
+    bio: "Specialized in Academic IELTS writing and reading modules. Proven track record of Band 8+ results.",
+    is_active: true,
+    hourly_rate: "₹1,200/hr",
+    rating: 4.8,
+    students_taught: 950,
+    created_at: "",
+    updated_at: "",
+  },
+  {
+    id: "seed-3",
+    name: "Emma Rodriguez",
+    email: "emma.rodriguez@micrylisbiotech.com",
+    phone: "+91 98765 43212",
+    expertise: ["IELTS General", "Listening", "Speaking"],
+    experience_years: 5,
+    qualification: "BA Linguistics, IDP Certified",
+    bio: "General IELTS specialist focusing on immigration and work visa candidates.",
+    is_active: true,
+    hourly_rate: "₹1,000/hr",
+    rating: 4.7,
+    students_taught: 780,
+    created_at: "",
+    updated_at: "",
+  },
+];
+
+/**
+ * Sort mentors by ranking: rating first, then experience, then students taught.
+ */
+export function sortMentorsByRank(mentors: IELTSMentor[]): IELTSMentor[] {
+  return [...mentors].sort((a, b) => {
+    const ratingDiff = (b.rating ?? 0) - (a.rating ?? 0);
+    if (ratingDiff !== 0) return ratingDiff;
+    const expDiff = (b.experience_years ?? 0) - (a.experience_years ?? 0);
+    if (expDiff !== 0) return expDiff;
+    return (b.students_taught ?? 0) - (a.students_taught ?? 0);
+  });
+}
