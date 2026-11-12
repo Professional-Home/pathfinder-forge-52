@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Instagram, Linkedin, Mail, MapPin, Phone, Youtube } from "lucide-react";
+import { Instagram, Linkedin, Mail, MapPin, MessageCircle, Youtube } from "lucide-react";
 import { Wordmark, GooglePlayIcon } from "@/components/brand";
 import { PLAY_STORE_URL } from "@/lib/app-config";
 
@@ -23,6 +23,7 @@ const SOCIAL_LINKS = [
   { name: "Instagram", href: "https://www.instagram.com/micrylis?igsh=cjR4ZGR1am1ubmI0", icon: Instagram },
   { name: "LinkedIn", href: "https://www.linkedin.com/in/micrylis-biotech-a4a4063aa/", icon: Linkedin },
   { name: "YouTube", href: "https://www.youtube.com/@micrylisbiotech", icon: Youtube },
+  { name: "WhatsApp Community", href: "https://chat.whatsapp.com/GfDUk67rDA7EgBNYeQZ27u", icon: MessageCircle },
 ] as const;
 
 function FooterNavLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -172,13 +173,14 @@ function SiteFooterComponent() {
 
                 <li>
                   <a
-                    href="tel:+91 88490 05635"
+                    href="https://wa.me/918849005635"
                     className="group flex items-center gap-3 transition-colors hover:text-white"
                   >
                     <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/80 group-hover:bg-[#2dd4bf]/15 group-hover:text-[#5eead4]">
-                      <Phone className="h-3.5 w-3.5" strokeWidth={2} />
+                      <MessageCircle className="h-3.5 w-3.5" strokeWidth={2} />
                     </span>
                     <span className="font-medium text-white/90">+91 88490 05635</span>
+                    <span className="text-xs text-white/45">WhatsApp</span>
                   </a>
                 </li>
 

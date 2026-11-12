@@ -51,7 +51,7 @@ function About() {
                 <div className="rounded-xl border border-border bg-surface-elevated p-6">
                   <h3 className="font-semibold text-foreground mb-2">Phone & WhatsApp Support</h3>
                   <p className="text-sm">Reach out to our helpline directly for assistance with enrollments and queries.</p>
-                  <a href="tel:+918849005635" className="mt-4 inline-block text-sm font-mono text-foreground hover:underline">
+                  <a href="https://wa.me/918849005635" className="mt-4 inline-block text-sm font-mono text-foreground hover:underline">
                     +91 88490 05635
                   </a>
                 </div>

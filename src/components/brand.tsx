@@ -33,11 +33,11 @@ export function Wordmark({
         }`}
       />
       <span
-        className={`font-semibold leading-none tracking-tight transition-[font-size,color] duration-300 ${
+        className={`font-semibold leading-none tracking-[-0.02em] transition-[font-size,color] duration-300 ${
           compact ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
         } ${isDark ? "text-white" : "text-foreground"}`}
       >
-        micrylis
+        Micrylis
       </span>
     </Link>
   );
