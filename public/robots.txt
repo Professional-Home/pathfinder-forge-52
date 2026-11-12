@@ -14,4 +14,4 @@ Disallow: /auth/callback
 Disallow: /onboarding
 
 # Sitemap location (dynamic domain)
-Sitemap: https://micrylis.vercel.app/sitemap.xml
+Sitemap: https://project.micrylisbiotech.com/sitemap.xml

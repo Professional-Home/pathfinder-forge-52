@@ -6,140 +6,140 @@
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
   <url>
-    <loc>https://micrylis.vercel.app/</loc>
-    <lastmod>2026-11-12T13:32:18.523Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/</loc>
+    <lastmod>2026-11-12T14:00:14.363Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/about</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/about</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/blog</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/blog</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/community</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/community</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/community/competitions</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/community/competitions</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/community/conferences</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/community/conferences</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/community/events</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/community/events</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/community/national-bio-challenge</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/community/national-bio-challenge</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/community/webinars</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/community/webinars</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/community/workshops</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/community/workshops</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/courses</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/courses</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/disclaimer</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/disclaimer</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/employees</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/employees</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/events</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/events</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/opportunities</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/opportunities</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/privacy-policy</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/privacy-policy</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/projects</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/projects</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/refund-policy</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/refund-policy</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/return-policy</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/return-policy</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/spin</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/spin</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/tools/colony-counter</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/tools/colony-counter</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/webinar</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/webinar</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://micrylis.vercel.app/webinars</loc>
-    <lastmod>2026-11-12T13:32:18.524Z</lastmod>
+    <loc>https://project.micrylisbiotech.com/webinars</loc>
+    <lastmod>2026-11-12T14:00:14.370Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
