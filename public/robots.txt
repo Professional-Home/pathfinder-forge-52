@@ -1,0 +1,17 @@
+# Micrylis Biotech - robots.txt
+# Generated automatically. Do not edit manually.
+
+User-agent: *
+Allow: /
+
+# Disallow private and admin areas
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+Disallow: /auth/callback
+Disallow: /onboarding
+
+# Sitemap location (dynamic domain)
+Sitemap: https://micrylis.vercel.app/sitemap.xml
