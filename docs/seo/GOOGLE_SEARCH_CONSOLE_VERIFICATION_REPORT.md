@@ -3,32 +3,38 @@
 **Date**: November 14, 2026  
 **Production Domain**: `https://project.micrylisbiotech.com`  
 **Git Branch**: `feature/seo-optimization`  
+**Status**: **VERIFIED & ACTIVE (Ownership Auto-Verified)**  
 
 ---
 
 ## 1. Overview & Objective
-To establish official Google Search Console (GSC) property ownership for `https://project.micrylisbiotech.com` using the HTML file verification method.
+To establish and maintain official Google Search Console (GSC) property ownership for `https://project.micrylisbiotech.com` using the HTML file verification method.
+
+As of November 14, 2026, property ownership has been **successfully verified** by Google Search Console (`Ownership auto verified`).
 
 ---
 
-## 2. Root Cause Analysis: Filename Mismatch Discovered
+## 2. Verification History & Token Management
 
-### A. Phase 1 Initial Observation
-During the initial Phase 1 repository audit, a file named `public/google2217dd6b41f733b3.html` was identified in the repository and confirmed live on the production Vercel server (`HTTP 200 OK`). This file was initially recorded in the audit as the verification asset.
+### A. Token Progression
+1. **Legacy Token (`google2217dd6b41f733b3.html`)**:
+   - Initial pre-existing token found in repository.
+   - Preserved in production to maintain backwards compatibility.
+2. **First Hotfix Token (`googlee4c634efcfa8054e.html`)**:
+   - Added via isolated branch `fix/google-search-console-verification` and merged to `main` via PR #21 (`5b23fd8`).
+   - Content: `google-site-verification: googlee4c634efcfa8054e.html`
+   - Verified live on production (`HTTP 200 OK`).
+3. **Active Official Token (`googlea1738a9f0280edb8.html`)**:
+   - Supplied by Google Search Console during active property setup.
+   - Added via isolated branch `fix/google-search-console-verification-v2` and merged to `main` via PR #22 (`1d9cb55`).
+   - Exact Content: `google-site-verification: googlea1738a9f0280edb8.html`
+   - Deployed live on production at `https://project.micrylisbiotech.com/googlea1738a9f0280edb8.html`.
+   - Confirmed live: `HTTP/1.1 200 OK` (Server: Vercel, Cache: HIT).
+   - **Google Search Console Result: "Ownership auto verified"**.
 
-### B. Filename Discrepancy Identified
-The user provided the actual, definitive Google Search Console verification token requested by Google for the active `https://project.micrylisbiotech.com` property:
-* **Required Filename**: `googlee4c634efcfa8054e.html`
-* **Required Content**: `google-site-verification: googlee4c634efcfa8054e.html`
-
-The previous file (`google2217dd6b41f733b3.html`) was an earlier or alternate token. Attempting verification with the old token in Google Search Console fails because Google specifically looks for `googlee4c634efcfa8054e.html`.
-
-### C. Resolution Strategy
-1. **Preservation**: The legacy file `public/google2217dd6b41f733b3.html` was preserved untouched to avoid breaking any legacy property associations.
-2. **Implementation**: The exact required file `public/googlee4c634efcfa8054e.html` was created in the static root `public/` directory with exact single-line content:
-   ```text
-   google-site-verification: googlee4c634efcfa8054e.html
-   ```
+### B. Preservation Requirement
+> [!IMPORTANT]
+> The verification file `public/googlea1738a9f0280edb8.html` MUST remain permanently on the production website. Google periodically re-verifies ownership; removing or modifying this file will revoke Search Console property ownership.
 
 ---
 
@@ -36,45 +42,42 @@ The previous file (`google2217dd6b41f733b3.html`) was an earlier or alternate to
 
 ### A. Static Directory Structure
 In this TanStack Start / Vite / Nitro project architecture:
-* Static assets placed in `public/` are mapped directly to the root path of the application.
-* File Location: `public/googlee4c634efcfa8054e.html`
-* Expected Production URL: `https://project.micrylisbiotech.com/googlee4c634efcfa8054e.html`
+* Static assets placed in `public/` are served directly at the root domain by Vercel.
+* File Location: `public/googlea1738a9f0280edb8.html`
+* Live Production URL: `https://project.micrylisbiotech.com/googlea1738a9f0280edb8.html`
 
-### B. Production Build Output Verification
-The production build was executed (`npm run build` using Vite 8 and Nitro Vercel preset).
-* Output Location: `.vercel/output/static/googlee4c634efcfa8054e.html`
-* Status: **CONFIRMED INCLUDED IN BUILD OUTPUT**
-* Content Verification:
+### B. Live Production Endpoint Diagnostics
+- **Command**: `curl.exe -s -i https://project.micrylisbiotech.com/googlea1738a9f0280edb8.html`
+- **Response**:
   ```text
-  google-site-verification: googlee4c634efcfa8054e.html
+  HTTP/1.1 200 OK
+  Server: Vercel
+  Content-Type: text/html; charset=utf-8
+  Content-Length: 54
+  X-Vercel-Cache: HIT
+
+  google-site-verification: googlea1738a9f0280edb8.html
   ```
-* Header & Fallback Safety: Being a static file in `.vercel/output/static/`, Vercel serves it directly with `Content-Type: text/html` without falling back to the Single Page Application (SPA) client bundle.
+- **Verification Method**: HTML file upload
+- **GSC Feedback**: Ownership auto verified
 
 ---
 
-## 4. Production Verification Status
+## 4. Verification Checkpoint Status
 
-| Checkpoint | Target | Current Status | Notes |
+| Checkpoint | Target | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| **Local File Created** | `public/googlee4c634efcfa8054e.html` | **COMPLETED** | Exact filename and content verified. |
-| **Build Package Inclusion** | `.vercel/output/static/` | **VERIFIED** | Vite build copies file to static output directory. |
-| **Live Production Check** | `https://project.micrylisbiotech.com/googlee4c634efcfa8054e.html` | **HTTP 404 (Pending Deploy)** | The file has not yet been deployed to the live production server. |
-| **GSC Console Verification** | Google Search Console UI | **PENDING USER DEPLOYMENT** | Verification can be finalized as soon as the commit is deployed to production. |
-
-> [!IMPORTANT]
-> A live HTTP 404 is expected at this stage because deployment to production has not occurred. Do not attempt to click "Verify" in Google Search Console until the user deploys `feature/seo-optimization` or merges to the deployment branch.
+| **Active Verification Token** | `public/googlea1738a9f0280edb8.html` | **LIVE & ACTIVE** | Merged via PR #22 into `main` and deployed to Vercel. |
+| **Legacy / Secondary Tokens** | `googlee4c634efcfa8054e.html`, `google2217dd6b41f733b3.html` | **PRESERVED** | Kept intact in production to prevent regressions. |
+| **Production HTTP Response** | `https://project.micrylisbiotech.com/googlea1738a9f0280edb8.html` | **HTTP 200 OK** | Serves exact verification string with `text/html; charset=utf-8`. |
+| **GSC Console Ownership** | Google Search Console UI | **OWNERSHIP AUTO VERIFIED** | Successfully recognized by Google Search Console. |
+| **Permanent Preservation** | Production Repository | **LOCKED** | Must never be deleted, modified, or overwritten. |
 
 ---
 
-## 5. Remaining Manual Action Required by User
+## 5. Next Steps for Google Search Console
 
-1. **Deploy Feature Branch to Production**:
-   * Review and approve the git commit on `feature/seo-optimization`.
-   * Deploy to production via the user's standard deployment workflow (e.g. Vercel preview/production deploy or merge).
-2. **Verify Live Endpoint**:
-   * Test: `curl -I https://project.micrylisbiotech.com/googlee4c634efcfa8054e.html`
-   * Confirm response is `HTTP/1.1 200 OK` and returns `google-site-verification: googlee4c634efcfa8054e.html`.
-3. **Complete GSC Verification**:
-   * In [Google Search Console](https://search.google.com/search-console), select the property for `https://project.micrylisbiotech.com`.
-   * Choose **HTML file** verification method.
-   * Click **Verify**.
+1. [x] **HTML Verification File Live & Auto-Verified**: Property ownership is established.
+2. [ ] **Sitemap Submission**: Submit `https://project.micrylisbiotech.com/sitemap.xml` in GSC after Phase 5 sitemap overhaul is deployed to production.
+3. [ ] **URL Inspection & Indexing Monitoring**: Monitor Google indexing reports as Phase 2 through Phase 4 metadata and structured data are rolled out.
+4. [ ] **Core Web Vitals Monitoring**: Track real-user CrUX data and field metrics reported in Search Console.
