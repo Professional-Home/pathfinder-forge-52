@@ -4,18 +4,17 @@ import { Users, Calendar, MapPin, Globe, ArrowRight, ExternalLink, MessageSquare
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/community/conferences")({
-  head: () => ({
-    meta: [
-      { title: "Biotechnology Conferences & Meetups — Micrylis" },
-      {
-        name: "description",
-        content: "Discover academic conferences, student symposiums, and regional biotech networking meetups.",
-      },
-    ],
-  }),
   component: ConferencesPage,
+  head: () =>
+    createSeoHead({
+      title: "Biotechnology Conferences & Meetups — Micrylis Biotech",
+      description:
+        "Discover academic conferences, student symposiums, and regional biotech networking meetups.",
+      path: "/community/conferences",
+    }),
 });
 
 const CONFERENCES = [

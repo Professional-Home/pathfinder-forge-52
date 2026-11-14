@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -19,17 +20,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/community/national-bio-challenge")({
-  head: () => ({
-    meta: [
-      { title: "National Bio Challenge 2026 — Micrylis Biotech" },
-      {
-        name: "description",
-        content:
-          "India's premier biotechnology innovation challenge. Compete for seed grants, laboratory incubation, and expert mentorship.",
-      },
-    ],
-  }),
   component: NationalBioChallengePage,
+  head: () =>
+    createSeoHead({
+      title: "National Bio Challenge 2026 — Micrylis Biotech",
+      description:
+        "India's premier biotechnology innovation challenge. Compete for seed grants, laboratory incubation, and expert mentorship.",
+      path: "/community/national-bio-challenge",
+    }),
 });
 
 const TRACKS = [

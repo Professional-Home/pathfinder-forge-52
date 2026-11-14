@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { ArrowRight, Sparkles, Rocket, Check, Users, Map, Trophy, Milestone, LayoutDashboard, Plus, Star, MessageSquare, Send, CheckCircle2 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -58,8 +59,15 @@ function AnimatedStat({ value }: { value: string }) {
   );
 }
 
-export const Route = createFileRoute("/")(  {
+export const Route = createFileRoute("/")({
   component: Landing,
+  head: () =>
+    createSeoHead({
+      title: "Micrylis Biotech — Personalized Mentorship & Biotech Research Projects",
+      description:
+        "Launch your biotechnology career with hands-on research projects, 1-on-1 mentorship, and certified training in bioplastics, AI drug discovery, and bioinformatics.",
+      path: "/",
+    }),
 });
 
 function Landing() {

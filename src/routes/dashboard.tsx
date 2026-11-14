@@ -13,6 +13,11 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/dashboard")({
+  head: () => ({
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   beforeLoad: async ({ location }) => {
     // OAuth callback: Supabase appends #access_token=... to the redirect URL.
     // We wait briefly for the Supabase client to auto-exchange the token,

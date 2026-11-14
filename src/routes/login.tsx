@@ -13,7 +13,7 @@ export const Route = createFileRoute("/login")({
     meta: [
       { title: "Sign in — Micrylis" },
       { name: "description", content: "Sign in to your Micrylis account and continue your growth journey." },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: LoginPage,

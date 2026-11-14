@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalLayout, LegalSection } from "@/components/LegalLayout";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/privacy-policy")({
   component: PrivacyPolicy,
+  head: () =>
+    createSeoHead({
+      title: "Privacy Policy — Micrylis Biotech",
+      description:
+        "Read the official Privacy Policy of Micrylis Biotech. Learn how we collect, protect, and manage your personal and project information.",
+      path: "/privacy-policy",
+    }),
 });
 
 function PrivacyPolicy() {

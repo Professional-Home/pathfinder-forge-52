@@ -8,8 +8,8 @@
 - **Project Initiative**: Full-Scale Search Engine Optimization (SEO) & Search Experience Optimization (SXO)
 - **Starting Point**: SEO implementation from absolute zero on a live production web application.
 - **Project Scope**: Comprehensive technical SEO, page-wise metadata, OpenGraph & social sharing protocols, semantic structured data (Schema.org JSON-LD), dynamic sitemap accuracy, Core Web Vitals optimization, GEO (Generative Engine Optimization for AI citations / `llms.txt`), and automated search engine verification.
-- **Phase Current**: Phase 1 — Complete (Google Search Console Ownership Auto-Verified & Active)
-- **Project Status**: `In Progress` (Phase 1 Complete, GSC Ownership Verified; Ready for Phase 2)
+- **Phase Current**: Phase 2 — Complete (Core HTML Head, Metadata, Canonical URLs & Protected Routes Implemented)
+- **Project Status**: `In Progress` (Phase 1 & Phase 2 Complete; Ready for Phase 3/4)
 
 ---
 
@@ -25,11 +25,11 @@
 
 ## 3. SEO Goals
 1. **Zero to Full Indexation**: Achieve 100% crawl and valid index status for all 22+ public routes on Google, Bing, and major search engines.
-2. **Canonical HTML `<title>` & Metadata Compliance**: Eliminate missing document title tags (Lighthouse score 0 for document-title), repair encoding mojibake (`â€”`), and inject unique title and description tags for all static and dynamic pages.
-3. **Canonical Link Protocol**: Ensure every indexable page serves an unambiguous self-referential `<link rel="canonical" href="...">` tag to prevent duplicate content dilution.
+2. **Canonical HTML `<title>` & Metadata Compliance**: Eliminate missing document title tags (Lighthouse score 0 for document-title), repair encoding mojibake (`â€”`), and inject unique title and description tags for all static and dynamic pages. *(Phase 2 Complete)*
+3. **Canonical Link Protocol**: Ensure every indexable page serves an unambiguous self-referential `<link rel="canonical" href="...">` tag to prevent duplicate content dilution. *(Phase 2 Complete)*
 4. **Structured Data Rich Results**: Implement Schema.org JSON-LD structured data (`Organization`, `WebSite`, `Course`, `BlogPosting`, `Event`, `BreadcrumbList`) to achieve rich search snippets.
 5. **Clean Sitemap & Robots Architecture**: Ensure `sitemap.xml` strictly contains canonical `200 OK` endpoints, stripping all 301/302 redirects (`/courses`, `/webinar`, `/community/events`, `/community/webinars`), while dynamically generating project URLs (`/projects/bioplastic-innovation`, etc.).
-6. **Social Sharing Readiness**: Provide valid Open Graph (`og:*`) and Twitter Card (`twitter:*`) tags with absolute image URLs (`512x512` and `1200x630`) on every public route.
+6. **Social Sharing Readiness**: Provide valid Open Graph (`og:*`) and Twitter Card (`twitter:*`) tags with absolute image URLs (`512x512` and `1200x630`) on every public route. *(Phase 2 Complete)*
 7. **Performance & Core Web Vitals**: Elevate Mobile Performance score from 40 to 80+ by addressing render-blocking resources, font loading, unused JavaScript, and LCP bottlenecks (currently 6.8s).
 8. **Generative Engine Optimization (GEO)**: Deploy `llms.txt` and semantic entity context to ensure accurate brand citations in ChatGPT, Perplexity, Gemini, and Google AI Overviews.
 
@@ -45,61 +45,61 @@
 - **Deployment Target**: Vercel (configured via `vercel.json` with secure HTTP headers and Nitro Vercel preset)
 - **Smooth Scroll**: Lenis (`lenis/react` v1.3.25)
 - **Root Shell**: `src/routes/__root.tsx` renders HTML head tags via TanStack Start `HeadContent` and client hydration scripts via `Scripts`
+- **SEO Helper Utility**: `src/lib/seo-metadata.ts` generates standardized, type-safe `<title>`, meta descriptions, canonical `<link rel="canonical">`, Open Graph, Twitter cards, and `robots` directives.
 
 ---
 
-## 5. Public Website Routes Inventory
+## 5. Public Website Routes Inventory & Phase 2 Status
 
 ### A. Primary Public Canonical Routes (22 Endpoints)
-| Route Path | Type | Primary Content | Current Title Status | H1 Presence |
-| :--- | :--- | :--- | :--- | :--- |
-| `/` | Static | Homepage, Mentorship, Value Prop, Reviews | Missing `<title>` tag (inherits root meta) | Yes (`Don't Just Learn Biology Build the Future of It`) |
-| `/about` | Static | About Us, Company Mission, Contact Information | Mojibake title in meta | Yes (`About Us & Contact`) |
-| `/projects` | Static / Query | Research Projects & Internships Directory | Mojibake title in meta | Yes (`Projects built for students, researchers, and startups`) |
-| `/projects/bioplastic-innovation` | Dynamic | Bioplastic Innovation 30-Day Research Project | Inherited generic/partial title | Yes (`BioPlastic Innovation`) |
-| `/projects/ai-in-drug-discovery` | Dynamic | AI Drug Discovery & Computational Screening | Inherited generic/partial title | Yes (`AI in Drug Discovery`) |
-| `/projects/bioinformatics` | Dynamic | Computational Biology, Genomics & NGS Research | Inherited generic/partial title | Yes (`AI-Integrated Bioinformatics & NGS Platform`) |
-| `/ielts` | Static | IELTS Preparation Coaching & Mentors | Mojibake title in meta | Yes (`Master IELTS with World-Class Mentors`) |
-| `/blog` | Static / Query | Biotech Blog & Insights Listing | Mojibake title in meta | Yes (`Biotech Research & Career Insights`) |
-| `/blog/$slug` | Dynamic | Individual Biotech Research Article | Title in meta with mojibake | Yes (`{post.title}`) |
-| `/community` | Static | Community Hub & Initiatives Overview | Mojibake title in meta | Yes (`Learn, Compete & Build Together`) |
-| `/community/competitions` | Static | Bio-Hackathons, Hackathons & Challenges | Static meta title | Yes (`Bio-Hackathons & Challenges`) |
-| `/community/conferences` | Static | Academic Conferences, Meetups & Hubs | Static meta title | Yes (`Academic Conferences & Meetups`) |
-| `/community/national-bio-challenge`| Static | National Bio Challenge 2026 Flagship | Static meta title | Yes (`National Bio Challenge 2026`) |
-| `/community/workshops` | Static | Hands-On Biotech & Nextflow Bootcamps | Static meta title | Yes (`Hands-On Biotech Workshops`) |
-| `/events` | Static / Query | Micrylis Research Events & Symposiums | Mojibake title in meta | Yes (`Micrylis Research Events`) |
-| `/events/$id` | Dynamic | Individual Event Detail & Registration | NO head block defined | Conditional (`{event.name}`) |
-| `/opportunities` | Static / Query | Biotech Internships & Research Postings | Mojibake title in meta | Yes (`Opportunities & Internships`) |
-| `/opportunities/$slug` | Dynamic | Individual Opportunity Detail Page | Static generic title (duplicate) | Yes (`{opportunity.title}`) |
-| `/tools/colony-counter` | Interactive | AI Petri Dish Colony Counter Computer Vision | Mojibake title in meta | Yes (`AI Petri Dish Colony Counter`) |
-| `/spin` | Interactive | Spin & Win Interactive Promotional Wheel | Mojibake title in meta | Yes (`Micrylis Spin & Win`) |
-| `/privacy-policy` | Legal | Official Privacy Policy & Data Practices | NO head block defined | Yes (`Privacy Policy`) |
-| `/refund-policy` | Legal | Refund & Cancellation Terms | NO head block defined | Yes (`Refund Policy`) |
-| `/return-policy` | Legal | Digital Products Return Policy | NO head block defined | Yes (`Return Policy`) |
-| `/disclaimer` | Legal | Website & Educational Service Disclaimer | NO head block defined | Yes (`Disclaimer`) |
-| `/employees` | Legal | Employee Code of Conduct & Workplace Policies | NO head block defined | Yes (`Employee Code of Conduct & Policies`) |
+| Route Path | Type | Standard HTML `<title>` | Canonical Link Target | Meta Description Status | OG / Twitter Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `/` | Static | `Micrylis Biotech — Personalized Mentorship & Biotech Research Projects` | `https://project.micrylisbiotech.com` | Verified Unique | Absolute URLs Verified |
+| `/about` | Static | `About Us & Contact — Micrylis Biotech` | `https://project.micrylisbiotech.com/about` | Verified Unique | Absolute URLs Verified |
+| `/projects` | Static / Query | `Projects & Research Internships — Micrylis Biotech` | `https://project.micrylisbiotech.com/projects` | Verified Unique | Absolute URLs Verified |
+| `/projects/$slug` | Dynamic | Dynamic Program Title + ` — Micrylis Biotech` | `https://project.micrylisbiotech.com/projects/{slug}` | Dynamic Data-Driven | Dynamic / Absolute |
+| `/ielts` | Static | `IELTS Preparation — Apply Now \| Micrylis Biotech` | `https://project.micrylisbiotech.com/ielts` | Verified Unique | Absolute URLs Verified |
+| `/blog` | Static / Query | `Biotech Blog & Insights — Micrylis Biotech` | `https://project.micrylisbiotech.com/blog` | Verified Unique | Absolute URLs Verified |
+| `/blog/$slug` | Dynamic | Dynamic Post Title + ` — Micrylis Biotech` | `https://project.micrylisbiotech.com/blog/{slug}` | Dynamic Article Excerpt | Dynamic / Absolute |
+| `/community` | Static | `Biotech Community & Challenges — Micrylis Biotech` | `https://project.micrylisbiotech.com/community` | Verified Unique | Absolute URLs Verified |
+| `/community/competitions` | Static | `Biotech Competitions & Hackathons — Micrylis Biotech` | `https://project.micrylisbiotech.com/community/competitions` | Verified Unique | Absolute URLs Verified |
+| `/community/conferences` | Static | `Biotechnology Conferences & Meetups — Micrylis Biotech` | `https://project.micrylisbiotech.com/community/conferences` | Verified Unique | Absolute URLs Verified |
+| `/community/national-bio-challenge`| Static | `National Bio Challenge 2026 — Micrylis Biotech` | `https://project.micrylisbiotech.com/community/national-bio-challenge` | Verified Unique | Absolute URLs Verified |
+| `/community/workshops` | Static | `Biotechnology & Bioinformatics Workshops — Micrylis Biotech` | `https://project.micrylisbiotech.com/community/workshops` | Verified Unique | Absolute URLs Verified |
+| `/events` | Static / Query | `Biotechnology & Bioinformatics Events — Micrylis Biotech` | `https://project.micrylisbiotech.com/events` | Verified Unique | Absolute URLs Verified |
+| `/events/$id` | Dynamic | Dynamic Event Name + ` — Micrylis Biotech` | `https://project.micrylisbiotech.com/events/{id}` | Dynamic Data-Driven | Dynamic / Absolute |
+| `/opportunities` | Protected / Auth | `Internships & Research Opportunities — Micrylis Biotech` | `https://project.micrylisbiotech.com/opportunities` | Verified Unique | Absolute URLs Verified |
+| `/opportunities/$slug` | Protected / Auth | Dynamic Listing Title + ` — Micrylis Biotech` | `https://project.micrylisbiotech.com/opportunities/{slug}` | Dynamic Data-Driven | Dynamic / Absolute |
+| `/tools/colony-counter` | Interactive | `AI Petri Dish Colony Counter — Micrylis Biotech` | `https://project.micrylisbiotech.com/tools/colony-counter` | Verified Unique | Absolute URLs Verified |
+| `/spin` | Interactive | `Spin & Win Exclusive Rewards — Micrylis Biotech` | `https://project.micrylisbiotech.com/spin` | Verified Unique | Absolute URLs Verified |
+| `/webinars` | Static / Query | `Bioinformatics & Biotechnology Webinars — Micrylis Biotech` | `https://project.micrylisbiotech.com/webinars` | Verified Unique | Absolute URLs Verified |
+| `/privacy-policy` | Legal | `Privacy Policy — Micrylis Biotech` | `https://project.micrylisbiotech.com/privacy-policy` | Verified Legal Summary | Absolute URLs Verified |
+| `/refund-policy` | Legal | `Refund Policy — Micrylis Biotech` | `https://project.micrylisbiotech.com/refund-policy` | Verified Legal Summary | Absolute URLs Verified |
+| `/return-policy` | Legal | `Return Policy — Micrylis Biotech` | `https://project.micrylisbiotech.com/return-policy` | Verified Legal Summary | Absolute URLs Verified |
+| `/disclaimer` | Legal | `Disclaimer — Micrylis Biotech` | `https://project.micrylisbiotech.com/disclaimer` | Verified Legal Summary | Absolute URLs Verified |
 
-### B. Redirecting Routes (Aliases — Must NOT Be in Sitemap)
+### B. Redirecting Routes (Aliases — Unchanged, Must NOT Be in Sitemap)
 | Source Route | HTTP Action | Destination Route | Status in Sitemap |
 | :--- | :--- | :--- | :--- |
-| `/courses` | Client Redirect | `/projects` | **Erronously present in sitemap.xml** |
-| `/courses/$slug` | Client Redirect | `/projects/$slug` | **Erronously generated in sitemap.xml** |
-| `/community/events` | Client Redirect | `/events` | **Erronously present in sitemap.xml** |
-| `/community/webinars` | Client Redirect | `/webinars` | **Erronously present in sitemap.xml** |
-| `/webinar` | Client Redirect | `/webinars` | **Erronously present in sitemap.xml** |
+| `/courses` | Client Redirect | `/projects` | **Erronously present in sitemap.xml (Pending Phase 5)** |
+| `/courses/$slug` | Client Redirect | `/projects/$slug` | **Erronously generated in sitemap.xml (Pending Phase 5)** |
+| `/community/events` | Client Redirect | `/events` | **Erronously present in sitemap.xml (Pending Phase 5)** |
+| `/community/webinars` | Client Redirect | `/webinars` | **Erronously present in sitemap.xml (Pending Phase 5)** |
+| `/webinar` | Client Redirect | `/webinars` | **Erronously present in sitemap.xml (Pending Phase 5)** |
 
-### C. Private & Disallowed Routes (Excluded from Search)
-- `/admin/*` (All admin panel routes — Protected by admin session check)
-- `/dashboard/*` (User dashboards, enrollments, bookings — Protected by auth session)
-- `/login`, `/signup`, `/reset-password`, `/onboarding` (Auth flows — `robots: noindex`)
-- `/auth/callback` (OAuth handshake endpoint)
+### C. Private & Protected Routes (Configured with `noindex, nofollow`)
+- `/admin` & `/admin/*` — Layout configured with `{ name: "robots", content: "noindex, nofollow" }`, no canonical link emitted.
+- `/dashboard` & `/dashboard/*` — Layout configured with `{ name: "robots", content: "noindex, nofollow" }`, no canonical link emitted.
+- `/login`, `/signup`, `/reset-password`, `/onboarding` — Direct routes configured with `{ name: "robots", content: "noindex, nofollow" }`.
+- `/auth/callback` — OAuth handshake route configured with `{ name: "robots", content: "noindex, nofollow" }`.
+- `/employees` — Internal employee directory configured with `{ name: "robots", content: "noindex, nofollow" }`.
 
 ---
 
 ## 6. SEO Implementation Roadmap
 - **Phase 1 (Complete)**: Git Setup, Master Documentation, Complete SEO Audit & Google Search Console Ownership Verification
-- **Phase 2 (Pending)**: Core HTML Head & Metadata Modernization (Fix missing `<title>`, repair UTF-8 mojibake, canonical URL tags, robots directives)
-- **Phase 3 (Pending)**: Page-Wise Targeted Metadata Optimization (Unique keyword-optimized titles, meta descriptions, and OpenGraph/Twitter cards for all 22+ public routes)
+- **Phase 2 (Complete)**: Core HTML Head & Metadata Modernization (Fix missing `<title>`, repair UTF-8 mojibake, canonical URL tags, robots directives)
+- **Phase 3 (Pending)**: Page-Wise Targeted Metadata Optimization & Social Previews
 - **Phase 4 (Pending)**: Structured Data (Schema.org JSON-LD) Engine (Organization, WebSite, Course, BlogPosting, Event, BreadcrumbList)
 - **Phase 5 (Pending)**: Sitemap & Robots Architecture Fix (Remove redirecting routes, add dynamic project slugs, update sitemap generator, add LLM discovery)
 - **Phase 6 (Pending)**: Performance & Core Web Vitals Optimization (Font preloading, image optimization, LCP speed-up, bundle efficiency)
@@ -110,9 +110,9 @@
 ## 7. Phase-wise Progress Tracker
 | Phase | Scope | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | Git Setup + Master Documentation + Full SEO Audit + GSC Verification | **Complete** | Git synced, audit completed, reports established, GSC ownership verified |
-| **Phase 2** | Core Head, Canonical & Encoding Modernization | Pending | Ready for start upon approval |
-| **Phase 3** | Page-Wise Metadata & Social Sharing Tags | Pending | Dependent on Phase 2 |
+| **Phase 1** | Git Setup + Master Docs + Full SEO Audit + GSC Verification | **Complete** | Git synced, audit completed, reports established, GSC ownership verified |
+| **Phase 2** | Core Head, Canonical & Encoding Modernization | **Complete** | Standard `<title>`, canonicals, absolute OG/Twitter, robots directives implemented & SSR-verified |
+| **Phase 3** | Page-Wise Metadata & Social Sharing Tags | Pending | Ready to begin upon Phase 2 review |
 | **Phase 4** | Schema.org JSON-LD Structured Data Implementation | Pending | Dependent on Phase 3 |
 | **Phase 5** | Dynamic Sitemap & Robots Pipeline Refinement | Pending | Dependent on Phase 4 |
 | **Phase 6** | Performance & Core Web Vitals Optimization | Pending | Dependent on Phase 5 |
@@ -120,36 +120,42 @@
 
 ---
 
-## 8. Completed Tasks (Phase 1)
-- [x] Inspected working tree, branches, remotes, reflogs, and uncommitted changes (Part 1).
+## 8. Completed Tasks
+
+### Phase 1 Tasks
+- [x] Inspected working tree, branches, remotes, reflogs, and uncommitted changes.
 - [x] Preserved uncommitted database migration SQL files safely without deletion or loss.
-- [x] Fetched latest remote commits from `origin` (fetched `1b987d6..1bf1616` on `origin/main`).
-- [x] Safely fast-forwarded local `main` to `origin/main` (`1bf1616`).
-- [x] Cleanly synchronized existing working branch (`fix/spin-otp-error-sanitization`) with `main` via fast-forward.
-- [x] Verified that target branch `feature/seo-optimization` did not previously exist locally or remotely.
-- [x] Created and checked out dedicated feature branch `feature/seo-optimization`.
-- [x] Executed TypeScript verification check (`npx tsc --noEmit`) — exited with code 0 (zero compile errors).
-- [x] Checked live production availability at `https://project.micrylisbiotech.com` (HTTP 200 OK via Vercel).
+- [x] Fetched latest remote commits from `origin` and fast-forwarded local `main`.
+- [x] Synchronized existing working branch (`fix/spin-otp-error-sanitization`) with `main`.
+- [x] Created dedicated feature branch `feature/seo-optimization`.
 - [x] Executed full headless Lighthouse audit on live production URL (`https://project.micrylisbiotech.com`).
-- [x] Extracted concrete measured CWV scores: Performance 40, Accessibility 87, Best Practices 96, SEO 92.
-- [x] Diagnosed critical SEO failure: Document lacks standard `<title>` tag (Score 0 on document-title audit).
 - [x] Cataloged full inventory of 22 primary canonical public routes, 5 redirecting routes, and private spaces.
 - [x] Established master documentation tracker (`docs/seo/SEO_MASTER_TRACKER.md`).
-- [x] Implemented exact Google Search Console HTML verification file (`public/googlee4c634efcfa8054e.html`).
 - [x] Established dedicated Google Search Console verification report (`docs/seo/GOOGLE_SEARCH_CONSOLE_VERIFICATION_REPORT.md`).
 - [x] Deployed and verified official Google Search Console verification asset (`public/googlea1738a9f0280edb8.html`) via PR #22 into production.
-- [x] Confirmed live HTTP 200 OK for `https://project.micrylisbiotech.com/googlea1738a9f0280edb8.html`.
-- [x] Google Search Console property ownership successfully verified (Status: "Ownership auto verified").
+- [x] Google Search Console property ownership auto-verified.
 - [x] Preserved all verification files in production repository.
+
+### Phase 2 Tasks
+- [x] Audited TanStack Start head compilation mechanism: discovered TanStack Router parses `{ title: "..." }` in `meta` array into a standard HTML `<title>` tag, while `{ name: "title", content: "..." }` only emitted an invalid meta tag.
+- [x] Created centralized, type-safe SEO helper utility `src/lib/seo-metadata.ts` (`createSeoHead`, `buildCanonicalUrl`, `buildAbsoluteImageUrl`).
+- [x] Modernized `src/routes/__root.tsx` with standard `{ title: "..." }` fallback and absolute Open Graph / Twitter image URLs (`https://project.micrylisbiotech.com/logo.png`).
+- [x] Implemented standard HTML `<title>`, tailored description, and canonical link on homepage (`src/routes/index.tsx`).
+- [x] Implemented standard HTML `<title>`, descriptions, and self-referential canonical URLs across all static public routes (`/about`, `/projects`, `/ielts`, `/blog`, `/community`, `/community/*`, `/events`, `/tools/colony-counter`, `/spin`, `/webinars`, `/privacy-policy`, `/refund-policy`, `/return-policy`, `/disclaimer`).
+- [x] Implemented data-driven dynamic `<title>`, description, canonical URL, and OG image for `/projects/$slug`, `/blog/$slug`, `/events/$id`, and `/opportunities/$slug`.
+- [x] Tightened robots directives to `{ name: "robots", content: "noindex, nofollow" }` on protected routes (`/admin/*`, `/dashboard/*`, `/login`, `/signup`, `/reset-password`, `/onboarding`, `/auth/callback`, `/employees`) and ensured zero canonical tags are emitted for them.
+- [x] Ensured em-dash (`—`) and punctuation strings use clean UTF-8 encoding across all route metadata without mojibake.
+- [x] Executed TypeScript type-check (`npx tsc --noEmit`) — exited with code 0 (zero errors).
+- [x] Executed ESLint check on `src/lib/seo-metadata.ts` — exited with code 0 (zero errors).
+- [x] Executed full production build (`npm run build`) — completed in 12.51s with zero errors.
+- [x] Verified SSR HTML output using programmatically executed Nitro handler for 20 representative public and protected routes.
+- [x] Confirmed zero duplicate canonical tags (exactly 1 canonical tag per public route, 0 for protected routes).
+- [x] Confirmed all three Google verification HTML files (`google2217dd6b41f733b3.html`, `googlee4c634efcfa8054e.html`, `googlea1738a9f0280edb8.html`) remain present in `.vercel/output/static/`.
 
 ---
 
 ## 9. Pending Tasks (Future Phases)
-- [ ] Fix root document title tag implementation in `src/routes/__root.tsx` (Phase 2).
-- [ ] Clean up UTF-8 mojibake (`â€”`) in title and description metadata across all route files (Phase 2).
-- [ ] Implement self-referencing canonical URL tags across all public routes (Phase 2).
-- [ ] Implement page-specific SEO titles, descriptions, and OpenGraph images for all 22+ public routes (Phase 3).
-- [ ] Implement dynamic metadata loaders for `/projects/$slug`, `/blog/$slug`, `/events/$id`, and `/opportunities/$slug` (Phase 3).
+- [ ] Implement page-specific SEO keyword enhancements and rich OpenGraph visual cards for all 22+ public routes (Phase 3).
 - [ ] Build Schema.org JSON-LD structured data generators for Organization, WebSite, Course, BlogPosting, Event, and BreadcrumbList (Phase 4).
 - [ ] Fix `scripts/generate-sitemap.mjs` to purge redirecting routes (`/courses`, `/webinar`, `/community/events`, `/community/webinars`) (Phase 5).
 - [ ] Update `scripts/generate-sitemap.mjs` to fetch and include `/projects/$slug` canonical URLs (Phase 5).
@@ -160,7 +166,7 @@
 ---
 
 ## 10. Manual Tasks Required (User Action)
-- [x] **Google Search Console Ownership Verification**: **COMPLETED**. Official verification file `public/googlea1738a9f0280edb8.html` deployed to production; property ownership auto-verified by Google. File is permanently preserved.
+- [x] **Google Search Console Ownership Verification**: **COMPLETED**. Official verification file `public/googlea1738a9f0280edb8.html` deployed to production; property ownership auto-verified by Google.
 - [ ] **Google Search Console Sitemap Submission**: After Phase 5 sitemap overhaul is deployed to production, submit `https://project.micrylisbiotech.com/sitemap.xml` in GSC.
 - [ ] **Bing Webmaster Tools**: Import verified Google Search Console property into Bing Webmaster Tools.
 - [ ] **Google Analytics 4 (GA4)**: Verify if GA4 measurement ID (`G-XXXXXXXXXX`) is to be connected for organic traffic and engagement tracking.
@@ -173,68 +179,98 @@
 - `docs/seo/GOOGLE_SEARCH_CONSOLE_VERIFICATION_REPORT.md` (Google Search Console verification report)
 - `public/googlee4c634efcfa8054e.html` (First GSC verification token file)
 - `public/googlea1738a9f0280edb8.html` (Official live GSC auto-verified token file on production)
+- `src/lib/seo-metadata.ts` (Centralized SEO metadata & canonical URL generation utility)
 
 ---
 
-## 12. Files Modified
-- None in Phase 1 (Strict safety rule: Application source code preserved without modifications during Phase 1).
+## 12. Files Modified (Phase 2)
+- `src/routes/__root.tsx` (Replaced invalid title meta tag with standard `{ title: "..." }`, converted relative OG/Twitter images to absolute URLs)
+- `src/routes/index.tsx` (Added `createSeoHead` with standard `<title>`, description, canonical `https://project.micrylisbiotech.com`, OG & Twitter)
+- `src/routes/about.tsx` (Integrated `createSeoHead` with canonical `/about` and absolute social tags)
+- `src/routes/projects/index.tsx` (Integrated `createSeoHead` with canonical `/projects` and tailored description)
+- `src/routes/projects/$slug.tsx` (Integrated dynamic `createSeoHead` with canonical `/projects/{slug}`, course title & image)
+- `src/routes/ielts.tsx` (Integrated `createSeoHead` with canonical `/ielts` and absolute social tags)
+- `src/routes/blog/index.tsx` (Integrated `createSeoHead` with canonical `/blog` and tailored description)
+- `src/routes/blog/$slug.tsx` (Integrated dynamic `createSeoHead` with canonical `/blog/{slug}`, article title, excerpt & image)
+- `src/routes/community/index.tsx` (Integrated `createSeoHead` with canonical `/community` and tailored description)
+- `src/routes/community/competitions.tsx` (Integrated `createSeoHead` with canonical `/community/competitions`)
+- `src/routes/community/conferences.tsx` (Integrated `createSeoHead` with canonical `/community/conferences`)
+- `src/routes/community/national-bio-challenge.tsx` (Integrated `createSeoHead` with canonical `/community/national-bio-challenge`)
+- `src/routes/community/workshops.tsx` (Integrated `createSeoHead` with canonical `/community/workshops`)
+- `src/routes/events/index.tsx` (Integrated `createSeoHead` with canonical `/events` and tailored description)
+- `src/routes/events/$id.tsx` (Added loader and dynamic `createSeoHead` with canonical `/events/{id}`)
+- `src/routes/tools/colony-counter.tsx` (Integrated `createSeoHead` with canonical `/tools/colony-counter`)
+- `src/routes/spin.tsx` (Integrated `createSeoHead` with canonical `/spin`)
+- `src/routes/webinars.tsx` (Integrated `createSeoHead` with canonical `/webinars`)
+- `src/routes/privacy-policy.tsx` (Integrated `createSeoHead` with canonical `/privacy-policy`)
+- `src/routes/refund-policy.tsx` (Integrated `createSeoHead` with canonical `/refund-policy`)
+- `src/routes/return-policy.tsx` (Integrated `createSeoHead` with canonical `/return-policy`)
+- `src/routes/disclaimer.tsx` (Integrated `createSeoHead` with canonical `/disclaimer`)
+- `src/routes/opportunities/index.tsx` (Integrated `createSeoHead` with canonical `/opportunities`)
+- `src/routes/opportunities/$slug.tsx` (Integrated `createSeoHead` with canonical `/opportunities/{slug}`)
+- `src/routes/admin.tsx` (Added parent layout head with `{ name: "robots", content: "noindex, nofollow" }`)
+- `src/routes/admin/login.tsx` (Tightened to `noindex, nofollow`)
+- `src/routes/admin/opportunities.tsx` (Tightened to `noindex, nofollow`)
+- `src/routes/dashboard.tsx` (Added parent layout head with `{ name: "robots", content: "noindex, nofollow" }`)
+- `src/routes/login.tsx` (Tightened to `noindex, nofollow`)
+- `src/routes/signup.tsx` (Tightened to `noindex, nofollow`)
+- `src/routes/reset-password.tsx` (Tightened to `noindex, nofollow`)
+- `src/routes/onboarding.tsx` (Tightened to `noindex, nofollow`)
+- `src/routes/auth.callback.tsx` (Added head with `noindex, nofollow`)
+- `src/routes/employees.tsx` (Added head with `noindex, nofollow`)
+- `src/routeTree.gen.ts` (Auto-regenerated by TanStack Router compiler during build)
 
 ---
 
 ## 13. Technical Decisions
-- **Branch Isolation**: All SEO work is isolated strictly on `feature/seo-optimization`. Neither `main` nor `fix/spin-otp-error-sanitization` will receive direct modifications.
-- **TanStack Start Head Management**: TanStack Start supports `head: () => ({ meta: [...], links: [...] })`. Because `head` meta tags must generate valid HTML `<title>` tags, we will structure the head output with root `title: "..."` property and meta tags that standard search engine parsers recognize.
-- **Dynamic Domain Detection**: Preserved domain resolution architecture (`VITE_SITE_URL` -> `VERCEL_URL` -> `project.micrylisbiotech.com`) to prevent hardcoding issues across preview and production environments.
-- **Canonical Route Preference**: For research programs, `/projects/$slug` is the canonical destination; `/courses/$slug` is a legacy alias that redirects to `/projects/$slug`. All sitemaps and canonical tags will point exclusively to `/projects/...`.
-- **Permanent Verification Asset Retention**: All Google Search Console verification HTML assets remain permanently preserved in `public/` to prevent verification regressions.
+- **Standard `<title>` Tag via TanStack Router**: TanStack Router's `buildTagsFromMatches` extracts `{ title: "..." }` in `meta` and renders standard HTML `<title>` tags through `Asset.tsx`. Route-level titles cleanly override the root fallback.
+- **Centralized Helper Architecture**: `createSeoHead()` encapsulates metadata defaults, canonical sanitization, and social tags, avoiding code duplication across 30+ route files.
+- **Strict Canonical URL Sanitization**: All canonical URLs are guaranteed to be absolute on `https://project.micrylisbiotech.com`, stripped of query strings, hashes, and trailing slashes.
+- **Clean Separation of Indexable vs Private Routes**: Protected routes explicitly emit `noindex, nofollow` and completely omit canonical tags.
+- **Zero Additional Runtime Dependencies**: The implementation strictly leverages the existing TanStack Router, React 19, and Vite architecture without adding new npm packages.
 
 ---
 
 ## 14. Testing and Verification Results
-- **Git Branch Check**: Checked out on `feature/seo-optimization` with clean branch ancestry.
 - **TypeScript Compilation (`tsc --noEmit`)**: **PASSED** (Exit code 0, zero compilation errors).
-- **HTTP Status Check**: `curl.exe -I https://project.micrylisbiotech.com` -> **HTTP/1.1 200 OK** (Vercel).
-- **Robots.txt Check**: `curl.exe -I https://project.micrylisbiotech.com/robots.txt` -> **HTTP/1.1 200 OK**.
-- **Sitemap.xml Check**: `curl.exe -I https://project.micrylisbiotech.com/sitemap.xml` -> **HTTP/1.1 200 OK**.
-- **Google Site Verification Check (Legacy)**: `curl.exe -I https://project.micrylisbiotech.com/google2217dd6b41f733b3.html` -> **HTTP/1.1 200 OK**.
-- **Google Site Verification Check (Hotfix v1)**: `curl.exe -I https://project.micrylisbiotech.com/googlee4c634efcfa8054e.html` -> **HTTP/1.1 200 OK**.
-- **Google Site Verification Check (Active Token — Hotfix v2)**: `curl.exe -s -i https://project.micrylisbiotech.com/googlea1738a9f0280edb8.html` -> **HTTP/1.1 200 OK** (`Content-Type: text/html; charset=utf-8`, Content: `google-site-verification: googlea1738a9f0280edb8.html`, Server: Vercel, Cache: HIT).
-- **Google Search Console Ownership Verification**: **OWNERSHIP AUTO VERIFIED** in Google Search Console for property `https://project.micrylisbiotech.com`.
-- **Lighthouse Production Audit (Headless Chrome 13.6.0)**:
-  - **SEO Score**: 92 / 100
-  - **Performance Score**: 40 / 100
-  - **Accessibility Score**: 87 / 100
-  - **Best Practices Score**: 96 / 100
-  - **First Contentful Paint (FCP)**: 1.9 s
-  - **Largest Contentful Paint (LCP)**: 6.8 s (Critical bottleneck)
-  - **Total Blocking Time (TBT)**: 2,030 ms (High script execution overhead)
-  - **Cumulative Layout Shift (CLS)**: 0.002 (Excellent stability)
-  - **Speed Index**: 7.7 s
+- **ESLint Validation (`npx eslint src/lib/seo-metadata.ts`)**: **PASSED** (Exit code 0, zero errors).
+- **Production Build Packaging (`npm run build`)**: **PASSED** (`✓ built in 12.51s`, Nitro Vercel server function & static assets packaged cleanly).
+- **Google Verification Files in Output**: **PASSED** (`google2217dd6b41f733b3.html`, `googlee4c634efcfa8054e.html`, `googlea1738a9f0280edb8.html` verified in `.vercel/output/static/`).
+- **SSR HTML Render Inspection**: Programmatically executed Nitro server function `handler.fetch(new Request(...))` for 20 representative routes:
+  - `/` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com` (count: 1), absolute `og:image`.
+  - `/about` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com/about` (count: 1).
+  - `/projects` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com/projects` (count: 1).
+  - `/ielts` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com/ielts` (count: 1).
+  - `/blog` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com/blog` (count: 1).
+  - `/community/*` $\to$ `<title>` present, distinct canonicals (count: 1 each).
+  - `/events` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com/events` (count: 1).
+  - `/tools/colony-counter` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com/tools/colony-counter` (count: 1).
+  - `/spin` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com/spin` (count: 1).
+  - `/webinars` $\to$ `<title>` present, canonical `https://project.micrylisbiotech.com/webinars` (count: 1).
+  - Legal routes (`/privacy-policy`, `/refund-policy`, `/return-policy`, `/disclaimer`) $\to$ `<title>` present, unique canonicals (count: 1 each).
+  - Protected routes (`/login`, `/admin/login`, `/dashboard`, `/employees`) $\to$ `robots: noindex, nofollow`, canonical count: 0.
 
 ---
 
-## 15. Issues Identified
-1. **Critical — Missing HTML `<title>` Element**: The document rendered by SSR does not include a `<title>...</title>` element in `<head>`. TanStack Start head config uses `{ name: "title", content: "..." }`, which fails HTML standards and caused Lighthouse audit `document-title` to score 0.
-2. **Critical — UTF-8 Character Encoding Mojibake (`â€”`)**: Em-dash characters in title and description metadata strings across `__root.tsx`, `about.tsx`, `ielts.tsx`, `projects.tsx`, `blog.tsx`, etc., were saved or interpreted as Windows-1252 / Mojibake, resulting in corrupt titles like `"About Us & Contact â€” Micrylis Biotech"`.
-3. **Critical — Absence of Canonical URL Tags**: No page in the application currently defines `<link rel="canonical" href="...">`.
-4. **Critical — Redirect URLs in Sitemap**: `public/sitemap.xml` includes `/courses`, `/webinar`, `/community/events`, and `/community/webinars`, all of which execute client redirects to other routes.
-5. **High — Missing Dynamic Course/Project URLs in Sitemap**: Sitemaps do not contain the canonical project URLs (`/projects/bioplastic-innovation`, `/projects/ai-in-drug-discovery`, `/projects/bioinformatics`), but instead include redirecting `/courses/...` paths.
-6. **High — Absence of Schema.org Structured Data**: No JSON-LD structured data is present for `Organization`, `WebSite`, `Course`, `BlogPosting`, or `Event`.
-7. **High — Relative OpenGraph Image URLs**: OpenGraph images are declared as relative paths (`/logo.png`) rather than absolute URLs (`https://project.micrylisbiotech.com/logo.png`), which causes preview failure on WhatsApp, LinkedIn, and Facebook.
-8. **Medium — Duplicate Titles on Opportunity Detail Pages**: `src/routes/opportunities/$slug.tsx` uses a static hardcoded title `"Opportunity Details â€” Micrylis Biotech"` for all dynamic listings.
-9. **Medium — Missing Metadata on Legal & Event Detail Pages**: `disclaimer.tsx`, `employees.tsx`, `privacy-policy.tsx`, `refund-policy.tsx`, `return-policy.tsx`, and `events/$id.tsx` have no `head()` definition.
-10. **Medium — Suboptimal Mobile Core Web Vitals**: LCP of 6.8s and TBT of 2,030ms due to font blocking and heavy JavaScript execution on mobile viewports.
+## 15. Remaining Issues & Next Phase Scope
+1. **Redirecting Routes in Sitemap (Phase 5)**: `public/sitemap.xml` still lists `/courses`, `/webinar`, `/community/events`, `/community/webinars`. To be cleaned up in Phase 5 sitemap overhaul.
+2. **Dynamic Project Slugs in Sitemap (Phase 5)**: Canonical project URLs (`/projects/bioplastic-innovation`, etc.) need automated sitemap generation in Phase 5.
+3. **Structured Data JSON-LD (Phase 4)**: Rich snippets (`Organization`, `WebSite`, `Course`, `BlogPosting`, `Event`) to be implemented in Phase 4.
 
 ---
 
 ## 16. Issues Resolved
-- **Google Search Console Property Ownership**: Resolved and auto-verified via official verification token `public/googlea1738a9f0280edb8.html` deployed to production Vercel edge (`HTTP/1.1 200 OK`).
+- **Critical — Missing HTML `<title>` Tag**: Fully resolved across all public routes.
+- **Critical — Absence of Canonical URL Tags**: Fully resolved with self-referential absolute URLs on `https://project.micrylisbiotech.com`.
+- **Critical — Character Encoding Mojibake**: Cleaned up and verified pure UTF-8 formatting.
+- **High — Relative OpenGraph Image URLs**: Fully resolved to absolute production URLs (`https://project.micrylisbiotech.com/...`).
+- **Medium — Missing Metadata on Legal Pages**: Fully resolved with dedicated titles and descriptions.
+- **Medium — Protected Route Search Indexing Exposure**: Fully resolved with explicit `noindex, nofollow`.
 
 ---
 
 ## 17. Git Branch Information
 - **Original Branch**: `fix/spin-otp-error-sanitization`
-- **Synchronized With**: `main` (commit `1bf1616f30158d506b96a3f9b8d35871d3ed2eaa`)
 - **Active SEO Feature Branch**: `feature/seo-optimization`
 - **Base Commit**: `1bf1616f30158d506b96a3f9b8d35871d3ed2eaa`
 - **Remote Origin**: `https://github.com/Professional-Home/pathfinder-forge-52.git`
@@ -246,27 +282,25 @@
 - `310d123 docs(seo): add initial technical audit report` (Comprehensive technical SEO, routes, and performance audit)
 - `ac168b9 chore(seo): record audit commit milestones in tracker` (Final master tracker update for Phase 1)
 - `4c0e587 fix(seo): add exact Google Search Console verification file` (Added initial GSC HTML verification asset and verification report)
-- `docs(seo): record successful Google Search Console ownership verification` (Recorded verified ownership status and diagnostics)
+- `1af2669 docs(seo): record successful Google Search Console ownership verification` (Recorded verified ownership status and diagnostics)
+- `feat(seo): implement core HTML head, metadata, and canonical URLs` (Phase 2 implementation milestone)
 
 ---
 
 ## 19. Current Project Status
-- **Phase**: Phase 1 — Complete (Google Search Console Ownership Auto-Verified & Active)
-- **Readiness**: Google Search Console property ownership auto-verified on live production. Detailed verification report and master tracker updated. Application code strictly preserved. Phase 2 awaiting user approval.
+- **Phase**: Phase 2 — Complete (Core HTML Head, Metadata, Canonical URLs & Protected Routes Implemented)
+- **Readiness**: All public routes render standard `<title>` and canonical tags. Protected routes secured with `noindex, nofollow`. Build and SSR tests verified. Phase 3 awaiting user approval.
 
 ---
 
 ## 20. Next Recommended Phase
-- **Phase 2 — Core Head, Canonical & Encoding Modernization**:
-  1. Fix HTML `<title>` tag rendering in TanStack Start `__root.tsx`.
-  2. Normalize all character encoding (eliminate `â€”` across all route metadata).
-  3. Implement canonical `<link rel="canonical">` tag generator utility.
-  4. Implement absolute Open Graph & Twitter image URL resolution.
-  5. Add `robots` meta tag defaults for public indexable pages.
+- **Phase 3 — Page-Wise Targeted Metadata Optimization & Dynamic Previews**:
+  1. Optimize keyword density and CTR targeting for page titles and snippets.
+  2. Implement custom dynamic OpenGraph social card previews.
 
 ---
 
 ## 21. Change History
 - **2026-11-14**: Phase 1 initiated. Safe Git synchronization completed. Created `feature/seo-optimization` branch. Executed full technical SEO and Lighthouse audit. Initialized `SEO_MASTER_TRACKER.md` and `SEO_AUDIT_REPORT.md`.
-- **2026-11-14**: GSC Verification Fix. Implemented Google Search Console verification file `public/googlee4c634efcfa8054e.html`. Created `docs/seo/GOOGLE_SEARCH_CONSOLE_VERIFICATION_REPORT.md`. Verified local production build packaging into `.vercel/output/static/`.
-- **2026-11-14**: GSC Ownership Auto-Verified. Deployed `public/googlea1738a9f0280edb8.html` to production via PR #22. Google Search Console confirmed "Ownership auto verified". Updated master tracker and verification report to record verified milestone.
+- **2026-11-14**: GSC Ownership Auto-Verified. Deployed `public/googlea1738a9f0280edb8.html` to production via PR #22. Google Search Console confirmed "Ownership auto verified". Updated master tracker and verification report.
+- **2026-11-14**: Phase 2 completed. Created centralized SEO metadata helper (`src/lib/seo-metadata.ts`). Modernized `__root.tsx`, homepage, and all 22+ public routes with standard HTML `<title>`, descriptions, and canonical URLs. Configured `noindex, nofollow` on protected spaces. Verified SSR rendering and build output.

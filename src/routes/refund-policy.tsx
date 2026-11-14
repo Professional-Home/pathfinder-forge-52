@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalLayout, LegalSection } from "@/components/LegalLayout";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/refund-policy")({
   component: RefundPolicy,
+  head: () =>
+    createSeoHead({
+      title: "Refund Policy — Micrylis Biotech",
+      description:
+        "Review the official Refund Policy for Micrylis Biotech student research projects, courses, and educational services.",
+      path: "/refund-policy",
+    }),
 });
 
 function RefundPolicy() {

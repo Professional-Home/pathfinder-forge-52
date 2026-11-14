@@ -11,7 +11,7 @@ export const Route = createFileRoute("/onboarding")({
     meta: [
       { title: "Onboarding — Micrylis" },
       { name: "description", content: "Answer 15 questions to build your personalized Micrylis dashboard." },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: Onboarding,

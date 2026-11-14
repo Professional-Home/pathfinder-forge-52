@@ -4,18 +4,17 @@ import { GraduationCap, Calendar, Clock, CheckCircle2, ArrowRight, ExternalLink 
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/community/workshops")({
-  head: () => ({
-    meta: [
-      { title: "Biotechnology & Bioinformatics Workshops — Micrylis" },
-      {
-        name: "description",
-        content: "Master practical skills with hands-on computational biology, gene editing, and molecular docking workshops.",
-      },
-    ],
-  }),
   component: WorkshopsPage,
+  head: () =>
+    createSeoHead({
+      title: "Biotechnology & Bioinformatics Workshops — Micrylis Biotech",
+      description:
+        "Master practical skills with hands-on computational biology, gene editing, and molecular docking workshops.",
+      path: "/community/workshops",
+    }),
 });
 
 const WORKSHOPS = [

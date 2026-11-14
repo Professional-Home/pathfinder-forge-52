@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Video,
@@ -28,15 +29,13 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/webinars")({
   component: WebinarsPage,
-  head: () => ({
-    meta: [
-      { title: `Bioinformatics & Biotechnology Webinars — Micrylis` },
-      {
-        name: "description",
-        content: "Join live interactive biotechnology and computational biology webinars hosted by Micrylis Biotech Research Team.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "Bioinformatics & Biotechnology Webinars — Micrylis Biotech",
+      description:
+        "Join live interactive biotechnology and computational biology webinars hosted by Micrylis Biotech Research Team.",
+      path: "/webinars",
+    }),
 });
 
 function formatWebinarDate(iso: string): string {

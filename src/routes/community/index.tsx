@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -18,17 +19,14 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const Route = createFileRoute("/community/")({
-  head: () => ({
-    meta: [
-      { title: "Biotech Community & Challenges — Micrylis" },
-      {
-        name: "description",
-        content:
-          "Connect with thousands of bioscientists, researchers, and students through webinars, competitions, and hands-on workshops.",
-      },
-    ],
-  }),
   component: CommunityIndexPage,
+  head: () =>
+    createSeoHead({
+      title: "Biotech Community & Challenges — Micrylis Biotech",
+      description:
+        "Connect with thousands of bioscientists, researchers, and students through webinars, competitions, and hands-on workshops.",
+      path: "/community",
+    }),
 });
 
 const COMMUNITY_INITIATIVES = [

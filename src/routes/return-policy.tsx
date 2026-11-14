@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalLayout, LegalSection } from "@/components/LegalLayout";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/return-policy")({
   component: ReturnPolicy,
+  head: () =>
+    createSeoHead({
+      title: "Return Policy — Micrylis Biotech",
+      description:
+        "Read the official Return Policy regarding digital products, personalized mentorship sessions, and courses at Micrylis Biotech.",
+      path: "/return-policy",
+    }),
 });
 
 function ReturnPolicy() {

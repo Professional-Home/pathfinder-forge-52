@@ -43,7 +43,7 @@ export const Route = createFileRoute("/admin/opportunities")({
   head: () => ({
     meta: [
       { title: "Manage Opportunities — Admin Micrylis" },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: AdminOpportunitiesPage,

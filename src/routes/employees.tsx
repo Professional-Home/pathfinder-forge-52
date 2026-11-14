@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react'
 import { isAdminLoggedIn } from '@/lib/adminAuth'
 
 export const Route = createFileRoute('/employees')({
+  head: () => ({
+    meta: [
+      { title: 'Employees Directory — Micrylis Admin' },
+      { name: 'robots', content: 'noindex, nofollow' },
+    ],
+  }),
   component: EmployeesPage,
 })
 

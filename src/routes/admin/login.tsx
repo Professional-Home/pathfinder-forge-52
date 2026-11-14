@@ -19,7 +19,7 @@ export const Route = createFileRoute("/admin/login")({
     meta: [
       { title: "Admin Login — Micrylis" },
       { name: "description", content: "Sign in to the Micrylis admin panel." },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: AdminLoginPage,

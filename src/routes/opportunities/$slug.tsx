@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -25,15 +26,13 @@ import { toast } from "sonner";
 import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 export const Route = createFileRoute("/opportunities/$slug")({
-  head: () => ({
-    meta: [
-      { title: "Opportunity Details — Micrylis Biotech" },
-      {
-        name: "description",
-        content: "View full requirements, eligibility, deadlines, and application links.",
-      },
-    ],
-  }),
+  head: ({ params }) =>
+    createSeoHead({
+      title: "Opportunity Details — Micrylis Biotech",
+      description:
+        "View full requirements, eligibility, deadlines, and application links for biotechnology opportunities.",
+      path: `/opportunities/${params.slug}`,
+    }),
   component: OpportunityDetailPage,
 });
 

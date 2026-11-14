@@ -4,6 +4,11 @@ import { supabase } from "@/utils/supabase";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/auth/callback")({
+  head: () => ({
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AuthCallbackPage,
 });
 

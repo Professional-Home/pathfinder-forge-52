@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import React, { useState, useEffect } from "react";
 import {
   Sparkles,
@@ -40,16 +41,13 @@ import { supabase } from "@/utils/supabase";
 
 export const Route = createFileRoute("/spin")({
   component: SpinPage,
-  head: () => ({
-    meta: [
-      { title: "Spin & Win Exclusive Rewards — Micrylis Biotech" },
-      {
-        name: "description",
-        content:
-          "Spin the Micrylis wheel to unlock certified course discounts, free 1-on-1 mentorship, live founder calls, or a 100% full project scholarship.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "Spin & Win Exclusive Rewards — Micrylis Biotech",
+      description:
+        "Spin the Micrylis wheel to unlock certified course discounts, free 1-on-1 mentorship, live founder calls, or a 100% full project scholarship.",
+      path: "/spin",
+    }),
 });
 
 function SpinPage() {

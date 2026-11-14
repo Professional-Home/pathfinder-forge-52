@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import {
   FlaskConical,
   Sparkles,
@@ -53,16 +54,13 @@ import {
 
 export const Route = createFileRoute("/tools/colony-counter")({
   component: ColonyCounterPage,
-  head: () => ({
-    meta: [
-      { title: "AI Petri Dish Colony Counter — Micrylis Biotech" },
-      {
-        name: "description",
-        content:
-          "Automated Petri dish colony detection and counting tool powered by computer vision. Upload or capture culture plate images for rapid colony quantification.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "AI Petri Dish Colony Counter — Micrylis Biotech",
+      description:
+        "Automated Petri dish colony detection and counting tool powered by computer vision. Upload or capture culture plate images for rapid colony quantification.",
+      path: "/tools/colony-counter",
+    }),
 });
 
 type PageState = "EMPTY" | "READY" | "ANALYZING" | "SUCCESS" | "ERROR";

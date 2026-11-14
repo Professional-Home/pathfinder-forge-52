@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { motion } from "framer-motion";
 import {
   Briefcase,
@@ -30,16 +31,13 @@ export const Route = createFileRoute("/opportunities/")({
       q: typeof search.q === "string" ? search.q : undefined,
     };
   },
-  head: () => ({
-    meta: [
-      { title: "Internships & Research Opportunities — Micrylis Biotech" },
-      {
-        name: "description",
-        content:
-          "Discover biotechnology internships and cutting-edge research opportunities curated for ambitious bioscientists.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "Internships & Research Opportunities — Micrylis Biotech",
+      description:
+        "Discover biotechnology internships and cutting-edge research opportunities curated for ambitious bioscientists.",
+      path: "/opportunities",
+    }),
   component: OpportunitiesPage,
 });
 

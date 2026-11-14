@@ -14,6 +14,11 @@ import { isAdminLoggedIn } from "@/lib/adminAuth";
 const LOGIN_PATH = "/admin/login";
 
 export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   beforeLoad: ({ location }) => {
     if (location.pathname === "/admin" || location.pathname === "/admin/") {
       throw redirect({

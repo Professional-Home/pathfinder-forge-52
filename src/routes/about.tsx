@@ -1,19 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalLayout, LegalSection } from "@/components/LegalLayout";
 import { SiteHeader } from "@/components/site-header";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/about")({
   component: About,
-  head: () => ({
-    meta: [
-      { title: "About Us & Contact — Micrylis Biotech" },
-      {
-        name: "description",
-        content:
-          "Micrylis Biotech is dedicated to empowering students, researchers, and biotech enthusiasts through hands-on research projects and direct expert mentorship.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "About Us & Contact — Micrylis Biotech",
+      description:
+        "Micrylis Biotech is dedicated to empowering students, researchers, and biotech enthusiasts through hands-on research projects and direct expert mentorship.",
+      path: "/about",
+    }),
 });
 
 function About() {

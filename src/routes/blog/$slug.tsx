@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { fetchBlogBySlug } from "@/lib/blogs/store";
 import { getOptimizedImageUrl } from "@/utils/cloudinary";
 import { ArticleContentRenderer } from "@/components/blog/ArticleContentRenderer";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/blog/$slug")({
   component: SingleBlogPage,
@@ -15,12 +16,20 @@ export const Route = createFileRoute("/blog/$slug")({
     }
     return { post };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `${loaderData?.post.title ?? "Blog Article"} — Micrylis Biotech` },
-      { name: "description", content: loaderData?.post.excerpt ?? "" },
-    ],
-  }),
+  head: ({ loaderData, params }) => {
+    const rawTitle = loaderData?.post.title ?? "Blog Article";
+    const title = rawTitle.includes("Micrylis") ? rawTitle : `${rawTitle} — Micrylis Biotech`;
+    const description = loaderData?.post.excerpt || "Read the latest biotechnology research insights and career guides from Micrylis Biotech.";
+    const ogImage = loaderData?.post.coverImage || undefined;
+
+    return createSeoHead({
+      title,
+      description,
+      path: `/blog/${params.slug}`,
+      ogImage,
+      ogType: "article",
+    });
+  },
 });
 
 function SingleBlogPage() {

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -31,16 +32,13 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/ielts")({
   component: IELTSApplyPage,
-  head: () => ({
-    meta: [
-      { title: "IELTS Preparation — Apply Now | Micrylis Biotech" },
-      {
-        name: "description",
-        content:
-          "Apply for IELTS preparation coaching with expert mentors. Achieve your target band score with personalized training.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "IELTS Preparation — Apply Now | Micrylis Biotech",
+      description:
+        "Apply for IELTS preparation coaching with expert mentors. Achieve your target band score with personalized training.",
+      path: "/ielts",
+    }),
 });
 
 function IELTSApplyPage() {

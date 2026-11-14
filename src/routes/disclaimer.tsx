@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalLayout, LegalSection } from "@/components/LegalLayout";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/disclaimer")({
   component: Disclaimer,
+  head: () =>
+    createSeoHead({
+      title: "Disclaimer — Micrylis Biotech",
+      description:
+        "Read the legal and educational disclaimer for Micrylis Biotech website, mentorship sessions, and educational content.",
+      path: "/disclaimer",
+    }),
 });
 
 function Disclaimer() {

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { motion } from "framer-motion";
 import { BookOpen, Calendar, Clock, Search, User, ArrowRight, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
@@ -10,15 +11,13 @@ import { getOptimizedImageUrl } from "@/utils/cloudinary";
 
 export const Route = createFileRoute("/blog/")({
   component: PublicBlogPage,
-  head: () => ({
-    meta: [
-      { title: "Biotech Blog & Insights — Micrylis Biotech" },
-      {
-        name: "description",
-        content: "Explore the latest insights, research trends, and career guides in Biotechnology, AI Drug Discovery, and Life Sciences.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "Biotech Blog & Insights — Micrylis Biotech",
+      description:
+        "Explore the latest insights, research trends, and career guides in Biotechnology, AI Drug Discovery, and Life Sciences.",
+      path: "/blog",
+    }),
 });
 
 function PublicBlogPage() {

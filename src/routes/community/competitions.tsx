@@ -4,18 +4,17 @@ import { Flame, Trophy, Calendar, Users, ExternalLink, ArrowRight, Award } from 
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Button } from "@/components/ui/button";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/community/competitions")({
-  head: () => ({
-    meta: [
-      { title: "Biotech Competitions & Hackathons — Micrylis" },
-      {
-        name: "description",
-        content: "Compete in live biotechnology hackathons, algorithmic genomics contests, and science pitch challenges.",
-      },
-    ],
-  }),
   component: CompetitionsPage,
+  head: () =>
+    createSeoHead({
+      title: "Biotech Competitions & Hackathons — Micrylis Biotech",
+      description:
+        "Compete in live biotechnology hackathons, algorithmic genomics contests, and science pitch challenges.",
+      path: "/community/competitions",
+    }),
 });
 
 const COMPETITIONS = [

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -23,15 +24,13 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/events/")({
   component: EventsPage,
-  head: () => ({
-    meta: [
-      { title: `Biotechnology & Bioinformatics Events — Micrylis` },
-      {
-        name: "description",
-        content: "Join our exclusive hands-on computational biology, gene editing, and bioinformatics workshops.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "Biotechnology & Bioinformatics Events — Micrylis Biotech",
+      description:
+        "Join our exclusive hands-on computational biology, gene editing, and bioinformatics workshops.",
+      path: "/events",
+    }),
 });
 
 function EventsPage() {

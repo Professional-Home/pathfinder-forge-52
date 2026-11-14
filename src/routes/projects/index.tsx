@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { createSeoHead } from "@/lib/seo-metadata";
 import { motion, AnimatePresence } from "framer-motion";
 import { FlaskConical, CheckCircle2, Video, ChevronDown, ExternalLink, ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
@@ -11,16 +12,13 @@ import { WEBINAR_REGISTRATION_URL } from "@/lib/webinar-config";
 
 export const Route = createFileRoute("/projects/")({
   component: ProjectsListingPage,
-  head: () => ({
-    meta: [
-      { title: "Projects — Micrylis Biotech" },
-      {
-        name: "description",
-        content:
-          "Explore intensive research internships in bioplastics, AI drug discovery, and biotechnology innovation.",
-      },
-    ],
-  }),
+  head: () =>
+    createSeoHead({
+      title: "Projects & Research Internships — Micrylis Biotech",
+      description:
+        "Explore intensive research internships and practical programs in bioplastics, AI drug discovery, and bioinformatics innovation.",
+      path: "/projects",
+    }),
 });
 
 function ProjectsListingPage() {

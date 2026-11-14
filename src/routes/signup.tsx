@@ -25,7 +25,7 @@ export const Route = createFileRoute("/signup")({
     meta: [
       { title: "Create account — Micrylis" },
       { name: "description", content: "Create your free Micrylis account and start building your personalized growth path." },
-      { name: "robots", content: "noindex" },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: SignupPage,

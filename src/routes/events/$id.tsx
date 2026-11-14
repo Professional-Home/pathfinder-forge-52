@@ -17,18 +17,40 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { fetchEventById, isEventLocked } from "@/lib/events/store";
 import { isAdminLoggedIn } from "@/lib/adminAuth";
+import { createSeoHead } from "@/lib/seo-metadata";
 
 export const Route = createFileRoute("/events/$id")({
   component: EventDetailPage,
+  loader: async ({ params }) => {
+    const event = await fetchEventById(params.id);
+    return { event };
+  },
+  head: ({ loaderData, params }) => {
+    const rawName = loaderData?.event?.name;
+    const title = rawName ? (rawName.includes("Micrylis") ? rawName : `${rawName} — Micrylis Biotech`) : "Event Details — Micrylis Biotech";
+    const description =
+      loaderData?.event?.description?.slice(0, 160) ||
+      "Join our exclusive hands-on computational biology, gene editing, and bioinformatics workshops.";
+    const ogImage = loaderData?.event?.photo || undefined;
+
+    return createSeoHead({
+      title,
+      description,
+      path: `/events/${params.id}`,
+      ogImage,
+    });
+  },
 });
 
 function EventDetailPage() {
   const { id } = Route.useParams();
+  const loaderData = Route.useLoaderData();
   const isAdmin = typeof window !== "undefined" && isAdminLoggedIn();
 
   const { data: event, isLoading, error } = useQuery({
     queryKey: ["event", id],
     queryFn: () => fetchEventById(id),
+    initialData: loaderData?.event ?? undefined,
   });
 
   if (isLoading) {
