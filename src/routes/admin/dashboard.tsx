@@ -78,7 +78,7 @@ function AdminDashboardPage() {
         supabase.from("users").select("id", { count: 'exact' }),
         supabase.rpc('get_google_user_count'),
         supabase.from("mentors").select("id", { count: 'exact' }),
-        supabase.from("enrollments").select("*, courses(title)").order("enrollment_date", { ascending: false }).limit(4),
+        supabase.from("enrollments_users").select("*, courses(title)").order("enrollment_date", { ascending: false }).limit(4),
         supabase.from("courses").select("id, title, category, duration, thumbnail").order("created_at", { ascending: false }).limit(3),
         listUsersAdmin({ data: { authToken } }).catch(() => ({ success: false, users: [] })),
       ]);

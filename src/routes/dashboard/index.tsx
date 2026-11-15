@@ -63,7 +63,7 @@ function DashboardOverview() {
       try {
         const res = await supabase
           .from("enrollments_users")
-          .select("course_id, enrolled_at")
+          .select("course_id, enrollment_date")
           .eq("student_email", userEmail)
           .limit(3);
         enrollmentsData = res.data || [];
@@ -84,7 +84,7 @@ function DashboardOverview() {
         items.push({
           type: "enrollment",
           label: `Enrolled in Course #${e.course_id || ""}`,
-          time: e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "Recently",
+          time: e.enrollment_date ? new Date(e.enrollment_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "Recently",
           icon: "course",
         });
       });
