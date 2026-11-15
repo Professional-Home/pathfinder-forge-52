@@ -68,6 +68,69 @@ async function handleSpinWebhookRequest(request: Request): Promise<Response> {
   }
 }
 
+async function handleNotificationWorkerRequest(request: Request): Promise<Response> {
+  if (request.method !== "POST" && request.method !== "GET") {
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed. Use POST or GET." }),
+      {
+        status: 405,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+
+  const authHeader = request.headers.get("authorization") || "";
+  const workerSecret = request.headers.get("x-worker-secret") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+  const expectedSecret =
+    process.env.NOTIFICATION_WORKER_SECRET ||
+    process.env.CRON_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (expectedSecret && token !== expectedSecret && workerSecret !== expectedSecret) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized. Valid worker secret required." }),
+      {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+
+  try {
+    const url = new URL(request.url);
+    const batchSize = parseInt(url.searchParams.get("batchSize") || "10", 10);
+    const lockSeconds = parseInt(url.searchParams.get("lockSeconds") || "60", 10);
+
+    const { processNotificationBatch } = await import("./lib/server/notification-worker");
+    const result = await processNotificationBatch(
+      Number.isFinite(batchSize) ? Math.min(Math.max(1, batchSize), 100) : 10,
+      Number.isFinite(lockSeconds) ? Math.min(Math.max(10, lockSeconds), 300) : 60
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        ...result,
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ success: false, error: err?.message || "Internal server error" }),
+      {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+}
+
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
@@ -99,6 +162,9 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/spin-webhook") {
       return handleSpinWebhookRequest(request);
+    }
+    if (url.pathname === "/api/worker/notifications") {
+      return handleNotificationWorkerRequest(request);
     }
 
     try {
