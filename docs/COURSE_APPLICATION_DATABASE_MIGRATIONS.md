@@ -1,11 +1,14 @@
-# PathFinder Course Application Management System — Database Migration Runbook (Draft V1.4)
+# PathFinder Course Application Management System — Database Migration Runbook (V1.7.0)
 
-**Phase:** 3.3.6 — Snapshot-Consistent Enrollment Concurrency & Privilege Hardening  
+**Phase:** Phase 3 Implementation (Consolidated Release)  
 **Target Repository:** `F:/Project/pathfinder-forge-52`  
 **Target Branch:** `feature/course-application-management`  
-**Migration Draft File:** [`supabase_course_applications_schema_v1.sql`](file:///F:/Project/pathfinder-forge-52/supabase_course_applications_schema_v1.sql)  
-**Execution Status:** **DRAFT ONLY — NOT EXECUTED AGAINST ANY DATABASE**  
-**Base Commit:** `0a9d79a95f28942e115bacf10d5166c6441e9267` (`origin/main`)  
+**Consolidated Migration File:** [`supabase_course_applications_v1_migration.sql`](file:///F:/Project/pathfinder-forge-52/supabase_course_applications_v1_migration.sql)  
+**Storage Migration File:** [`supabase_course_applications_storage_v1.sql`](file:///F:/Project/pathfinder-forge-52/supabase_course_applications_storage_v1.sql)  
+**Execution Status:** **READY FOR MANUAL EXECUTION [MANUAL — YOU MUST DO THIS]**  
+**Security Specification:** [`docs/COURSE_APPLICATION_RLS_SECURITY_DESIGN.md`](file:///F:/Project/pathfinder-forge-52/docs/COURSE_APPLICATION_RLS_SECURITY_DESIGN.md) (Version 1.7.0)  
+**Upstream Branching Base Commit:** `0a9d79a95f28942e115bacf10d5166c6441e9267` (`origin/main`, PR #23 merge baseline)  
+**Consolidation Feature Commit:** `43a0e0de277a9eac749bd9c53921ee0db52ea9a3` (`origin/feature/course-application-management`)  
 
 ---
 
@@ -41,6 +44,35 @@ The migration draft establishes 5 core tables, 1 sequence, 5 functions, 5 trigge
 | **`public.course_application_audit_logs`** | Security & compliance audit trail | `id BIGSERIAL` | `application_id` $\to$ `course_applications(id)` (ON DELETE SET NULL)<br/>`actor_id` $\to$ `auth.users(id)` (ON DELETE SET NULL) | `actor_role` CHECK<br/>Immutable (triggers block UPDATE, DELETE, TRUNCATE; REVOKE applied) (DEC-05) |
 | **`public.notification_outbox`** | Transactional email queue | `id BIGSERIAL` | `application_id` $\to$ `course_applications(id)` (ON DELETE SET NULL) | `idempotency_key` UNIQUE<br/>`status` CHECK<br/>`template_name` CHECK<br/>Lease recovery index on `(next_attempt_at, locked_until)` |
 
+### 2.2 Schema Object Count, Verified Line Count & Additions Explanation
+
+#### Verified Line Count and Counting Methodology
+The current migration draft file [`supabase_course_applications_schema_v1.sql`](file:///F:/Project/pathfinder-forge-52/supabase_course_applications_schema_v1.sql) contains **499 lines** under standard non-empty/newline counting conventions (measured via `[System.IO.File]::ReadAllLines` and standard POSIX line counting `wc -l` when accounting for the terminating newline; splitting raw text by `\n` without trimming yields 500 due to the trailing EOF newline).
+
+**Evolution of Line Counts:**
+- **Initial Draft (Phase 3.3):** 354 lines (base relational structure).
+- **Hardened Draft (Phase 3.3.4 - 3.3.7):** 392 lines (incorporating `course_application_events`, worker lease index, active document index, and conditional payment uniqueness).
+- **Security Prerequisite Draft (Phase 3.3.8):** 456 lines (incorporating Section 9 RLS deployment blocker and access tier specifications).
+- **Corrected Privilege Scope Draft (Phase 3.3.9):** 481 lines (qualifying default privileges, SECURITY DEFINER FORCE RLS caveats, and query planner realities).
+- **Final Security Caveat Draft (Phase 3.3.10):** 492 lines (explicitly detailing precise PostgreSQL RLS bypass criteria: BYPASSRLS / superuser / non-FORCE RLS table owner).
+- **Final RLS Semantics Clarification (Phase 3.3.11):** 499 lines (clarified exact FORCE ROW LEVEL SECURITY behavior and non-override of BYPASSRLS / superuser bypass).
+
+#### Architectural Justification for Schema Additions
+1. **`public.course_application_events` (Table & Index):**
+   - Added to support a user-facing and operational timeline of candidate milestone transitions (`DRAFT_CREATED`, `SUBMITTED`, `UNDER_REVIEW`, `RESUBMISSION_REQUESTED`, `RESUBMITTED`, `APPROVED`, `PAYMENT_VERIFIED`, `ENROLLED`, `REJECTED`, `CANCELLED`, `CLAIMED_BY_USER`, `REVOKED`).
+   - Accompanied by index `idx_app_events_app_id` on `(application_id, created_at DESC)`.
+2. **Additional Dossier Performance Indexes:**
+   - `idx_course_applications_created_at`: Supports index-ordered chronological review queues (`created_at DESC`).
+   - `idx_unique_payment_ref`: Conditional unique index on `(lower(trim(payment_reference))) WHERE payment_reference IS NOT NULL AND payment_status NOT IN ('unpaid', 'refunded')` preventing duplicate transaction ID submissions.
+3. **Active Document Lookup Index:**
+   - `idx_app_documents_type`: Composite partial index on `(application_id, document_type) WHERE is_archived = false` enabling fast retrieval of active candidate documents when superseded drafts exist.
+4. **Worker Lease Recovery Index:**
+   - `idx_notification_outbox_locked`: Partial index on `(locked_until) WHERE status = 'processing'` enabling background workers to discover and reclaim stalled leases.
+
+> [!NOTE]
+> **Query Planner & Performance Reality:**
+> These 14 indexes are designed to support targeted index access paths for specific workload queries. However, in PostgreSQL, the cost-based query planner determines whether an index scan, bitmap index scan, or sequential scan is most efficient based on table cardinality, statistics, and selectivity. Indexes do not categorically eliminate sequential scans across all execution scenarios (e.g. small table volumes or low-selectivity queries).
+
 ---
 
 ## 3. Application-Number Generation Specification
@@ -66,8 +98,20 @@ APP-YYYY-00001
 ### Two-Way Trigger Referential Protection
 1. **Child Application Validation (`trg_validate_course_application_course_id`):**
    - Validates that `NEW.course_id::text` matches an existing row in `public.courses`.
-   - **Race-Condition Protection:** Executes `SELECT 1 FROM public.courses WHERE id = NEW.course_id::text FOR KEY SHARE`. Taking a shared row lock blocks any concurrent transaction attempting to delete or alter the course until the application creation transaction completes.
-   - **Security Definer:** Declared with `SECURITY DEFINER` and `SET search_path = pg_catalog, public, pg_temp`. This allows unauthenticated guest applicants (DEC-02) to validate course existence even when RLS on `public.courses` restricts direct SELECT queries.
+   - **Concurrency Guard:** Executes `SELECT 1 FROM public.courses WHERE id = NEW.course_id::text FOR KEY SHARE`. Taking a shared row lock blocks any concurrent transaction attempting to delete or alter the course until the application creation transaction completes.
+   - **SECURITY DEFINER & Precise RLS Boundary Semantics:** Declared with `SECURITY DEFINER` and `SET search_path = pg_catalog, public, pg_temp` to allow guest applicants (DEC-02) to validate course existence even when caller permissions limit direct SELECT access.
+     - A `SECURITY DEFINER` function executes with the privileges of its owning role rather than the calling role.
+     - `SECURITY DEFINER` does **not** automatically bypass Row Level Security (RLS).
+     - RLS on `public.courses` is bypassed only if:
+       1. The owning role possesses the PostgreSQL `BYPASSRLS` role attribute, OR
+       2. The owning role is a PostgreSQL superuser, OR
+       3. The owning role is the table owner of `public.courses` AND `FORCE ROW LEVEL SECURITY` is **not** enabled on `public.courses`.
+     - **FORCE ROW LEVEL SECURITY Behavior & Boundaries:**
+       - When `FORCE ROW LEVEL SECURITY` is enabled on `public.courses`, a table owner that does not otherwise bypass RLS becomes subject to RLS.
+       - `FORCE ROW LEVEL SECURITY` does **not** override the `BYPASSRLS` attribute or superuser bypass (superusers and roles with `BYPASSRLS` remain exempt from RLS regardless of `FORCE RLS`).
+     - A role without `BYPASSRLS` that is neither a superuser nor an exempt table owner remains subject to applicable RLS policies on `public.courses`, which evaluate and govern row visibility.
+     - In all cases, required underlying table privileges (`SELECT` on `public.courses` for the referential query) must strictly exist.
+     - Production function ownership, role attributes (`BYPASSRLS`), table-level grants, and live `FORCE ROW LEVEL SECURITY` configuration on `public.courses` have **not** been inspected or verified and remain mandatory implementation prerequisites to be confirmed during Phase 3.4.
    - **Least Privilege:** `REVOKE EXECUTE ON FUNCTION public.validate_course_application_course_id() FROM PUBLIC;`.
 2. **Parent Course Deletion Protection (`trg_prevent_course_deletion_or_id_change`):**
    - Defined `BEFORE UPDATE OF id OR DELETE ON public.courses`.
@@ -226,7 +270,52 @@ The upcoming approval RPC must use:
 
 ---
 
-## 11. Migration Quality & Rerun Safety
+## 11. Row Level Security (RLS) & Access Policy Prerequisite (Deployment Blocker)
+
+> [!CAUTION]
+> **CRITICAL PRE-DEPLOYMENT SECURITY REQUIREMENT:**
+> The migration script `supabase_course_applications_schema_v1.sql` currently establishes the core relational tables, foreign key relationships, sequences, triggers, and secondary indexes.
+> **It does NOT enable Row Level Security (RLS) or establish access policies.**
+> **PRODUCTION DEPLOYMENT IS BLOCKED** until RLS policies and table grant/revoke permissions are formally designed, audited, and approved for all five tables:
+> 1. `public.course_applications`
+> 2. `public.course_application_documents`
+> 3. `public.course_application_events`
+> 4. `public.course_application_audit_logs`
+> 5. `public.notification_outbox`
+
+### Privilege Architecture, Default Grants & RLS Deny-By-Default
+1. **PostgreSQL Table-Level Privileges:**
+   In vanilla PostgreSQL, newly created tables grant permissions (`ALL`) exclusively to the creating table owner. Third-party roles have zero access unless granted explicitly or via default privileges.
+2. **Supabase Default Privileges (`ALTER DEFAULT PRIVILEGES`):**
+   In standard Supabase environments, initial setup routines often configure default privileges in the `public` schema (`ALTER DEFAULT PRIVILEGES ... GRANT ALL ON TABLES TO anon, authenticated, service_role`), allowing newly created tables to be queried by PostgREST API roles unless customized or restricted.
+3. **RLS Policy Enforcement Layer:**
+   Table privileges operate as the initial gate. If table privileges exist, enabling Row Level Security activates row-by-row filtering. Executing `ALTER TABLE <table_name> ENABLE ROW LEVEL SECURITY;` without defining permissive policies enforces a strict **deny-by-default** rule for non-superusers (`anon`, `authenticated`), causing direct client PostgREST queries to fail with HTTP 401/403.
+4. **Unverified Live Project ACL Configuration:**
+   Because Phase 3.3.x is strictly local and read-only, the production Supabase instance's live default privileges, role grants, schema-level ACLs, and table-level ownership have **not** been freshly inspected.
+   - The five Course Application tables have **not been deployed** to production, and production does not currently expose them.
+   - Production deployment is strictly **BLOCKED** until live default privileges and ACLs are audited, and explicit least-privilege table grants/revocations and RLS policies are designed and approved.
+
+### Three Operational Access Tiers
+Any future RLS implementation must differentiate between:
+1. **Authenticated Client Access (`authenticated` role):**
+   - Students: May read only their owned applications (`user_id = auth.uid()`), upload and view documents for owned applications, and view timeline events. Direct client updates or status alterations are forbidden.
+   - Administrators: May read all or assigned dossiers, update review statuses, and append timeline events, authenticated via verified role check in `public.profile` (`role = 'admin'`).
+2. **Anonymous Guest Submission (`anon` role):**
+   - DEC-02 permits prospective candidates to apply without an account (`user_id IS NULL`).
+   - However, direct table access by `anon` creates severe security risks (data harvesting, spam, and dossier poisoning).
+   - Guest submissions and document uploads must be routed through a validated, rate-limited server-side API or trusted RPC, while direct `anon` table access via PostgREST remains forbidden.
+3. **Trusted Server-Side Operations (`service_role` / Background Workers):**
+   - Notification worker polling `public.notification_outbox` requires exclusive access. `anon` and `authenticated` roles must have ZERO access to `notification_outbox`.
+   - Guest claim processing and enrollment materialization execute via trusted `SECURITY DEFINER` RPCs.
+
+### Audit Log Mutation Security Boundary
+- The triggers and REVOKE statement on `public.course_application_audit_logs` enforce row-level immutability (`BEFORE UPDATE OR DELETE`) and statement-level truncate protection (`BEFORE TRUNCATE`).
+- These mechanisms prevent tampering with audit records once written.
+- However, they do **not** restrict `SELECT` access to audit logs, and they provide **zero security** for `course_applications`, `course_application_documents`, `course_application_events`, or `notification_outbox`.
+
+---
+
+## 12. Migration Quality & Rerun Safety
 
 ### Idempotent Statements
 - `CREATE SEQUENCE IF NOT EXISTS`
@@ -250,23 +339,43 @@ ensures that any syntax error, permission error, or constraint violation trigger
 
 ---
 
-## 12. Bioinformatics Course Discrepancy Status
+## 13. Bioinformatics Course Discrepancy Status
 
 - **Previously Observed Identifier:** In earlier production inspection, `public.courses` contained `Bioinformatics & Computational Biology` with UUID `619be200-832d-41e8-97b8-d0515031ae76`.
-- **Current Audit Stance:** Neither Phase 3.3.1 nor Phase 3.3.2/3.3.4/3.3.5/3.3.6 accessed production. Therefore, `619be200-832d-41e8-97b8-d0515031ae76` is treated as a previously observed production value, not a freshly verified current database fact.
+- **Current Audit Stance:** Neither Phase 3.3.1 nor Phase 3.3.2/3.3.4/3.3.5/3.3.6/3.3.7/3.3.8 accessed production. Therefore, `619be200-832d-41e8-97b8-d0515031ae76` is treated as a previously observed production value, not a freshly verified current database fact.
 - **Strict Prohibition:** **No seed migration is included** in this schema draft. No course records are inserted or modified. Authorized live verification will take place prior to frontend fallback updates.
 
 ---
 
-## 13. Explicit Safety & Read-Only Confirmation
+## 14. Explicit Safety & Read-Only Confirmation
 
-- **Repository Files Modified in Original Worktree (`pathfinder-forge-52`):** **ZERO.**
-- **Pre-existing SQL Files Preserved:** All 4 uncommitted SQL files remain untouched.
+- **Original Project Repository (`pathfinder-forge-52`):** Exclusive permanent development location.
+- **Active Feature Branch:** `feature/course-application-management`.
+- **Pre-existing SQL Files Preserved:** All 4 uncommitted SQL files remain untouched (SHA-256 verified byte-for-byte).
 - **Production Database Modifications:** **NONE.**
 - **Supabase Objects Created / Altered:** **NONE.**
 - **Deployment Operations:** **NONE.**
 
 ---
 
-> **Phase 3.3.6 Status:** **SNAPSHOT-CONSISTENT ENROLLMENT CONCURRENCY & PRIVILEGE HARDENING APPLIED.**  
-> Schema draft [`supabase_course_applications_schema_v1.sql`](file:///F:/Project/pathfinder-forge-52/supabase_course_applications_schema_v1.sql), architecture specification [`docs/COURSE_APPLICATION_SYSTEM_ARCHITECTURE.md`](file:///F:/Project/pathfinder-forge-52/docs/COURSE_APPLICATION_SYSTEM_ARCHITECTURE.md), and migration runbook [`docs/COURSE_APPLICATION_DATABASE_MIGRATIONS.md`](file:///F:/Project/pathfinder-forge-52/docs/COURSE_APPLICATION_DATABASE_MIGRATIONS.md) have been synchronized.
+## 15. Historical Progression & Phase Evolution
+
+| Phase | Milestone & Focus | Scope & Changes |
+| :--- | :--- | :--- |
+| **Phase 3.3** | Initial Core Schema Migration Draft | Established foundational 5-table relational schema draft in root. |
+| **Phase 3.3.1** | Read-Only Technical Audit | Audited schema draft against approved decisions; identified constraint and trigger gaps. |
+| **Phase 3.3.2** | Migration Draft Corrections | Resolved naming collisions, added trigger search-path hardening, and aligned DEC constraints. |
+| **Phase 3.3.3** | Artifact Inspection & SQL Handoff | Read-only inspection and packaging of complete artifacts for review. |
+| **Phase 3.3.4** | Guest Claim Security & Database Consistency | Replaced plaintext tokens with SHA-256 hash storage, 7-day TTL, and email-confirmed verification. |
+| **Phase 3.3.5** | Final Guest Claim SQL & UUID Deduplication | Corrected anti-hijacking invariants and UUID deduplication logic in documentation. |
+| **Phase 3.3.6** | Concurrency & Privilege Hardening | Implemented snapshot-consistent single-statement deduplication and revoked trigger execute privileges. |
+| **Phase 3.3.7** | Project Consolidation & Publication | Migrated all work into permanent repository `F:/Project/pathfinder-forge-52`, published to GitHub, and removed separate worktree. |
+| **Phase 3.3.8** | Security Scope & RLS Prerequisites | Identified RLS deployment blocker, defined 3 access tiers, corrected advisory-lock boundary wording, and reconciled schema additions. |
+| **Phase 3.3.9** | Documentation Accuracy & Security Assumption Corrections | Reconciled SQL line counts (481 lines via standard newline counting), labeled dual base commits (0a9d79a upstream vs 43a0e0d consolidation), qualified default privileges, added SECURITY DEFINER FORCE RLS caveats, and aligned query planner reality. |
+| **Phase 3.3.10** | Final Security Caveats & Protected-File Audit | Explicitly codified precise PostgreSQL RLS bypass criteria (BYPASSRLS / superuser / non-FORCE RLS owner) across all artifacts and completed comprehensive baseline-aware protected-file SHA-256 audit. |
+| **Phase 3.3.11** | Final RLS Semantics Clarification | Clarified that FORCE ROW LEVEL SECURITY does not override BYPASSRLS or superuser bypass, and eliminated ambiguous phrasing regarding roles subject to RLS. |
+
+---
+
+> **Phase 3.3.11 Status:** **FINAL RLS SEMANTICS CLARIFICATION COMPLETE.**  
+> Schema draft [`supabase_course_applications_schema_v1.sql`](file:///F:/Project/pathfinder-forge-52/supabase_course_applications_schema_v1.sql), architecture specification [`docs/COURSE_APPLICATION_SYSTEM_ARCHITECTURE.md`](file:///F:/Project/pathfinder-forge-52/docs/COURSE_APPLICATION_SYSTEM_ARCHITECTURE.md), and migration runbook [`docs/COURSE_APPLICATION_DATABASE_MIGRATIONS.md`](file:///F:/Project/pathfinder-forge-52/docs/COURSE_APPLICATION_DATABASE_MIGRATIONS.md) are fully synchronized and preserved in [`F:/Project/pathfinder-forge-52`](file:///F:/Project/pathfinder-forge-52).

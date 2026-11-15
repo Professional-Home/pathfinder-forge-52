@@ -1,12 +1,44 @@
 -- ====================================================================
--- PATHFINDER COURSE APPLICATION MANAGEMENT SYSTEM — SCHEMA MIGRATION DRAFT (V1.2)
--- Phase 3.3.4: Guest Claim Security & Database Consistency Corrections
+-- PATHFINDER COURSE APPLICATION MANAGEMENT SYSTEM — SCHEMA MIGRATION DRAFT (V1.3.3)
+-- Phase: 3.3.11 (Final RLS Semantics Clarification)
 -- Repository: F:/Project/pathfinder-forge-52
 -- Target Branch: feature/course-application-management
 --
--- STRICT PRE-DEPLOYMENT NOTICE:
--- This is a static schema design draft for review. DO NOT EXECUTE against
--- production Supabase without explicit phase sign-off and authorization.
+-- BASE COMMITS & PROVENANCE:
+-- - Upstream Branching Baseline: 0a9d79a95f28942e115bacf10d5166c6441e9267 (origin/main, PR #23 merge baseline)
+-- - Consolidation Feature Commit: 43a0e0de277a9eac749bd9c53921ee0db52ea9a3 (origin/feature/course-application-management publication)
+--
+-- HISTORICAL PROGRESSION:
+-- - Phase 3.3: Initial Core Relational Schema Design & Migration Draft
+-- - Phase 3.3.2: Technical Audit Corrections (Constraints, Triggers, DEC Alignment)
+-- - Phase 3.3.4: Cryptographic Guest Claim Security & Database Consistency Corrections
+-- - Phase 3.3.7: Consolidation into Permanent Project Repository (F:/Project/pathfinder-forge-52)
+-- - Phase 3.3.8: Final Schema Security Scope, RLS Prerequisites & Documentation Consistency Review
+-- - Phase 3.3.9: Documentation Accuracy & Security Assumption Corrections (Privileges, Planner, RLS FORCE caveats)
+-- - Phase 3.3.10: Final Security Caveat (SECURITY DEFINER / BYPASSRLS / FORCE RLS) & Protected-File Audit
+-- - Phase 3.3.11: Final RLS Semantics Clarification (Precise FORCE RLS & BYPASSRLS Exemption Rules)
+--
+-- STRICT PRE-DEPLOYMENT NOTICE & SECURITY BLOCKER:
+-- 1. This is a static schema design draft for review. DO NOT EXECUTE against
+--    production Supabase without explicit phase sign-off and authorization.
+-- 2. ROW LEVEL SECURITY (RLS) IS NOT YET CONFIGURED OR ENABLED IN THIS DRAFT.
+--    Effective access to newly created tables depends on the database's configured
+--    default privileges (ALTER DEFAULT PRIVILEGES), explicit role grants/revokes, and RLS.
+--    In standard Supabase environments, public schema default privileges often grant
+--    table access to anon and authenticated roles unless explicitly customized or restricted.
+-- 3. UNVERIFIED PRODUCTION ACLs: The live production database's default privileges, table grants,
+--    and role permissions have NOT been freshly verified, and these tables have NOT been deployed.
+--    Production deployment is strictly BLOCKED until the live ACL configuration is verified
+--    and comprehensive RLS and least-privilege access policies are designed and approved for all 5 tables:
+--    - public.course_applications
+--    - public.course_application_documents
+--    - public.course_application_events
+--    - public.course_application_audit_logs
+--    - public.notification_outbox
+-- 4. Audit-log immutability triggers protect only audit records against mutation/deletion;
+--    they provide ZERO security for the other tables against unauthorized reads or writes.
+-- 5. If RLS is enabled without policies, PostgreSQL defaults to DENY-ALL for client roles
+--    (anon, authenticated), requiring trusted server-side execution (service_role or SECURITY DEFINER RPCs).
 --
 -- APPROVED BUSINESS DECISIONS EMBEDDED:
 -- - DEC-01: courses.id remains TEXT. Applications use UUID validated via trigger.
@@ -127,10 +159,30 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_payment_ref
 -- row in public.courses (where courses.id is TEXT), avoiding an invalid
 -- cross-type foreign key while enforcing strict referential integrity.
 --
--- Security Definer Justification:
--- Executed with elevated privileges so anonymous or guest applicants (DEC-02)
--- can validate course existence even when RLS on public.courses limits SELECT
--- access. Hardened search_path prevents search-path hijacking.
+-- Security Definer Justification & Precise RLS Semantics:
+-- Executed with the privileges of the function's owning role to validate course existence
+-- even when the client caller lacks direct table SELECT permissions on public.courses.
+-- Hardened search_path prevents search-path hijacking.
+--
+-- TECHNICAL SECURITY CAVEATS & RLS BOUNDARIES:
+-- 1. SECURITY DEFINER executes with the privileges of the function's owning role.
+--    It does NOT automatically bypass Row Level Security (RLS).
+-- 2. In PostgreSQL, RLS is bypassed only if:
+--    a. The owning role possesses the PostgreSQL BYPASSRLS role attribute, OR
+--    b. The owning role is a PostgreSQL superuser, OR
+--    c. The owning role is the table owner of public.courses AND 'FORCE ROW LEVEL SECURITY'
+--       is NOT enabled on public.courses.
+-- 3. FORCE ROW LEVEL SECURITY behavior and limits:
+--    a. Enabling FORCE ROW LEVEL SECURITY ensures table owners become subject to RLS policies
+--       if they do not otherwise bypass RLS.
+--    b. FORCE ROW LEVEL SECURITY does NOT override the BYPASSRLS attribute or superuser bypass
+--       (superusers and roles with BYPASSRLS remain exempt from RLS regardless of FORCE RLS).
+-- 4. A role without BYPASSRLS that is neither a superuser nor an exempt table owner remains
+--    subject to applicable RLS SELECT policies on public.courses, which evaluate and govern row visibility.
+-- 5. In all cases, required underlying table privileges (SELECT on public.courses) must strictly exist.
+-- 6. Production function ownership, role attributes (BYPASSRLS), table grants, and live
+--    FORCE RLS settings have NOT been inspected or verified and are treated as implementation
+--    prerequisites to be confirmed during Phase 3.4 prior to deployment.
 CREATE OR REPLACE FUNCTION public.validate_course_application_course_id()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -357,7 +409,7 @@ CREATE TABLE IF NOT EXISTS public.notification_outbox (
 
 -- Optimized polling index matching worker query:
 -- WHERE status IN ('pending', 'failed') AND next_attempt_at <= now()
--- Includes locked_until to support recovery of expired processing leases without table scans.
+-- Includes locked_until to support recovery of expired processing leases via index scan (subject to query planner cost evaluation).
 CREATE INDEX IF NOT EXISTS idx_notification_outbox_queue 
     ON public.notification_outbox (next_attempt_at, locked_until)
     WHERE status IN ('pending', 'failed');
@@ -386,6 +438,62 @@ BEFORE UPDATE ON public.course_applications
 FOR EACH ROW
 EXECUTE FUNCTION public.set_course_application_updated_at();
 
+-- --------------------------------------------------------------------
+-- 9. ROW LEVEL SECURITY (RLS) & ACCESS CONTROL PREREQUISITES
+-- --------------------------------------------------------------------
+-- CRITICAL SECURITY NOTICE (DEPLOYMENT BLOCKER):
+-- The five core tables created in this draft currently do NOT have Row Level
+-- Security enabled and do NOT have access policies attached.
+--
+-- Before ANY execution in production Supabase, the following security architecture
+-- MUST be designed, reviewed, and implemented:
+--
+-- 1. PRIVILEGE & ACCESS ARCHITECTURE DISTINCTIONS:
+--    a. PostgreSQL Object Privileges: Base permissions (SELECT, INSERT, UPDATE, DELETE)
+--       assigned to database roles on tables.
+--    b. Supabase Default Privileges: Configured via ALTER DEFAULT PRIVILEGES IN SCHEMA public.
+--       In default projects, permissions are often granted broadly to anon and authenticated,
+--       but live project configuration can alter these defaults.
+--    c. RLS Policy Enforcement: Evaluated only when table-level privileges exist. Provides
+--       row-by-row filtering and access control.
+--    d. Live Project Status: The production project's live ACLs and default privileges have
+--       not been verified. These tables have NOT been deployed to production.
+--
+-- 2. ACCESS TIERS REQUIRING DISTINCT POLICIES:
+--    a. Authenticated Client Access (role: authenticated):
+--       - Students: SELECT on course_applications, course_application_documents,
+--         and course_application_events WHERE user_id = auth.uid().
+--         INSERT of documents for owned applications.
+--         UPDATE/DELETE strictly prohibited directly from client.
+--       - Administrators: SELECT, UPDATE on applications assigned or authorized via
+--         profile role verification (public.profile.role = 'admin').
+--    b. Anonymous Guest Submission (role: anon):
+--       - Submitting new applications (DEC-02) and initial documents.
+--       - DIRECT table SELECT/UPDATE/DELETE MUST BE FORBIDDEN to prevent PII harvesting,
+--         data tampering, and enumeration attacks.
+--       - Submissions should be routed through a validated, rate-limited server API /
+--         trusted RPC rather than exposing broad anon INSERT on public tables.
+--    c. Trusted Server-Side Operations (role: service_role / SECURITY DEFINER):
+--       - Notification Outbox worker: Exclusive processor of public.notification_outbox.
+--         Client roles (anon, authenticated) must have ZERO access to notification_outbox.
+--       - Guest Claim Processor: Atomic claiming RPC verifying SHA-256 token hashes.
+--       - Enrollment Activation: Atomic approval RPC executing under advisory lock.
+--
+-- 3. CONSEQUENCES OF ENABLING RLS WITHOUT POLICIES:
+--    - Running `ALTER TABLE <table_name> ENABLE ROW LEVEL SECURITY;` without CREATE POLICY
+--      statements enforces a complete DENY-BY-DEFAULT for anon and authenticated users.
+--    - All client PostgREST queries will fail with HTTP 401/403.
+--    - Server operations using service_role bypass RLS, but client UI flows will break
+--      unless granular policies or dedicated RPCs are deployed in unison.
+--
+-- 4. AUDIT LOG SECURITY IS NOT GENERAL TABLE SECURITY:
+--    - While public.course_application_audit_logs is protected against UPDATE, DELETE,
+--      and TRUNCATE via triggers and REVOKE, this does NOT protect it against unauthorized
+--      SELECT of sensitive audit trails (IPs, user agents, diffs).
+--    - Furthermore, it provides ZERO security for the other 4 tables.
+--
+-- RLS enablement statements and granular policies will be formally drafted and reviewed
+-- in the dedicated security phase prior to deployment.
 -- ====================================================================
--- END OF SCHEMA MIGRATION DRAFT (V1.2)
+-- END OF SCHEMA MIGRATION DRAFT (V1.3.3)
 -- ====================================================================

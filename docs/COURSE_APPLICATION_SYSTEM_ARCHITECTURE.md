@@ -1,12 +1,13 @@
 # PathFinder Course Application Management System — Approved Architecture Specification
 
-**Document Version:** 1.4.0  
-**Status:** Approved Requirements Specification (Post-Review Consistency, Privilege Hardening & Concurrency Refinement)  
+**Document Version:** 1.7.0  
+**Status:** Phase 3 Implementation Completed (Ready for Independent Review & Verification)  
 **Approval Date:** 14 November 2026 (Updated: 15 November 2026)  
 **Project Repository:** `F:/Project/pathfinder-forge-52`  
 **Implementation Branch:** `feature/course-application-management`  
-**Base Commit:** `0a9d79a95f28942e115bacf10d5166c6441e9267` (`origin/main`, fast-forward containing `1d9cb55dab3a7901f7575dd087b3599fc07c075d`)  
-**Production Authorization Notice:** Production database migrations, Supabase schema modifications, and deployment changes have **NOT** yet been executed or authorized. This document records approved architectural decisions and specifications for development within this isolated worktree.
+**Upstream Branching Base Commit:** `0a9d79a95f28942e115bacf10d5166c6441e9267` (`origin/main`, PR #23 merge baseline)  
+**Consolidation Feature Commit:** `43a0e0de277a9eac749bd9c53921ee0db52ea9a3` (`origin/feature/course-application-management`, Phase 3.3.7 repository publication)  
+**Production Authorization Notice:** Production database migrations, Supabase schema modifications, and deployment changes have **NOT** yet been executed or authorized. This document records approved architectural decisions and specifications for development within the permanent repository `F:/Project/pathfinder-forge-52` (branch: `feature/course-application-management`).
 
 ---
 
@@ -30,13 +31,15 @@ The Course Application Management System cleanly separates candidate evaluation 
 
 ```mermaid
 flowchart LR
-    subgraph AppDomain["1. Application Domain (Evaluation)"]
+    subgraph AppDomain["1. Application Domain (Evaluation & Processing)"]
         CA["public.course_applications"]
         CAD["public.course_application_documents"]
+        CAE["public.course_application_events"]
         CAL["public.course_application_audit_logs"]
+        NO["public.notification_outbox"]
     end
 
-    subgraph EnrollDomain["2. Enrollment Domain (Access)"]
+    subgraph EnrollDomain["2. Enrollment Domain (Operational Access)"]
         EU["public.enrollments_users<br/>(Active Operational Table)"]
         LE["public.enrollments<br/>(Legacy Table - Preserved)"]
     end
@@ -45,7 +48,7 @@ flowchart LR
     RPC -->|Atomic Materialization (Advisory Locked)| EU
 ```
 
-1. **Application Domain (`course_applications`):** Governs candidate vetting, academic background, document verification, resubmission workflows, and payment auditing.
+1. **Application Domain (`course_applications`, `course_application_documents`, `course_application_events`, `course_application_audit_logs`, `notification_outbox`):** Governs candidate vetting, academic background, document verification, timeline tracking, regulatory auditing, and transactional asynchronous notifications.
 2. **Enrollment Domain (`enrollments_users`):** Governs student dashboard access, course material unlocking, and counselor WhatsApp routing. Entries are created in `enrollments_users` **only** upon final enrollment activation.
 
 ---
@@ -177,8 +180,21 @@ APP-YYYY-00001
 To protect references without altering the `public.courses.id` type from TEXT:
 1. **Application-side Validation Trigger (`trg_validate_course_application_course_id`):**
    - Validates that `NEW.course_id::text` exists in `public.courses`.
-   - Acquires `FOR KEY SHARE` row lock to eliminate race conditions against concurrent course updates.
-   - Configured with `SECURITY DEFINER` and `SET search_path = pg_catalog, public, pg_temp` to allow guest submissions even if caller lacks direct SELECT rights on courses under RLS.
+   - Acquires `FOR KEY SHARE` row lock to guard against concurrent course deletion or mutation during application insertion.
+   - Configured with `SECURITY DEFINER` and `SET search_path = pg_catalog, public, pg_temp` to allow guest submissions even if caller lacks direct SELECT rights on courses.
+   - **SECURITY DEFINER & Precise RLS Boundary Semantics:**
+     - A `SECURITY DEFINER` function executes with the privileges of its owning role rather than the calling role.
+     - `SECURITY DEFINER` does **not** automatically bypass Row Level Security (RLS).
+     - RLS on `public.courses` is bypassed only if:
+       1. The owning role possesses the PostgreSQL `BYPASSRLS` role attribute, OR
+       2. The owning role is a PostgreSQL superuser, OR
+       3. The owning role is the table owner of `public.courses` AND `FORCE ROW LEVEL SECURITY` is **not** enabled on `public.courses`.
+     - **FORCE ROW LEVEL SECURITY Behavior & Boundaries:**
+       - When `FORCE ROW LEVEL SECURITY` is enabled on `public.courses`, a table owner that does not otherwise bypass RLS becomes subject to RLS.
+       - `FORCE ROW LEVEL SECURITY` does **not** override the `BYPASSRLS` attribute or superuser bypass (superusers and roles with `BYPASSRLS` remain exempt from RLS regardless of `FORCE RLS`).
+     - A role without `BYPASSRLS` that is neither a superuser nor an exempt table owner remains subject to applicable RLS policies on `public.courses`, which evaluate and govern row visibility.
+     - In all cases, required underlying table privileges (`SELECT` on `public.courses` for the referential query) must strictly exist.
+     - Production function ownership, role attributes (`BYPASSRLS`), table-level grants, and live `FORCE ROW LEVEL SECURITY` configuration on `public.courses` have **not** been inspected or verified and remain mandatory implementation prerequisites to be confirmed during Phase 3.4.
    - Execution revoked from `PUBLIC` (`REVOKE EXECUTE ON FUNCTION public.validate_course_application_course_id() FROM PUBLIC;`).
 2. **Course-side Protection Trigger (`trg_prevent_course_deletion_or_id_change`):**
    - Fires `BEFORE UPDATE OF id OR DELETE ON public.courses`.
@@ -205,9 +221,44 @@ CREATE TABLE public.course_application_documents (
 );
 
 CREATE INDEX idx_app_documents_app_id ON public.course_application_documents (application_id);
+CREATE INDEX idx_app_documents_type ON public.course_application_documents (application_id, document_type) WHERE is_archived = false;
 ```
 
-### 5.5 `public.course_application_audit_logs` (Immutability Architecture)
+### 5.5 `public.course_application_events` (User-Facing Progress Timeline)
+```sql
+CREATE TABLE public.course_application_events (
+    id BIGSERIAL PRIMARY KEY,
+    application_id UUID NOT NULL REFERENCES public.course_applications(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL CHECK (
+        event_type IN (
+            'DRAFT_CREATED',
+            'SUBMITTED',
+            'UNDER_REVIEW',
+            'RESUBMISSION_REQUESTED',
+            'RESUBMITTED',
+            'APPROVED',
+            'PAYMENT_VERIFIED',
+            'ENROLLED',
+            'REJECTED',
+            'CANCELLED',
+            'CLAIMED_BY_USER',
+            'REVOKED'
+        )
+    ),
+    actor_type TEXT NOT NULL CHECK (actor_type IN ('student', 'admin', 'system')),
+    actor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+CREATE INDEX idx_app_events_app_id ON public.course_application_events (application_id, created_at DESC);
+```
+- **Purpose:** Provides a candidate-accessible timeline of application status transitions, administrative review requests, and milestone achievements.
+- **Cascade Behavior:** Unlike audit logs, event timeline records belong to the student dossier life cycle and cascade delete with the application.
+
+### 5.6 `public.course_application_audit_logs` (Immutability Architecture)
 ```sql
 CREATE TABLE public.course_application_audit_logs (
     id BIGSERIAL PRIMARY KEY,
@@ -223,13 +274,17 @@ CREATE TABLE public.course_application_audit_logs (
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
+CREATE INDEX idx_app_audit_app_id ON public.course_application_audit_logs (application_id);
+CREATE INDEX idx_app_audit_created_at ON public.course_application_audit_logs (created_at DESC);
+
 -- Immutability enforcement
 REVOKE UPDATE, DELETE, TRUNCATE ON public.course_application_audit_logs FROM PUBLIC, anon, authenticated;
 ```
 - **Immutability Triggers:** Row-level triggers reject `UPDATE` and `DELETE`, and a statement-level trigger rejects `TRUNCATE`.
 - **Operational Boundary:** Protects against application and client roles. Does not prevent PostgreSQL superusers (`postgres` / `supabase_admin`) from modifying tables or disabling triggers.
+- **Audit Isolation:** Note that audit log mutation protection applies *strictly* to `course_application_audit_logs` and provides zero security or access restriction for any other table in the schema.
 
-### 5.6 `public.notification_outbox`
+### 5.7 `public.notification_outbox`
 ```sql
 CREATE TABLE public.notification_outbox (
     id BIGSERIAL PRIMARY KEY,
@@ -260,7 +315,31 @@ CREATE TABLE public.notification_outbox (
 
 CREATE INDEX idx_notification_outbox_queue ON public.notification_outbox (next_attempt_at, locked_until)
 WHERE status IN ('pending', 'failed');
+
+CREATE INDEX idx_notification_outbox_locked ON public.notification_outbox (locked_until)
+WHERE status = 'processing';
 ```
+
+### 5.8 Indexing Strategy & Schema Additions Rationale
+The schema includes 14 secondary indexes designed to support specific access paths and operational query patterns:
+1. `idx_course_applications_email`: Supports case-insensitive email dossier lookups (`lower(trim(student_email))`).
+2. `idx_course_applications_user_id`: Supports candidate dashboard queries filtering by linked user account.
+3. `idx_course_applications_guest_claim`: Filtered index supporting guest token claiming lookups (`guest_claim_token_hash IS NOT NULL`).
+4. `idx_course_applications_course_id`: Supports administrative filtering of applications by course.
+5. `idx_course_applications_status`: Optimizes administrative pipeline queries filtering by application lifecycle status.
+6. `idx_course_applications_created_at`: Supports index-ordered chronological review queues (`created_at DESC`).
+7. `idx_unique_payment_ref`: Conditional unique index preventing duplicate payment reference submissions across active non-refunded applications.
+8. `idx_app_documents_app_id`: Supports retrieval of documents attached to a specific application ID.
+9. `idx_app_documents_type`: Filtered composite index (`application_id, document_type WHERE is_archived = false`) supporting selective lookups of active candidate documents when superseded drafts exist.
+10. `idx_app_events_app_id`: Supports ordered candidate timeline event queries (`application_id, created_at DESC`).
+11. `idx_app_audit_app_id`: Supports retrieval of audit trail entries by application ID.
+12. `idx_app_audit_created_at`: Supports chronological sorting and time-window filtering for compliance audits.
+13. `idx_notification_outbox_queue`: Partial composite index on `(next_attempt_at, locked_until) WHERE status IN ('pending', 'failed')` tailored to worker polling query patterns.
+14. `idx_notification_outbox_locked`: Partial index on `(locked_until) WHERE status = 'processing'` supporting efficient recovery queries for stalled worker leases.
+
+> [!NOTE]
+> **Query Planner & Performance Reality:**
+> While these indexes are engineered to provide efficient access paths for their respective workload queries, PostgreSQL's cost-based query planner ultimately decides between an index scan, bitmap index scan, or sequential scan based on table cardinality, page statistics, and predicate selectivity. Indexes do not categorically eliminate sequential scans across all execution contexts (such as small initial table volumes or non-selective queries).
 
 ---
 
@@ -273,7 +352,11 @@ WHERE status IN ('pending', 'failed');
 4. Two separate SQL queries (e.g., `SELECT count(*)` followed by `SELECT id`) can observe different snapshots under default `READ COMMITTED` isolation if concurrent writers commit between them.
 
 ### Approved Concurrency & Snapshot-Consistent Deduplication Architecture
-To guarantee race-free, idempotent enrollment creation without modifying existing tables or suffering from snapshot skew:
+To establish a coordinated, snapshot-consistent protocol for idempotent enrollment creation without modifying existing tables or suffering from snapshot skew:
+
+> [!NOTE]
+> **Advisory Lock Boundary & Cooperative Scope:**
+> This protocol serializes concurrent executions among **cooperating writers** that participate in this exact approval workflow using the `(hashtext(email), hashtext(course_id))` locking protocol. It does **not** provide absolute database-level mathematical uniqueness against uncoordinated legacy writers, manual administrative database inserts, or external integrations that write directly to `public.enrollments_users` without acquiring this advisory lock. True relational uniqueness requires an explicit database unique constraint or unique index on `(lower(trim(student_email)), course_id)`. Such a constraint requires an authorized production deduplication audit before creation.
 1. **Application Dossier Row Lock:**
    `SELECT * FROM public.course_applications WHERE id = p_application_id FOR UPDATE;`
 2. **Dual-Key Transaction Advisory Lock:**
@@ -470,7 +553,62 @@ GRANT EXECUTE ON FUNCTION public.claim_guest_course_application(UUID, TEXT) TO a
 
 ---
 
-## 8. Document Storage & Upload Security (DEC-04 & DEC-05)
+## 8. Row Level Security (RLS) & Table Access Policy Architecture (Pre-Deployment Requirement)
+
+> [!CAUTION]
+> **CRITICAL SECURITY NOTICE — PRODUCTION DEPLOYMENT BLOCKER:**
+> The current schema migration draft (`supabase_course_applications_schema_v1.sql`) defines table structures, constraints, sequences, triggers, and performance indexes, but **does NOT yet enable Row Level Security (RLS) or define access policies**.
+> **Production deployment is strictly BLOCKED** until formal RLS policies and table grant/revoke permissions are designed, reviewed, and approved for all five application tables:
+> 1. `public.course_applications`
+> 2. `public.course_application_documents`
+> 3. `public.course_application_events`
+> 4. `public.course_application_audit_logs`
+> 5. `public.notification_outbox`
+
+### 8.1 Privilege Architecture, Default Grants & RLS Deny-By-Default
+To accurately evaluate the security model, four distinct database layers must be distinguished:
+
+1. **PostgreSQL Standard Table Privileges:**
+   In core PostgreSQL, newly created tables grant all permissions (`ALL`) exclusively to the creating table owner. Other roles have zero access unless granted explicitly or via schema-level default privileges.
+2. **Supabase Default Privileges (`ALTER DEFAULT PRIVILEGES`):**
+   In standard Supabase environments, initial setup routines often configure default privileges in `public` via `ALTER DEFAULT PRIVILEGES ... GRANT ALL ON TABLES TO anon, authenticated, service_role`. When present, this causes newly created tables to automatically inherit permissions for API roles. However, default privileges can be customized or restricted per project.
+3. **RLS Policy Enforcement Layer:**
+   Table privileges operate as the initial gate. If table privileges exist, enabling Row Level Security activates row-by-row filtering. Executing `ALTER TABLE <table_name> ENABLE ROW LEVEL SECURITY;` without defining permissive policies enforces a strict **deny-by-default** rule for non-superusers (`anon`, `authenticated`), causing direct client PostgREST queries to fail with HTTP 401/403.
+4. **Unverified Live Project ACL Configuration:**
+   Because Phase 3.3.x is strictly local and read-only, the production Supabase instance's live default privileges, role grants, schema-level ACLs, and table-level ownership have **not** been freshly inspected.
+   - The five Course Application tables have **not been deployed** to production, and production does not currently expose them.
+   - Production deployment is strictly **BLOCKED** until live default privileges and ACLs are audited, and explicit least-privilege table grants/revocations and RLS policies are designed and approved.
+
+### 8.2 Three Distinct Architectural Access Tiers
+The security architecture must enforce strict separation across three operational contexts:
+
+1. **Tier 1: Authenticated Client Access (`authenticated` role):**
+   - **Enrolled / Prospective Students:**
+     - `course_applications`: Permitted to `SELECT` only their own dossiers where `user_id = auth.uid()`. Direct client `UPDATE` or `DELETE` is prohibited. Status changes must be mediated by validated workflows.
+     - `course_application_documents`: Permitted to `SELECT` and `INSERT` metadata for documents attached to applications they own (`application_id IN (SELECT id FROM course_applications WHERE user_id = auth.uid())`).
+     - `course_application_events`: Permitted to `SELECT` milestone timeline events where `application_id` belongs to them. `INSERT`, `UPDATE`, `DELETE` are prohibited.
+   - **Admins & Reviewers:**
+     - Permitted to `SELECT` all applications or assigned applications, `UPDATE` review statuses/notes, and `INSERT` timeline events, gated strictly by verified administrative role checking (`public.profile.role = 'admin'` or JWT claims). Direct tampering with payment or audit logs remains prohibited.
+
+2. **Tier 2: Anonymous Guest Submissions (`anon` role):**
+   - **DEC-02 Compliance:** Allows prospective candidates to apply before registering (`user_id IS NULL`).
+   - **Direct Table Access Forbidden:** Granting unauthenticated `anon` direct `INSERT` or `SELECT` rights on `public.course_applications` creates unacceptable risks of database poisoning, spam flooding, and PII harvesting.
+   - **Server-Side API / Hardened RPC Mediation:** Guest applications and document uploads must be submitted through a rate-limited, validated server endpoint or a hardened `SECURITY DEFINER` RPC (`submit_guest_application`). Direct `anon` table access via Supabase PostgREST must remain denied.
+
+3. **Tier 3: Trusted Server-Side Operations (`service_role` & Background Workers):**
+   - **Notification Worker:** Background process running on TanStack Start server (`src/server.ts`). Requires exclusive read/write access to `public.notification_outbox` to poll pending emails, acquire lease locks, update attempts, and record errors. Client roles (`anon`, `authenticated`) must have **ZERO** access to `notification_outbox`.
+   - **Guest Account Claiming:** Atomic execution via `claim_guest_course_application()` RPC running with elevated permissions to verify `auth.users.email_confirmed_at` and consume claim token hashes.
+   - **Enrollment Activation:** Atomic execution via `approve_course_application_and_enroll()` RPC executing under transaction advisory locks.
+
+### 8.3 Audit-Log Mutation Restrictions Do Not Secure Other Tables
+- The triggers `trg_course_application_audit_logs_immutable` / `trg_course_application_audit_logs_prevent_truncate` and `REVOKE UPDATE, DELETE, TRUNCATE ON course_application_audit_logs` prevent row alteration and deletion in `course_application_audit_logs`.
+- However, they do **not** restrict reading (`SELECT`) on `course_application_audit_logs` (which contains candidate IP addresses, user agents, and sensitive state diffs).
+- Most importantly, audit log protections provide **zero protection** for `course_applications`, `course_application_documents`, `course_application_events`, or `notification_outbox`.
+- Audit immutability is a localized regulatory control, not a system-wide access control framework.
+
+---
+
+## 9. Document Storage & Upload Security (DEC-04 & DEC-05)
 
 - **Bucket ID:** `course-application-documents` (private, public read disabled).
 - **Upload Flow:** Client requests temporary upload ticket $\to$ server generates signed upload URL (15-min expiry) $\to$ client uploads binary $\to$ server confirms SHA-256 hash and magic bytes.
@@ -484,7 +622,7 @@ GRANT EXECUTE ON FUNCTION public.claim_guest_course_application(UUID, TEXT) TO a
 
 ---
 
-## 9. Notification Worker Architecture
+## 10. Notification Worker Architecture
 
 - **Service Location:** Background process or scheduled worker in TanStack Start (`src/server.ts`).
 - **Transport:** Existing Gmail SMTP connection pool (`src/lib/server/mail.ts`).
@@ -493,7 +631,7 @@ GRANT EXECUTE ON FUNCTION public.claim_guest_course_application(UUID, TEXT) TO a
 
 ---
 
-## 10. Bioinformatics Course Discrepancy & Frontend Alignment
+## 11. Bioinformatics Course Discrepancy & Frontend Alignment
 
 ### Discrepancy Classification
 - An earlier manual inspection of production observed a course row:
@@ -508,9 +646,28 @@ GRANT EXECUTE ON FUNCTION public.claim_guest_course_application(UUID, TEXT) TO a
 
 ---
 
-## 11. Required Frontend Corrections (Phase 3 Implementation)
+## 12. Required Frontend Corrections (Phase 3 Implementation — Completed)
 
-1. **[`src/routes/admin/dashboard.tsx:81`](file:///F:/Project/pathfinder-forge-52/src/routes/admin/dashboard.tsx#L81):** Change `from("enrollments")` to query `from("enrollments_users")`.
-2. **[`src/routes/dashboard/index.tsx:66`](file:///F:/Project/pathfinder-forge-52/src/routes/dashboard/index.tsx#L66):** Change `.select("course_id, enrolled_at")` to `.select("course_id, enrollment_date")` and update line 87 to read `e.enrollment_date`.
-3. **[`src/lib/courses/store.ts:349`](file:///F:/Project/pathfinder-forge-52/src/lib/courses/store.ts#L349):** Append `.select("id, slug").single()` to `syncCourseToSupabase` to capture database UUIDs and eliminate synthetic local storage IDs.
-4. **[`src/lib/courses/dashboard-courses.ts:53`](file:///F:/Project/pathfinder-forge-52/src/lib/courses/dashboard-courses.ts#L53):** Update fallback ID once production database course row verification is performed.
+1. **[`src/routes/admin/dashboard.tsx:81`](file:///F:/Project/pathfinder-forge-52/src/routes/admin/dashboard.tsx#L81):** Changed `from("enrollments")` to query `from("enrollments_users")`. [COMPLETED]
+2. **[`src/routes/dashboard/index.tsx:66`](file:///F:/Project/pathfinder-forge-52/src/routes/dashboard/index.tsx#L66):** Changed `.select("course_id, enrolled_at")` to `.select("course_id, enrollment_date")` and updated line 87 to read `e.enrollment_date`. [COMPLETED]
+3. **[`src/lib/courses/store.ts:349`](file:///F:/Project/pathfinder-forge-52/src/lib/courses/store.ts#L349):** Appended `.select("id").single()` to `syncCourseToSupabase` and updated `saveCourse` to capture real database UUIDs and replace synthetic IDs. [COMPLETED]
+4. **[`src/lib/courses/dashboard-courses.ts:53`](file:///F:/Project/pathfinder-forge-52/src/lib/courses/dashboard-courses.ts#L53):** Normalized ID mapping in `mergeDashboardCourses` to prioritize database identifiers. [COMPLETED]
+
+---
+
+## 13. Phase 3 Consolidated Implementation Delivery Ledger
+
+All Phase 3 workstreams have been fully implemented in the local repository:
+
+| Workstream | Scope / Component | Implementation Artifacts | Status |
+| :--- | :--- | :--- | :--- |
+| **Workstream A** | Database Migrations & Stored Procedures | `supabase_course_applications_v1_migration.sql` | **Completed** |
+| **Workstream B** | Storage Bucket & Binary Security | `supabase_course_applications_storage_v1.sql`, `src/lib/server/course-application-storage.ts` | **Completed** |
+| **Workstream C** | Server Functions & Business Logic | `src/lib/server/course-applications.ts` | **Completed** |
+| **Workstream D** | Student Application Submission UI | `src/routes/apply/$courseSlug.tsx`, `src/routes/application/$applicationNumber.tsx`, `src/routes/claim-application.tsx` | **Completed** |
+| **Workstream E** | Administrative Review Portal | `src/routes/admin/applications/index.tsx`, `src/routes/admin/applications/$id.tsx`, `src/components/admin/AdminSidebar.tsx` | **Completed** |
+| **Workstream F** | Notification Outbox Worker | `src/lib/server/notification-worker.ts` | **Completed** |
+| **Workstream G** | Existing Frontend Query Corrections | `src/routes/admin/dashboard.tsx`, `src/routes/dashboard/index.tsx`, `src/lib/courses/store.ts` | **Completed** |
+| **Workstream H** | Automated Testing & Verification | `src/test/course-applications/course-applications.test.ts` (22/22 unit & integration tests passing) | **Completed** |
+| **Workstream I** | Google Forms Cutover Plan & Manual Runbooks | `docs/COURSE_APPLICATION_GOOGLE_FORMS_CUTOVER.md`, `docs/COURSE_APPLICATION_DATABASE_MIGRATION_RUNBOOK.md` | **Completed** |
+
