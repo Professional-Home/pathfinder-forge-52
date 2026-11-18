@@ -81,6 +81,7 @@ export function AdminApplicationsQueuePage() {
       total: totalCount,
       submitted: 0,
       under_review: 0,
+      resubmitted: 0,
       approved: 0,
       enrolled: 0,
       resubmission_required: 0,
@@ -96,9 +97,12 @@ export function AdminApplicationsQueuePage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "submitted":
-        return <Badge className="bg-sky-500 text-white hover:bg-sky-600">Submitted</Badge>;
+      case "pending_verification":
+        return <Badge className="bg-amber-500 text-white hover:bg-amber-600">Pending Verification</Badge>;
       case "under_review":
-        return <Badge className="bg-amber-500 text-white hover:bg-amber-600">Under Review</Badge>;
+        return <Badge className="bg-amber-600 text-white hover:bg-amber-700">Under Review</Badge>;
+      case "resubmitted":
+        return <Badge className="bg-sky-600 text-white hover:bg-sky-700">Resubmitted</Badge>;
       case "resubmission_required":
         return <Badge className="bg-orange-500 text-white hover:bg-orange-600">Action Required</Badge>;
       case "approved":
@@ -122,6 +126,10 @@ export function AdminApplicationsQueuePage() {
         return <Badge variant="outline" className="border-blue-500 text-blue-700 font-medium">Waived</Badge>;
       case "not_required":
         return <Badge variant="outline" className="border-slate-400 text-slate-600">N/A</Badge>;
+      case "pending_verification":
+        return <Badge variant="outline" className="border-amber-500 text-amber-700 font-medium">Pending Verification</Badge>;
+      case "unpaid":
+        return <Badge variant="outline" className="border-rose-400 text-rose-700">Unpaid</Badge>;
       case "pending":
       default:
         return <Badge variant="outline" className="border-amber-400 text-amber-700">Pending</Badge>;
@@ -152,9 +160,9 @@ export function AdminApplicationsQueuePage() {
           <span className="text-xs text-muted-foreground font-medium block">Total Queue</span>
           <span className="text-xl font-bold text-foreground mt-0.5 block">{totalCount}</span>
         </Card>
-        <Card className="p-3 shadow-none border-sky-200 bg-sky-50/40">
-          <span className="text-xs text-sky-800 font-medium block">Submitted</span>
-          <span className="text-xl font-bold text-sky-900 mt-0.5 block">{metrics.submitted}</span>
+        <Card className="p-3 shadow-none border-amber-200 bg-amber-50/40">
+          <span className="text-xs text-amber-800 font-medium block">Pending Verification</span>
+          <span className="text-xl font-bold text-amber-900 mt-0.5 block">{metrics.submitted}</span>
         </Card>
         <Card className="p-3 shadow-none border-amber-200 bg-amber-50/40">
           <span className="text-xs text-amber-800 font-medium block">Under Review</span>
@@ -201,9 +209,10 @@ export function AdminApplicationsQueuePage() {
             }}
           >
             <option value="all">All Statuses</option>
-            <option value="submitted">Submitted</option>
+            <option value="submitted">Pending Verification</option>
             <option value="under_review">Under Review</option>
             <option value="resubmission_required">Resubmission Required</option>
+            <option value="resubmitted">Resubmitted</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
             <option value="enrolled">Enrolled</option>
@@ -219,7 +228,8 @@ export function AdminApplicationsQueuePage() {
             }}
           >
             <option value="all">All Payments</option>
-            <option value="pending">Pending</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="pending_verification">Pending Verification</option>
             <option value="verified">Verified</option>
             <option value="waived">Waived</option>
             <option value="not_required">N/A</option>
@@ -255,7 +265,14 @@ export function AdminApplicationsQueuePage() {
                     {app.application_number}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-foreground">{app.applicant_name}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium text-foreground">{app.applicant_name}</span>
+                      {(app.is_identity_conflict || app.academic_background?.google_forms?.identity_conflict) && (
+                        <Badge variant="outline" className="border-red-500 bg-red-50 text-red-700 text-[10px] font-bold py-0 h-4">
+                          Quarantined
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{app.applicant_email}</div>
                   </td>
                   <td className="px-4 py-3 text-xs text-foreground font-medium">

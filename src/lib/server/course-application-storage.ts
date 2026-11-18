@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/server/supabase-admin";
 
-export const BUCKET_NAME = "course-application-documents";
+export const BUCKET_NAME = "course-applications";
 export const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB per DEC-04
 
 export const ALLOWED_MIME_TYPES = [

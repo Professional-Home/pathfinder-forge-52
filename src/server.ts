@@ -68,7 +68,64 @@ async function handleSpinWebhookRequest(request: Request): Promise<Response> {
   }
 }
 
-async function handleNotificationWorkerRequest(request: Request): Promise<Response> {
+export async function handleCourseApplicationWebhookRequest(request: Request): Promise<Response> {
+  if (request.method !== "POST") {
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed. Use POST." }),
+      {
+        status: 405,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+
+  try {
+    const rawBody = await request.text();
+    const signature =
+      request.headers.get("x-webhook-signature") ||
+      request.headers.get("X-Webhook-Signature") ||
+      request.headers.get("x-course-app-signature") ||
+      request.headers.get("X-Course-App-Signature");
+    const timestamp =
+      request.headers.get("x-webhook-timestamp") ||
+      request.headers.get("X-Webhook-Timestamp") ||
+      request.headers.get("x-course-app-timestamp") ||
+      request.headers.get("X-Course-App-Timestamp");
+
+    const { processCourseApplicationWebhookCore } = await import(
+      "./lib/server/course-applications-webhook"
+    );
+    const result = await processCourseApplicationWebhookCore({
+      rawBody,
+      signature,
+      timestamp,
+    });
+
+    const statusCode = result.success
+      ? 200
+      : result.code === "INVALID_SIGNATURE"
+      ? 401
+      : result.code === "CONFIGURATION_ERROR"
+      ? 503
+      : 400;
+
+    return new Response(JSON.stringify(result), {
+      status: statusCode,
+      headers: { "content-type": "application/json" },
+    });
+  } catch (err: any) {
+    console.error("[COURSE_APP_WEBHOOK] Unhandled server error:", err);
+    return new Response(
+      JSON.stringify({ success: false, error: err?.message || "Internal server error" }),
+      {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+}
+
+export async function handleNotificationWorkerRequest(request: Request): Promise<Response> {
   if (request.method !== "POST" && request.method !== "GET") {
     return new Response(
       JSON.stringify({ success: false, error: "Method not allowed. Use POST or GET." }),
@@ -88,7 +145,20 @@ async function handleNotificationWorkerRequest(request: Request): Promise<Respon
     process.env.CRON_SECRET ||
     process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (expectedSecret && token !== expectedSecret && workerSecret !== expectedSecret) {
+  if (!expectedSecret) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Notification worker authentication is not configured on this server.",
+      }),
+      {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+
+  if (token !== expectedSecret && workerSecret !== expectedSecret) {
     return new Response(
       JSON.stringify({ success: false, error: "Unauthorized. Valid worker secret required." }),
       {
@@ -102,11 +172,15 @@ async function handleNotificationWorkerRequest(request: Request): Promise<Respon
     const url = new URL(request.url);
     const batchSize = parseInt(url.searchParams.get("batchSize") || "10", 10);
     const lockSeconds = parseInt(url.searchParams.get("lockSeconds") || "60", 10);
+    const dryRun =
+      url.searchParams.get("dryRun") === "true" ||
+      request.headers.get("x-worker-dry-run") === "true";
 
     const { processNotificationBatch } = await import("./lib/server/notification-worker");
     const result = await processNotificationBatch(
       Number.isFinite(batchSize) ? Math.min(Math.max(1, batchSize), 100) : 10,
-      Number.isFinite(lockSeconds) ? Math.min(Math.max(10, lockSeconds), 300) : 60
+      Number.isFinite(lockSeconds) ? Math.min(Math.max(10, lockSeconds), 300) : 60,
+      { dryRun }
     );
 
     return new Response(
@@ -162,6 +236,12 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/spin-webhook") {
       return handleSpinWebhookRequest(request);
+    }
+    if (
+      url.pathname === "/api/course-applications/webhook" ||
+      url.pathname === "/api/webhooks/course-applications"
+    ) {
+      return handleCourseApplicationWebhookRequest(request);
     }
     if (url.pathname === "/api/worker/notifications") {
       return handleNotificationWorkerRequest(request);

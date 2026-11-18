@@ -5,7 +5,9 @@ import {
   createDocumentUploadTicketCore,
   confirmDocumentUploadCore,
   adminTransitionApplicationCore,
+  adminReviewDocumentCore,
   adminUpdatePaymentStatusCore,
+  adminApproveGoogleFormsApplicationCore,
   getAdminApplicationsListCore,
   getAdminApplicationDetailCore,
   getStudentApplicationTrackingCore,
@@ -14,8 +16,12 @@ import {
   CreateUploadTicketInput,
   ConfirmUploadInput,
   AdminTransitionInput,
+  AdminReviewDocumentInput,
   AdminUpdatePaymentInput,
+  AdminApproveGoogleFormsInput,
+  AdminReconcileIdentityConflictInput,
   AdminApplicationsFilterInput,
+  adminReconcileIdentityConflictCore,
 } from "@/lib/server/course-applications";
 
 // ─── 1. Submit Course Application (Guest & Authenticated) ───
@@ -48,11 +54,29 @@ export const adminTransitionApplication = createServerFn({ method: "POST" })
   .validator((input: AdminTransitionInput) => input)
   .handler(async ({ data }) => adminTransitionApplicationCore(data));
 
+// ─── 5b. Admin Review Individual Document ───
+
+export const adminReviewDocument = createServerFn({ method: "POST" })
+  .validator((input: AdminReviewDocumentInput) => input)
+  .handler(async ({ data }) => adminReviewDocumentCore(data));
+
 // ─── 6. Admin Update Payment Status ───
 
 export const adminUpdatePaymentStatus = createServerFn({ method: "POST" })
   .validator((input: AdminUpdatePaymentInput) => input)
   .handler(async ({ data }) => adminUpdatePaymentStatusCore(data));
+
+// ─── 6b. Admin Approve Google Forms Application (Atomic Payment Verification) ───
+
+export const adminApproveGoogleFormsApplication = createServerFn({ method: "POST" })
+  .validator((input: AdminApproveGoogleFormsInput) => input)
+  .handler(async ({ data }) => adminApproveGoogleFormsApplicationCore(data));
+
+// ─── 6c. Admin Reconcile Identity Conflict (Quarantine Resolution) ───
+
+export const adminReconcileIdentityConflict = createServerFn({ method: "POST" })
+  .validator((input: AdminReconcileIdentityConflictInput) => input)
+  .handler(async ({ data }) => adminReconcileIdentityConflictCore(data));
 
 // ─── 7. Admin Applications Queue List ───
 

@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   GraduationCap,
   Sparkles,
+  CreditCard,
 } from "lucide-react";
 
 export const Route = createFileRoute("/application/$applicationNumber")({
@@ -43,6 +44,12 @@ export function ApplicationTrackingPage() {
   const [resubmitDocType, setResubmitDocType] = useState<string>("academic_transcript");
   const [resubmitting, setResubmitting] = useState(false);
   const [resubmitSuccess, setResubmitSuccess] = useState(false);
+
+  // Student payment receipt submission state
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptRef, setReceiptRef] = useState("");
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [receiptSuccess, setReceiptSuccess] = useState(false);
 
   // Auto-attempt fetch if user is logged in
   useEffect(() => {
@@ -100,6 +107,10 @@ export function ApplicationTrackingPage() {
     setError(null);
 
     try {
+      // Forward current authenticated session access token for claimed application authorization
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData.session?.access_token;
+
       // 1. Get upload ticket
       const ticketRes = await (createDocumentUploadTicket as any)({
         data: {
@@ -108,6 +119,7 @@ export function ApplicationTrackingPage() {
           fileName: resubmitFile.name,
           fileSize: resubmitFile.size,
           mimeType: resubmitFile.type || "application/octet-stream",
+          authToken,
         },
       });
 
@@ -147,15 +159,85 @@ export function ApplicationTrackingPage() {
     }
   };
 
+  const handleReceiptUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receiptFile || !applicationData) return;
+
+    setUploadingReceipt(true);
+    setError(null);
+
+    try {
+      // Forward current authenticated session access token for claimed application authorization
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData.session?.access_token;
+
+      // 1. Get upload ticket for fee_receipt
+      const ticketRes = await (createDocumentUploadTicket as any)({
+        data: {
+          applicationId: applicationData.id,
+          documentType: "fee_receipt",
+          fileName: receiptFile.name,
+          fileSize: receiptFile.size,
+          mimeType: receiptFile.type || "application/octet-stream",
+          authToken,
+        },
+      });
+
+      if (!ticketRes.success || !ticketRes.signedUploadUrl) {
+        throw new Error(ticketRes.error || "Failed to generate receipt upload ticket.");
+      }
+
+      // 2. Upload file via signed URL
+      const uploadRes = await fetch(ticketRes.signedUploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": receiptFile.type || "application/octet-stream" },
+        body: receiptFile,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Direct storage upload failed. Please try again.");
+      }
+
+      // 3. Confirm document upload with optional paymentReference
+      await (confirmDocumentUpload as any)({
+        data: {
+          documentId: ticketRes.documentId,
+          storagePath: ticketRes.storagePath,
+          paymentReference: receiptRef.trim() || undefined,
+        },
+      });
+
+      setReceiptSuccess(true);
+      setReceiptFile(null);
+      setReceiptRef("");
+      // Refresh tracking info
+      if (verifiedEmail) {
+        fetchTracking(verifiedEmail);
+      }
+    } catch (err: any) {
+      setError(err.message || "Receipt submission failed.");
+    } finally {
+      setUploadingReceipt(false);
+    }
+  };
+
   // Helper for status badge styling
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "submitted":
-        return <Badge className="bg-sky-500 text-white">Submitted</Badge>;
+        return (
+          <Badge className="bg-amber-500 text-white">
+            {applicationData?.source === "google_forms" || applicationData?.payment_status === "pending_verification"
+              ? "Pending Verification"
+              : "Submitted"}
+          </Badge>
+        );
       case "under_review":
         return <Badge className="bg-amber-500 text-white">Under Review</Badge>;
       case "resubmission_required":
         return <Badge className="bg-orange-500 text-white">Action Required</Badge>;
+      case "resubmitted":
+        return <Badge className="bg-sky-600 text-white font-medium">Resubmitted</Badge>;
       case "approved":
         return <Badge className="bg-emerald-600 text-white">Academically Approved</Badge>;
       case "rejected":
@@ -282,7 +364,7 @@ export function ApplicationTrackingPage() {
                     <div className="space-y-1">
                       <div
                         className={`h-2 rounded ${
-                          ["under_review", "resubmission_required", "approved", "enrolled"].includes(
+                          ["under_review", "resubmission_required", "resubmitted", "approved", "enrolled"].includes(
                             applicationData.status
                           )
                             ? "bg-emerald-500"
@@ -357,9 +439,9 @@ export function ApplicationTrackingPage() {
                                 onChange={(e) => setResubmitDocType(e.target.value)}
                               >
                                 <option value="academic_transcript">Academic Transcript</option>
-                                <option value="cv_resume">CV / Resume</option>
+                                <option value="resume">CV / Resume</option>
                                 <option value="id_proof">Photo ID Proof</option>
-                                <option value="statement_of_purpose">Statement of Purpose</option>
+                                <option value="sop">Statement of Purpose</option>
                               </select>
                             </div>
                             <div>
@@ -385,6 +467,71 @@ export function ApplicationTrackingPage() {
                     </AlertDescription>
                   </Alert>
                 )}
+
+                {/* Fee Receipt Submission Section (when academically approved and payment is unpaid or pending verification) */}
+                {applicationData.status === "approved" &&
+                  (applicationData.payment_status === "unpaid" ||
+                    applicationData.payment_status === "pending_verification") && (
+                    <Card className="border-emerald-200 bg-emerald-50/50 shadow-sm">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-semibold text-emerald-950 flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-emerald-700" />
+                          Tuition Payment & Fee Receipt Submission
+                        </CardTitle>
+                        <CardDescription className="text-xs text-emerald-800">
+                          Congratulations! Your application has been academically approved. Please upload your payment receipt or transfer proof to complete verification and activate enrollment.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {applicationData.payment_status === "pending_verification" ? (
+                          <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-900 flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                            <span>
+                              Your payment receipt has been submitted and is currently <strong>Under Review</strong> by our finance team. You will be notified once verified.
+                            </span>
+                          </div>
+                        ) : receiptSuccess ? (
+                          <div className="bg-emerald-100 text-emerald-800 p-3 rounded flex items-center gap-2 text-xs">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                            Fee receipt submitted successfully. Our finance team is reviewing your payment proof.
+                          </div>
+                        ) : (
+                          <form onSubmit={handleReceiptUpload} className="space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs text-emerald-950">Select Receipt (PDF/PNG/JPEG)</Label>
+                                <Input
+                                  type="file"
+                                  className="h-9 text-xs"
+                                  accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                                  required
+                                  onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs text-emerald-950">Transaction / UTR Reference (Optional)</Label>
+                                <Input
+                                  type="text"
+                                  className="h-9 text-xs"
+                                  placeholder="e.g. UPI / IMPS / Bank Ref #"
+                                  value={receiptRef}
+                                  onChange={(e) => setReceiptRef(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <Button
+                              type="submit"
+                              size="sm"
+                              disabled={!receiptFile || uploadingReceipt}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            >
+                              {uploadingReceipt ? "Uploading..." : "Submit Payment Receipt"}
+                            </Button>
+                          </form>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
 
                 {/* Events / Timeline */}
                 {applicationData.events && applicationData.events.length > 0 && (

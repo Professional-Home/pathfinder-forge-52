@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "./supabase-admin";
 import { transporter, getSenderAddress } from "./mail";
+import { resolveCourseTitle } from "../courses/course-identifiers";
 
 const db = supabaseAdmin as any;
 
@@ -7,7 +8,7 @@ export interface OutboxNotification {
   id: string;
   application_id: string;
   recipient_email: string;
-  recipient_name: string;
+  recipient_name?: string;
   template_name: string;
   payload: Record<string, any>;
   status: "pending" | "processing" | "sent" | "failed";
@@ -58,11 +59,14 @@ export function renderNotificationEmail(
   payload: Record<string, any>
 ): RenderedEmail {
   const appNumber = payload.application_number || "Application";
-  const courseTitle = payload.course_title || "Course Program";
-  const portalUrl = (process.env.APP_URL || "https://micrylis.com").replace(/\/$/, "");
+  const courseTitle =
+    payload.course_title ||
+    resolveCourseTitle(payload.course_id) ||
+    "Course Program";
+  const portalUrl = (process.env.APP_URL || "https://project.micrylisbiotech.com").replace(/\/+$/, "");
   const trackingUrl = `${portalUrl}/application/${appNumber}`;
   const claimUrl = payload.claim_token ? `${portalUrl}/claim-application?token=${payload.claim_token}` : null;
-  const safeName = recipientName || "Applicant";
+  const safeName = recipientName || payload.student_name || "Applicant";
 
   let subject = `Course Application Update: ${appNumber}`;
   let headline = "Course Application Update";
@@ -102,7 +106,7 @@ export function renderNotificationEmail(
     case "resubmission_required":
       subject = `Action Required: Additional Documents Requested for ${appNumber}`;
       headline = "Document Resubmission Required";
-      const notes = payload.notes || "One or more documents require clearer scans or updated details.";
+      const notes = payload.notes || payload.resubmission_notes || "One or more documents require clearer scans or updated details.";
       messageBody = `
         <p>During the review of your application <strong>${appNumber}</strong> for <strong>${courseTitle}</strong>, our committee identified items that require your attention:</p>
         <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
@@ -128,7 +132,7 @@ export function renderNotificationEmail(
     case "application_rejected":
       subject = `Decision Update: Application ${appNumber} — ${courseTitle}`;
       headline = "Application Decision";
-      const rejectionReason = payload.rejection_reason || "Admissions criteria were not fully satisfied for the current cohort.";
+      const rejectionReason = payload.rejection_reason || payload.reason || "Admissions criteria were not fully satisfied for the current cohort.";
       messageBody = `
         <p>Thank you for your interest in <strong>${courseTitle}</strong> and for the time invested in your application <strong>${appNumber}</strong>.</p>
         <p>After careful evaluation of all applications, we regret to inform you that we are unable to offer you admission for the upcoming cohort.</p>
@@ -154,7 +158,7 @@ export function renderNotificationEmail(
     case "enrollment_revoked":
       subject = `Notice: Enrollment Revocation — ${courseTitle} (${appNumber})`;
       headline = "Enrollment Revoked";
-      const revocationReason = payload.notes || "Enrollment was revoked due to administrative or compliance requirements.";
+      const revocationReason = payload.notes || payload.reason || "Enrollment was revoked due to administrative or compliance requirements.";
       messageBody = `
         <p>This is an official notification that your enrollment for <strong>${courseTitle}</strong> (Application <strong>${appNumber}</strong>) has been revoked.</p>
         <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 20px 0; border-radius: 4px;">
@@ -213,7 +217,7 @@ export function renderNotificationEmail(
           <tr>
             <td style="background-color: #f1f5f9; padding: 24px 40px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
               <p style="margin: 0 0 8px 0;">PathFinder Course Application System &bull; Micrylis Biotech</p>
-              <p style="margin: 0;">This is an automated notification. For support, reply or visit <a href="${portalUrl}" style="color: #0284c7; text-decoration: none;">micrylis.com</a></p>
+              <p style="margin: 0;">This is an automated notification. For support, reply or visit <a href="${portalUrl}" style="color: #0284c7; text-decoration: none;">project.micrylisbiotech.com</a></p>
             </td>
           </tr>
         </table>
@@ -245,15 +249,112 @@ PathFinder &bull; Micrylis Biotech
   return { subject, html, text };
 }
 
+export interface ProcessNotificationOptions {
+  dryRun?: boolean;
+}
+
+export interface SimulatedNotificationItem {
+  id: number | string;
+  recipient_email: string;
+  template_name: string;
+  subject: string;
+  current_status: string;
+  simulated_outcome: "would_send" | "template_error";
+  error?: string;
+}
+
+export interface ProcessNotificationResult {
+  processed: number;
+  sent: number;
+  failed: number;
+  simulated: number;
+  dryRun: boolean;
+  simulatedDeliveries?: SimulatedNotificationItem[];
+}
+
 /**
  * Processes a single batch of pending notifications from notification_outbox.
- * Uses atomic RPC dequeue with lock timeout to guarantee at-least-once delivery
- * with zero concurrent double-delivery races.
+ * In dry-run mode (default when ENABLE_REAL_SMTP is not 'true'), simulates processing
+ * in a read-only manner: never calls SMTP, never mutates notification status to 'sent',
+ * never increments attempts or touches outbox history.
  */
 export async function processNotificationBatch(
   batchSize: number = 10,
-  lockSeconds: number = 60
-): Promise<{ processed: number; sent: number; failed: number }> {
+  lockSeconds: number = 60,
+  options?: ProcessNotificationOptions
+): Promise<ProcessNotificationResult> {
+  const isDryRun =
+    Boolean(options?.dryRun) ||
+    process.env.NOTIFICATION_DRY_RUN === "true" ||
+    process.env.ENABLE_REAL_SMTP !== "true"; // Keeps actual SMTP disabled throughout this task
+
+  if (isDryRun) {
+    // ─── DRY-RUN EXECUTION (Read-only simulation) ───
+    // Does NOT invoke rpc_dequeue_notification_batch (which would mutate status to 'processing' and increment attempts).
+    // Does NOT invoke Nodemailer transporter.sendMail().
+    // Does NOT mutate status to 'sent', does NOT touch attempts, sent_at, or outbox history.
+    try {
+      const sanitizedBatchSize = Math.min(Math.max(1, batchSize), 100);
+      const { data: candidates, error: fetchErr } = await db
+        .from("notification_outbox")
+        .select("*")
+        .in("status", ["pending", "failed"])
+        .lte("next_attempt_at", new Date().toISOString())
+        .order("next_attempt_at", { ascending: true })
+        .limit(sanitizedBatchSize);
+
+      if (fetchErr) {
+        console.error("[Notification Worker - Dry Run] Fetch error:", fetchErr);
+        return { processed: 0, sent: 0, failed: 0, simulated: 0, dryRun: true };
+      }
+
+      const items = candidates || [];
+      const simulatedDeliveries: SimulatedNotificationItem[] = [];
+
+      for (const item of items) {
+        try {
+          const { subject } = renderNotificationEmail(
+            item.template_name,
+            item.recipient_name,
+            item.payload || {}
+          );
+
+          simulatedDeliveries.push({
+            id: item.id,
+            recipient_email: item.recipient_email,
+            template_name: item.template_name,
+            subject,
+            current_status: item.status,
+            simulated_outcome: "would_send",
+          });
+        } catch (renderErr: any) {
+          simulatedDeliveries.push({
+            id: item.id,
+            recipient_email: item.recipient_email,
+            template_name: item.template_name,
+            subject: "Render Error",
+            current_status: item.status,
+            simulated_outcome: "template_error",
+            error: sanitizeErrorMessage(renderErr),
+          });
+        }
+      }
+
+      return {
+        processed: items.length,
+        sent: 0, // Explicitly 0: never marked as sent in dry-run
+        failed: 0,
+        simulated: simulatedDeliveries.length,
+        dryRun: true,
+        simulatedDeliveries,
+      };
+    } catch (err: any) {
+      console.error("[Notification Worker - Dry Run] Error:", err);
+      return { processed: 0, sent: 0, failed: 0, simulated: 0, dryRun: true };
+    }
+  }
+
+  // ─── LIVE DISPATCH EXECUTION (Enabled only if ENABLE_REAL_SMTP === 'true') ───
   let processed = 0;
   let sent = 0;
   let failed = 0;
@@ -269,11 +370,11 @@ export async function processNotificationBatch(
 
     if (dequeueErr) {
       console.error("[Notification Worker] Error dequeuing batch:", dequeueErr);
-      return { processed: 0, sent: 0, failed: 0 };
+      return { processed: 0, sent: 0, failed: 0, simulated: 0, dryRun: false };
     }
 
     if (!batch || !Array.isArray(batch) || batch.length === 0) {
-      return { processed: 0, sent: 0, failed: 0 };
+      return { processed: 0, sent: 0, failed: 0, simulated: 0, dryRun: false };
     }
 
     processed = batch.length;
@@ -303,6 +404,11 @@ export async function processNotificationBatch(
             sent_at: new Date().toISOString(),
             last_error: null,
             locked_until: null,
+            payload: {
+              ...(item.payload || {}),
+              delivery_mode: "smtp",
+              smtp_dispatched_at: new Date().toISOString(),
+            },
           })
           .eq("id", item.id);
 
@@ -338,7 +444,7 @@ export async function processNotificationBatch(
     console.error("[Notification Worker] Unexpected error during batch execution:", globalErr);
   }
 
-  return { processed, sent, failed };
+  return { processed, sent, failed, simulated: 0, dryRun: false };
 }
 
 /**

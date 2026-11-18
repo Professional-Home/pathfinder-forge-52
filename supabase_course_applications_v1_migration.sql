@@ -46,6 +46,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM public.courses
         WHERE id = NEW.course_id::text
+           OR public.normalize_course_id(id) = public.normalize_course_id(NEW.course_id::text)
     ) THEN
         RAISE EXCEPTION 'Foreign key violation: course_id % does not exist in public.courses', NEW.course_id
             USING ERRCODE = 'foreign_key_violation';
@@ -549,7 +550,7 @@ BEGIN
             WHERE id = v_app.enrollment_id;
 
             IF NOT FOUND OR pg_catalog.lower(pg_catalog.btrim(v_enrollment_row.student_email)) != pg_catalog.lower(pg_catalog.btrim(v_app.student_email))
-               OR v_enrollment_row.course_id::text != v_app.course_id::text THEN
+               OR public.normalize_course_id(v_enrollment_row.course_id) != public.normalize_course_id(v_app.course_id::text) THEN
                 RAISE EXCEPTION 'Application enrollment_id % references invalid or mismatched enrollment record. Manual administrative reconciliation required.',
                     v_app.enrollment_id
                     USING ERRCODE = 'data_exception';
@@ -674,7 +675,7 @@ BEGIN
             WHERE id = v_app.enrollment_id;
 
             IF NOT FOUND OR pg_catalog.lower(pg_catalog.btrim(v_enrollment_row.student_email)) != pg_catalog.lower(pg_catalog.btrim(v_app.student_email))
-               OR v_enrollment_row.course_id::text != v_app.course_id::text THEN
+               OR public.normalize_course_id(v_enrollment_row.course_id) != public.normalize_course_id(v_app.course_id::text) THEN
                 RAISE EXCEPTION 'Application enrollment_id % references invalid or mismatched enrollment record. Manual administrative reconciliation required.',
                     v_app.enrollment_id
                     USING ERRCODE = 'data_exception';
@@ -686,19 +687,19 @@ BEGIN
         IF v_old_status = 'enrolled' AND v_app.enrollment_id IS NULL THEN
             PERFORM pg_catalog.pg_advisory_xact_lock(
                 pg_catalog.hashtext(pg_catalog.lower(pg_catalog.btrim(v_app.student_email))),
-                pg_catalog.hashtext(v_app.course_id::text)
+                pg_catalog.hashtext(public.normalize_course_id(v_app.course_id::text))
             );
 
             SELECT count(*) INTO v_match_count
             FROM public.enrollments_users
             WHERE pg_catalog.lower(pg_catalog.btrim(student_email)) = pg_catalog.lower(pg_catalog.btrim(v_app.student_email))
-              AND course_id::text = v_app.course_id::text;
+              AND public.normalize_course_id(course_id) = public.normalize_course_id(v_app.course_id::text);
 
             IF v_match_count = 1 THEN
                 SELECT id INTO v_candidate_id
                 FROM public.enrollments_users
                 WHERE pg_catalog.lower(pg_catalog.btrim(student_email)) = pg_catalog.lower(pg_catalog.btrim(v_app.student_email))
-                  AND course_id::text = v_app.course_id::text
+                  AND public.normalize_course_id(course_id) = public.normalize_course_id(v_app.course_id::text)
                 LIMIT 1;
 
                 UPDATE public.course_applications
@@ -756,22 +757,22 @@ BEGIN
                 USING ERRCODE = 'check_violation';
         END IF;
 
-        -- Dual-key transaction-scoped advisory lock on (student_email, course_id)
+        -- Dual-key transaction-scoped advisory lock on (student_email, normalized_course_id)
         PERFORM pg_catalog.pg_advisory_xact_lock(
             pg_catalog.hashtext(pg_catalog.lower(pg_catalog.btrim(v_app.student_email))),
-            pg_catalog.hashtext(v_app.course_id::text)
+            pg_catalog.hashtext(public.normalize_course_id(v_app.course_id::text))
         );
 
         SELECT count(*) INTO v_match_count
         FROM public.enrollments_users
         WHERE pg_catalog.lower(pg_catalog.btrim(student_email)) = pg_catalog.lower(pg_catalog.btrim(v_app.student_email))
-          AND course_id::text = v_app.course_id::text;
+          AND public.normalize_course_id(course_id) = public.normalize_course_id(v_app.course_id::text);
 
         IF v_match_count = 1 THEN
             SELECT id INTO v_candidate_id
             FROM public.enrollments_users
             WHERE pg_catalog.lower(pg_catalog.btrim(student_email)) = pg_catalog.lower(pg_catalog.btrim(v_app.student_email))
-              AND course_id::text = v_app.course_id::text
+              AND public.normalize_course_id(course_id) = public.normalize_course_id(v_app.course_id::text)
             LIMIT 1;
 
             v_enrollment_id := v_candidate_id;
@@ -841,7 +842,7 @@ BEGIN
                     v_deleted_enrollment_json := NULL;
                 ELSE
                     IF pg_catalog.lower(pg_catalog.btrim(v_enrollment_row.student_email)) != pg_catalog.lower(pg_catalog.btrim(v_app.student_email))
-                       OR v_enrollment_row.course_id::text != v_app.course_id::text THEN
+                       OR public.normalize_course_id(v_enrollment_row.course_id) != public.normalize_course_id(v_app.course_id::text) THEN
                         RAISE EXCEPTION 'Referenced enrollment % belongs to mismatched student (% vs %) or course (% vs %). Refusing deletion. Manual administrative reconciliation required.',
                             v_app.enrollment_id, v_enrollment_row.student_email, v_app.student_email, v_enrollment_row.course_id, v_app.course_id
                             USING ERRCODE = 'data_exception';
@@ -869,7 +870,7 @@ BEGIN
                 SELECT count(*) INTO v_match_count
                 FROM public.enrollments_users
                 WHERE pg_catalog.lower(pg_catalog.btrim(student_email)) = pg_catalog.lower(pg_catalog.btrim(v_app.student_email))
-                  AND course_id::text = v_app.course_id::text;
+                  AND public.normalize_course_id(course_id) = public.normalize_course_id(v_app.course_id::text);
 
                 IF v_match_count > 0 THEN
                     RAISE EXCEPTION 'REVOCATION_BLOCKED: Application is marked enrolled with NULL enrollment_id, but % matching active row(s) exist in enrollments_users. Manual administrative reconciliation required.',
