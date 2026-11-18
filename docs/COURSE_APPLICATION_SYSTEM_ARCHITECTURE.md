@@ -664,8 +664,8 @@ The security architecture must enforce strict separation across three operationa
 - **Forward-Only Database Migration:**
   - Migration script: `supabase_course_applications_v1_notification_filter_migration.sql`.
   - Drops the previous 2-argument signature (`rpc_dequeue_notification_batch(INT, INT)`) to prevent ambiguous PostgreSQL function overloading.
-  - Creates 3-argument signature with defaults: `rpc_dequeue_notification_batch(p_batch_size INT DEFAULT 10, p_lock_seconds INT DEFAULT 60, p_template_name TEXT DEFAULT NULL)`.
-  - Backward compatible: callers omitting `p_template_name` default to `NULL` (all templates).
+  - Creates hardened 3-argument signature with fail-closed defaults: `rpc_dequeue_notification_batch(p_batch_size INT DEFAULT 10, p_lock_seconds INT DEFAULT 60, p_template_name TEXT DEFAULT 'enrollment_confirmed')`.
+  - Fail-closed guard: callers omitting `p_template_name` strictly default to `'enrollment_confirmed'`. Any explicit NULL, `'application_approved'`, or unapproved template name immediately fails closed (returns zero rows) via strict equality filtering `template_name = 'enrollment_confirmed'` without advancing leases or mutating unselected records.
   - Stored procedure execution remains locked down to `service_role` only.
 - **Application-Level Anti-Bypass & Fail-Closed Guardrails:**
   - The API route handler (`src/server.ts`) inspects the query parameter `template`. If a caller supplies any template other than `enrollment_confirmed`, the request is rejected with `HTTP 400 Bad Request`.

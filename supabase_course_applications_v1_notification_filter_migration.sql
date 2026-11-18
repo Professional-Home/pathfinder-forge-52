@@ -2,27 +2,28 @@
 -- Migration: PathFinder Course Notifications - Enrollment-Only Dequeue Filter
 -- Filename: supabase_course_applications_v1_notification_filter_migration.sql
 -- Description:
---   Updates public.rpc_dequeue_notification_batch to accept an optional
---   p_template_name filter parameter (defaulting to NULL for backward compatibility).
---   When specified, only matching outbox records are locked, leased, and returned.
---   Unmatched records (e.g. application_approved) remain completely untouched
---   in their existing state (pending/failed).
+--   Updates public.rpc_dequeue_notification_batch to enforce strict, fail-closed
+--   filtering for 'enrollment_confirmed' notifications only.
+--   The default template is 'enrollment_confirmed'. Any explicit NULL,
+--   'application_approved', or unapproved template name immediately fails closed
+--   (returns zero rows) without acquiring locks, advancing leases, or touching
+--   unmatched outbox records.
 --
 -- Safety & Governance Notice:
 --   - FORWARD-ONLY MIGRATION.
 --   - DO NOT EXECUTE DIRECTLY IN THIS PHASE.
---   - Preserves full compatibility with 2-argument callers via default NULL.
 --   - Drops the previous 2-argument signature to prevent ambiguous PostgreSQL overloading.
+--   - Default template parameter strictly set to 'enrollment_confirmed'.
 -- =============================================================================
 
 -- Step 1: Drop the previous 2-parameter signature to prevent ambiguous function overloading
 DROP FUNCTION IF EXISTS public.rpc_dequeue_notification_batch(INT, INT);
 
--- Step 2: Create the enhanced 3-parameter function with default parameter values
+-- Step 2: Create the enhanced 3-parameter function with fail-closed template validation
 CREATE OR REPLACE FUNCTION public.rpc_dequeue_notification_batch(
     p_batch_size INT DEFAULT 10,
     p_lock_seconds INT DEFAULT 60,
-    p_template_name TEXT DEFAULT NULL
+    p_template_name TEXT DEFAULT 'enrollment_confirmed'
 )
 RETURNS SETOF public.notification_outbox
 LANGUAGE plpgsql
@@ -32,9 +33,17 @@ AS $$
 DECLARE
     v_validated_batch_size INT;
     v_validated_lock_seconds INT;
+    v_target_template CONSTANT TEXT := 'enrollment_confirmed';
 BEGIN
     v_validated_batch_size := GREATEST(1, LEAST(COALESCE(p_batch_size, 10), 100));
     v_validated_lock_seconds := GREATEST(30, LEAST(COALESCE(p_lock_seconds, 300), 3600));
+
+    -- Fail-closed template guard:
+    -- Only 'enrollment_confirmed' notifications are permitted for automated worker dequeue.
+    -- Explicit NULL, 'application_approved', or any other template immediately returns zero rows.
+    IF p_template_name IS NULL OR p_template_name <> v_target_template THEN
+        RETURN;
+    END IF;
 
     -- Step 1: Reclaim expired processing jobs that exhausted retries -> dead_letter
     UPDATE public.notification_outbox
@@ -45,7 +54,7 @@ BEGIN
     WHERE status = 'processing'
       AND locked_until < pg_catalog.now()
       AND attempts >= max_attempts
-      AND (p_template_name IS NULL OR template_name = p_template_name);
+      AND template_name = v_target_template;
 
     -- Step 2: Atomically select and claim available jobs using FOR UPDATE SKIP LOCKED
     RETURN QUERY
@@ -62,7 +71,7 @@ BEGIN
             -- Case C: Abandoned / crashed worker jobs whose lease expired
             (status = 'processing' AND locked_until < pg_catalog.now() AND attempts < max_attempts)
         )
-        AND (p_template_name IS NULL OR template_name = p_template_name)
+        AND template_name = v_target_template
         ORDER BY next_attempt_at ASC, id ASC
         LIMIT v_validated_batch_size
         FOR UPDATE SKIP LOCKED
@@ -84,13 +93,13 @@ GRANT EXECUTE ON FUNCTION public.rpc_dequeue_notification_batch(INT, INT, TEXT) 
 
 -- =============================================================================
 -- Rollback Instructions (Reference Only):
--- If necessary to revert to the 2-parameter signature:
+-- If necessary to revert to the original 2-parameter signature:
 --
 -- DROP FUNCTION IF EXISTS public.rpc_dequeue_notification_batch(INT, INT, TEXT);
 --
 -- CREATE OR REPLACE FUNCTION public.rpc_dequeue_notification_batch(
 --     p_batch_size INT DEFAULT 10,
---     p_lock_seconds INT DEFAULT 60
+--     p_lock_seconds INT DEFAULT 300
 -- )
 -- RETURNS SETOF public.notification_outbox
 -- LANGUAGE plpgsql

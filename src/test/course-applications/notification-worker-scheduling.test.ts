@@ -301,8 +301,8 @@ describe("Phase 4: Notification Worker Automatic Scheduling & Enrollment Filteri
     });
   });
 
-  // ─── 3. Database Migration & Concurrency Verification ───
-  describe("Forward-Only Migration Verification", () => {
+  // ─── 3. Database Migration & Concurrency Verification (Phase 4.1 Hardened) ───
+  describe("Forward-Only Migration Verification (Phase 4.1 Hardened)", () => {
     const migrationPath = path.resolve(
       process.cwd(),
       "supabase_course_applications_v1_notification_filter_migration.sql"
@@ -314,22 +314,30 @@ describe("Phase 4: Notification Worker Automatic Scheduling & Enrollment Filteri
       expect(sql).toContain("DROP FUNCTION IF EXISTS public.rpc_dequeue_notification_batch(INT, INT);");
     });
 
-    it("migration defines 3-argument function with default parameter values", () => {
+    it("migration defines 3-argument function strictly defaulting p_template_name to enrollment_confirmed", () => {
       const sql = fs.readFileSync(migrationPath, "utf-8");
       expect(sql).toContain("CREATE OR REPLACE FUNCTION public.rpc_dequeue_notification_batch(");
       expect(sql).toContain("p_batch_size INT DEFAULT 10");
       expect(sql).toContain("p_lock_seconds INT DEFAULT 60");
-      expect(sql).toContain("p_template_name TEXT DEFAULT NULL");
+      expect(sql).toContain("p_template_name TEXT DEFAULT 'enrollment_confirmed'");
+    });
+
+    it("migration enforces fail-closed template guard rejecting NULL and unapproved templates", () => {
+      const sql = fs.readFileSync(migrationPath, "utf-8");
+      expect(sql).toContain("v_target_template CONSTANT TEXT := 'enrollment_confirmed';");
+      expect(sql).toContain("IF p_template_name IS NULL OR p_template_name <> v_target_template THEN");
+      expect(sql).toContain("RETURN;");
+    });
+
+    it("migration enforces strict SQL equality filtering on template_name without NULL bypass", () => {
+      const sql = fs.readFileSync(migrationPath, "utf-8");
+      expect(sql).toContain("AND template_name = v_target_template");
+      expect(sql).not.toContain("(p_template_name IS NULL OR template_name = p_template_name)");
     });
 
     it("migration enforces atomic FOR UPDATE SKIP LOCKED row locking", () => {
       const sql = fs.readFileSync(migrationPath, "utf-8");
       expect(sql).toContain("FOR UPDATE SKIP LOCKED");
-    });
-
-    it("migration filters candidate outbox rows by template_name when p_template_name is provided", () => {
-      const sql = fs.readFileSync(migrationPath, "utf-8");
-      expect(sql).toContain("(p_template_name IS NULL OR template_name = p_template_name)");
     });
 
     it("migration locks down function execution to service_role only", () => {
@@ -342,13 +350,72 @@ describe("Phase 4: Notification Worker Automatic Scheduling & Enrollment Filteri
       );
     });
 
-    it("migration includes clear rollback instructions", () => {
+    it("migration includes clear rollback instructions matching original definition", () => {
       const sql = fs.readFileSync(migrationPath, "utf-8");
       expect(sql).toContain("Rollback Instructions");
+      expect(sql).toContain("p_lock_seconds INT DEFAULT 300");
     });
   });
 
-  // ─── 4. Vercel Cron Configuration Verification ───
+  // ─── 4. RPC Dequeue Invariant Coverage (Five Parameter Cases) ───
+  describe("RPC Dequeue Fail-Closed Parameter Evaluation Invariants", () => {
+    const mockOutboxRows = [
+      { id: "row-enrollment-1", template_name: "enrollment_confirmed", status: "pending" },
+      { id: "row-enrollment-2", template_name: "enrollment_confirmed", status: "pending" },
+      { id: "row-approved-1", template_name: "application_approved", status: "pending" },
+      { id: "row-received-1", template_name: "application_received", status: "pending" },
+    ];
+
+    // Functional model of hardened PL/pgSQL logic:
+    function simulateHardenedRpcDequeue(
+      rows: typeof mockOutboxRows,
+      p_batch_size: number = 10,
+      p_lock_seconds: number = 60,
+      p_template_name: string | null = "enrollment_confirmed"
+    ) {
+      const v_target_template = "enrollment_confirmed";
+      // Fail-closed guard:
+      if (p_template_name === null || p_template_name !== v_target_template) {
+        return [];
+      }
+      return rows.filter((r) => r.template_name === v_target_template).slice(0, p_batch_size);
+    }
+
+    it("Case 1: two-argument invocation defaults to enrollment_confirmed and dequeues matching records", () => {
+      const dequeued = simulateHardenedRpcDequeue(mockOutboxRows, 10, 60);
+      expect(dequeued.length).toBe(2);
+      expect(dequeued.every((r) => r.template_name === "enrollment_confirmed")).toBe(true);
+      expect(dequeued.some((r) => r.template_name === "application_approved")).toBe(false);
+    });
+
+    it("Case 2: explicit NULL template parameter fails closed and dequeues zero records", () => {
+      const dequeued = simulateHardenedRpcDequeue(mockOutboxRows, 10, 60, null);
+      expect(dequeued).toEqual([]);
+      expect(dequeued.length).toBe(0);
+    });
+
+    it("Case 3: explicit enrollment_confirmed parameter dequeues matching records", () => {
+      const dequeued = simulateHardenedRpcDequeue(mockOutboxRows, 10, 60, "enrollment_confirmed");
+      expect(dequeued.length).toBe(2);
+      expect(dequeued.every((r) => r.template_name === "enrollment_confirmed")).toBe(true);
+    });
+
+    it("Case 4: application_approved parameter fails closed and leaves approved records untouched", () => {
+      const dequeued = simulateHardenedRpcDequeue(mockOutboxRows, 10, 60, "application_approved");
+      expect(dequeued).toEqual([]);
+      expect(dequeued.length).toBe(0);
+    });
+
+    it("Case 5: any unsupported template name fails closed and dequeues zero records", () => {
+      const dequeuedUnknown = simulateHardenedRpcDequeue(mockOutboxRows, 10, 60, "unknown_template");
+      expect(dequeuedUnknown).toEqual([]);
+
+      const dequeuedWildcard = simulateHardenedRpcDequeue(mockOutboxRows, 10, 60, "*");
+      expect(dequeuedWildcard).toEqual([]);
+    });
+  });
+
+  // ─── 5. Vercel Cron Configuration Verification ───
   describe("Vercel Configuration (vercel.json)", () => {
     const vercelConfigPath = path.resolve(process.cwd(), "vercel.json");
 

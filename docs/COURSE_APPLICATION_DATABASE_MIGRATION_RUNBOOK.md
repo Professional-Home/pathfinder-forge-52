@@ -244,20 +244,27 @@ The Course Application Management system integrates directly with `public.course
 
 ### Key Components Created / Updated:
 1. Drops previous 2-parameter signature: `DROP FUNCTION IF EXISTS public.rpc_dequeue_notification_batch(INT, INT);` to prevent ambiguous PostgreSQL overloading.
-2. Creates enhanced 3-parameter function: `public.rpc_dequeue_notification_batch(p_batch_size INT DEFAULT 10, p_lock_seconds INT DEFAULT 60, p_template_name TEXT DEFAULT NULL)`.
-3. Filters candidate outbox rows by template name:
+2. Creates hardened 3-parameter function: `public.rpc_dequeue_notification_batch(p_batch_size INT DEFAULT 10, p_lock_seconds INT DEFAULT 60, p_template_name TEXT DEFAULT 'enrollment_confirmed')`.
+3. Enforces strict fail-closed template validation:
    ```sql
-   AND (p_template_name IS NULL OR template_name = p_template_name)
+   IF p_template_name IS NULL OR p_template_name <> v_target_template THEN
+       RETURN;
+   END IF;
+   ```
+   Two-argument callers strictly default to `'enrollment_confirmed'`. Any explicit `NULL`, `'application_approved'`, or unapproved template name immediately returns zero rows.
+4. Strict equality filtering on candidate rows and dead-letter reclamation:
+   ```sql
+   AND template_name = v_target_template
    ```
    Ensuring non-matching notifications (such as `application_approved`) remain untouched in status `pending` / `failed` without incrementing attempts or acquiring leases.
-4. Preserves atomic `FOR UPDATE SKIP LOCKED` locking, lease management, and dead-letter reclamation.
-5. Function execution locked down: `SECURITY DEFINER SET search_path = ''`, execution granted exclusively to `service_role`.
+5. Preserves atomic `FOR UPDATE SKIP LOCKED` locking, lease management, and dead-letter reclamation.
+6. Function execution locked down: `SECURITY DEFINER SET search_path = ''`, execution granted exclusively to `service_role`.
 
 ### Rollback Procedure:
-If necessary to revert to the un-filtered 2-parameter signature:
+If necessary to revert to the original un-filtered 2-parameter signature:
 ```sql
 DROP FUNCTION IF EXISTS public.rpc_dequeue_notification_batch(INT, INT, TEXT);
--- Re-apply 2-parameter definition from supabase_course_applications_v1_migration.sql lines 1125-1177.
+-- Re-apply original 2-parameter definition from supabase_course_applications_v1_migration.sql lines 1123-1187 (p_lock_seconds DEFAULT 300).
 ```
 
 ---
