@@ -69,7 +69,8 @@ export function renderNotificationEmail(
   const portalUrl = (process.env.APP_URL || "https://project.micrylisbiotech.com").replace(/\/+$/, "");
   const trackingUrl = `${portalUrl}/application/${appNumber}`;
   const claimUrl = payload.claim_token ? `${portalUrl}/claim-application?token=${payload.claim_token}` : null;
-  const safeName = recipientName || payload.student_name || "Applicant";
+  const isEnrollmentConfirmed = templateName === "enrollment_confirmed";
+  const safeName = recipientName || payload.student_name || (isEnrollmentConfirmed ? "Student" : "Applicant");
 
   let subject = `Course Application Update: ${appNumber}`;
   let headline = "Course Application Update";
@@ -147,15 +148,17 @@ export function renderNotificationEmail(
       break;
 
     case "enrollment_confirmed":
-      subject = `Enrollment Confirmed: Welcome to ${courseTitle}! (${appNumber})`;
-      headline = "Welcome to PathFinder!";
+      subject = "Your PathFinder Course Enrollment is Confirmed!";
+      headline = "Enrollment Confirmed";
       messageBody = `
-        <p>Congratulations! Your enrollment in <strong>${courseTitle}</strong> is officially confirmed.</p>
-        <p>Your student seat has been activated under application reference <strong>${appNumber}</strong>. You now have full access to course curriculum materials, mentor schedules, and research project resources.</p>
-        <p>Please log in to your student dashboard to access your schedule and onboarding guide.</p>
+        <p style="margin: 0 0 16px 0;">Congratulations!</p>
+        <p style="margin: 0 0 16px 0;">Your application has been successfully verified and your enrollment in <strong>${courseTitle}</strong> is confirmed.</p>
+        <p style="margin: 0 0 16px 0;">You can now access your course by visiting the PathFinder website and logging in using the same email address you provided in your application form.</p>
+        <p style="margin: 0 0 24px 0;">We are excited to have you as part of PathFinder.</p>
+        <p style="margin: 0; color: #475569;">Best regards,<br>Team Micrylis Biotech</p>
       `;
-      actionButtonLabel = "Open Student Dashboard";
-      actionButtonUrl = `${portalUrl}/dashboard`;
+      actionButtonLabel = "";
+      actionButtonUrl = "";
       break;
 
     case "enrollment_revoked":
@@ -206,21 +209,33 @@ export function renderNotificationEmail(
           <!-- Body -->
           <tr>
             <td style="padding: 36px 40px; line-height: 1.6; font-size: 15px;">
-              <p style="margin-top: 0; font-size: 16px;">Dear <strong>${safeName}</strong>,</p>
+              ${
+                isEnrollmentConfirmed
+                  ? `<p style="margin-top: 0; margin-bottom: 16px; font-size: 16px;">Hello <strong>${safeName}</strong>,</p>`
+                  : `<p style="margin-top: 0; font-size: 16px;">Dear <strong>${safeName}</strong>,</p>`
+              }
               ${messageBody}
-              <div style="margin: 32px 0 24px 0; text-align: center;">
+              ${
+                actionButtonUrl && !isEnrollmentConfirmed
+                  ? `<div style="margin: 32px 0 24px 0; text-align: center;">
                 <a href="${actionButtonUrl}" style="background-color: #0284c7; color: #ffffff; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);">${actionButtonLabel}</a>
               </div>
               <p style="font-size: 13px; color: #64748b; margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
                 Direct link: <a href="${actionButtonUrl}" style="color: #0284c7;">${actionButtonUrl}</a>
-              </p>
+              </p>`
+                  : ""
+              }
             </td>
           </tr>
           <!-- Footer -->
           <tr>
             <td style="background-color: #f1f5f9; padding: 24px 40px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
               <p style="margin: 0 0 8px 0;">PathFinder Course Application System &bull; Micrylis Biotech</p>
-              <p style="margin: 0;">This is an automated notification. For support, reply or visit <a href="${portalUrl}" style="color: #0284c7; text-decoration: none;">project.micrylisbiotech.com</a></p>
+              ${
+                isEnrollmentConfirmed
+                  ? `<p style="margin: 0;">This is an automated notification from PathFinder.</p>`
+                  : `<p style="margin: 0;">This is an automated notification. For support, reply or visit <a href="${portalUrl}" style="color: #0284c7; text-decoration: none;">project.micrylisbiotech.com</a></p>`
+              }
             </td>
           </tr>
         </table>
@@ -231,7 +246,22 @@ export function renderNotificationEmail(
 </html>
   `.trim();
 
-  const text = `
+  const text = isEnrollmentConfirmed
+    ? `
+Hello ${safeName},
+
+Congratulations!
+
+Your application has been successfully verified and your enrollment in ${courseTitle} is confirmed.
+
+You can now access your course by visiting the PathFinder website and logging in using the same email address you provided in your application form.
+
+We are excited to have you as part of PathFinder.
+
+Best regards,
+Team Micrylis Biotech
+    `.trim()
+    : `
 PathFinder Course Application Update
 ====================================
 ${headline}

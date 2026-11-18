@@ -701,6 +701,28 @@ The security architecture must enforce strict separation across three operationa
 - **Exponential Backoff:** Retries scheduled at $2^{\text{attempts}} \times 60$ seconds. Maximum 5 attempts before marking as `'dead_letter'`.
 - **Safety Gate:** `ENABLE_REAL_SMTP` remains `"false"` across Preview and local environments. Zero live emails are sent until explicit signoff.
 
+### 10.7 Enrollment Confirmed Email Template Specification (URL-Free)
+- **Subject:** `Your PathFinder Course Enrollment is Confirmed!`
+- **Dedicated Sender:** `professionalhome01@gmail.com` via `getCourseNotificationSenderAddress()` (`PathFinder Admissions <professionalhome01@gmail.com>`).
+- **Approved Message Copy:**
+  - **Salutation:** `Hello {{student_name}},` (dynamic student name, fallback to `Student`).
+  - **Body Text:**
+    ```text
+    Congratulations!
+
+    Your application has been successfully verified and your enrollment in {{course_name}} is confirmed.
+
+    You can now access your course by visiting the PathFinder website and logging in using the same email address you provided in your application form.
+
+    We are excited to have you as part of PathFinder.
+
+    Best regards,
+    Team Micrylis Biotech
+    ```
+- **Zero-Link Invariant:**
+  - Strictly **no** website URLs, preview URLs, direct links, CTA buttons, or status tracker links in either HTML or plain-text representations.
+  - Eliminates phishing false-positives and preview deployment leakages while guaranteeing clean mailbox inbox placement.
+
 ---
 
 ## 11. Bioinformatics Course Discrepancy & Frontend Alignment

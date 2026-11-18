@@ -177,18 +177,17 @@ describe("Course Application Management — Security & Functional Verification",
       expect(calculateExponentialBackoffMs(4)).toBe(960 * 1000); // 16 min
     });
 
-    const templates = [
+    const standardTemplates = [
       "application_received",
       "review_started",
       "resubmission_required",
       "application_approved",
       "application_rejected",
-      "enrollment_confirmed",
       "enrollment_revoked",
     ];
 
-    templates.forEach((tmpl) => {
-      it(`renders valid HTML and text for template '${tmpl}'`, () => {
+    standardTemplates.forEach((tmpl) => {
+      it(`renders valid HTML and text for standard template '${tmpl}'`, () => {
         const payload = {
           application_number: "APP-2026-00042",
           course_title: "Bioplastic Innovation Lab",
@@ -205,6 +204,71 @@ describe("Course Application Management — Security & Functional Verification",
         expect(email.html).toContain("APP-2026-00042");
         expect(email.html).toContain("Alex Student");
         expect(email.text).toContain("APP-2026-00042");
+      });
+    });
+
+    describe("enrollment_confirmed Template Specification", () => {
+      const payload = {
+        application_number: "APP-2026-01015",
+        course_title: "Bioinformatics & Genomic Data Analysis",
+        student_name: "Aarav Sharma",
+      };
+
+      it("renders exact approved subject line without application number or dynamic prefix", () => {
+        const email = renderNotificationEmail("enrollment_confirmed", "Aarav Sharma", payload);
+        expect(email.subject).toBe("Your PathFinder Course Enrollment is Confirmed!");
+      });
+
+      it("renders exact salutation with dynamic student name", () => {
+        const email = renderNotificationEmail("enrollment_confirmed", "Aarav Sharma", payload);
+        expect(email.text).toContain("Hello Aarav Sharma,");
+        expect(email.html).toContain("Hello <strong>Aarav Sharma</strong>,");
+      });
+
+      it("falls back to payload.student_name when recipientName is empty", () => {
+        const email = renderNotificationEmail("enrollment_confirmed", "", {
+          ...payload,
+          student_name: "Priya Patel",
+        });
+        expect(email.text).toContain("Hello Priya Patel,");
+        expect(email.html).toContain("Hello <strong>Priya Patel</strong>,");
+      });
+
+      it("renders exact approved body paragraphs with dynamic course title", () => {
+        const email = renderNotificationEmail("enrollment_confirmed", "Aarav Sharma", payload);
+        const expectedTextLines = [
+          "Congratulations!",
+          "Your application has been successfully verified and your enrollment in Bioinformatics & Genomic Data Analysis is confirmed.",
+          "You can now access your course by visiting the PathFinder website and logging in using the same email address you provided in your application form.",
+          "We are excited to have you as part of PathFinder.",
+          "Best regards,",
+          "Team Micrylis Biotech",
+        ];
+
+        for (const line of expectedTextLines) {
+          expect(email.text).toContain(line);
+        }
+
+        // HTML version contains bold markup for course title and sign-off
+        expect(email.html).toContain("Congratulations!");
+        expect(email.html).toContain("Your application has been successfully verified and your enrollment in <strong>Bioinformatics & Genomic Data Analysis</strong> is confirmed.");
+        expect(email.html).toContain("You can now access your course by visiting the PathFinder website and logging in using the same email address you provided in your application form.");
+        expect(email.html).toContain("We are excited to have you as part of PathFinder.");
+        expect(email.html).toContain("Best regards,<br>Team Micrylis Biotech");
+      });
+
+      it("strictly contains NO website URLs, preview URLs, or clickable links in HTML and plain text", () => {
+        const email = renderNotificationEmail("enrollment_confirmed", "Aarav Sharma", payload);
+        // Zero clickable links
+        expect(email.html).not.toContain("<a ");
+        expect(email.html).not.toContain("</a>");
+        // Zero URLs
+        expect(email.html).not.toMatch(/https?:\/\//i);
+        expect(email.text).not.toMatch(/https?:\/\//i);
+        // Zero CTA buttons or direct link references
+        expect(email.html).not.toContain("Open Student Dashboard");
+        expect(email.html).not.toContain("Direct link:");
+        expect(email.text).not.toContain("View Application Status:");
       });
     });
   });
