@@ -137,15 +137,15 @@ export async function handleNotificationWorkerRequest(request: Request): Promise
   }
 
   const authHeader = request.headers.get("authorization") || "";
-  const workerSecret = request.headers.get("x-worker-secret") || "";
-  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const workerSecretHeader = request.headers.get("x-worker-secret")?.trim() || "";
+  const bearerToken = authHeader.replace(/^Bearer\s+/i, "").trim();
 
-  const expectedSecret =
-    process.env.NOTIFICATION_WORKER_SECRET ||
-    process.env.CRON_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Phase B: Independent validation of NOTIFICATION_WORKER_SECRET and CRON_SECRET.
+  // Note: SUPABASE_SERVICE_ROLE_KEY is strictly excluded as a general-purpose worker authentication fallback.
+  const configuredWorkerSecret = process.env.NOTIFICATION_WORKER_SECRET?.trim() || "";
+  const configuredCronSecret = process.env.CRON_SECRET?.trim() || "";
 
-  if (!expectedSecret) {
+  if (!configuredWorkerSecret && !configuredCronSecret) {
     return new Response(
       JSON.stringify({
         success: false,
@@ -158,7 +158,13 @@ export async function handleNotificationWorkerRequest(request: Request): Promise
     );
   }
 
-  if (token !== expectedSecret && workerSecret !== expectedSecret) {
+  const isAuthorized =
+    (Boolean(configuredWorkerSecret) &&
+      (bearerToken === configuredWorkerSecret || workerSecretHeader === configuredWorkerSecret)) ||
+    (Boolean(configuredCronSecret) &&
+      (bearerToken === configuredCronSecret || workerSecretHeader === configuredCronSecret));
+
+  if (!isAuthorized) {
     return new Response(
       JSON.stringify({ success: false, error: "Unauthorized. Valid worker secret required." }),
       {
@@ -187,6 +193,22 @@ export async function handleNotificationWorkerRequest(request: Request): Promise
       );
     }
 
+    // Phase C: Enrollment-only notification filtering.
+    // Callers cannot bypass the enrollment-only constraint through query parameters.
+    const requestedTemplate = url.searchParams.get("template");
+    if (requestedTemplate && requestedTemplate !== "enrollment_confirmed") {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Invalid template filter. Only 'enrollment_confirmed' notifications are permitted for worker execution.",
+        }),
+        {
+          status: 400,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
+
     const batchSize = parseInt(url.searchParams.get("batchSize") || "10", 10);
     const lockSeconds = parseInt(url.searchParams.get("lockSeconds") || "60", 10);
     const dryRun =
@@ -197,7 +219,10 @@ export async function handleNotificationWorkerRequest(request: Request): Promise
     const result = await processNotificationBatch(
       Number.isFinite(batchSize) ? Math.min(Math.max(1, batchSize), 100) : 10,
       Number.isFinite(lockSeconds) ? Math.min(Math.max(10, lockSeconds), 300) : 60,
-      { dryRun }
+      {
+        dryRun,
+        allowedTemplate: "enrollment_confirmed",
+      }
     );
 
     return new Response(

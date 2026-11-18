@@ -622,26 +622,84 @@ The security architecture must enforce strict separation across three operationa
 
 ---
 
-## 10. Notification Worker Architecture
+## 10. Notification Worker Architecture & Automatic Scheduling
 
+### 10.1 Service Overview & Endpoints
 - **Service Location:** Background process or scheduled worker in TanStack Start (`src/server.ts`).
-- **Dedicated Course Notification Transport:**
-  - Course application confirmation and lifecycle emails are dispatched via a **dedicated Nodemailer connection pool** (`getCourseNotificationTransporter()` in `src/lib/server/mail.ts`).
-  - **Sender Account:** `professionalhome01@gmail.com` (`PathFinder Admissions <professionalhome01@gmail.com>`).
-  - **Required Environment Variables:**
-    - `COURSE_NOTIFICATIONS_GMAIL_USER`: The dedicated Gmail account address (`professionalhome01@gmail.com`).
-    - `COURSE_NOTIFICATIONS_GMAIL_APP_PASSWORD`: The dedicated 16-character Google Workspace App Password for course notifications.
-  - **Fail-Closed Isolation Guarantee:**
-    - The dedicated course notification transporter strictly requires both variables. It **never** falls back to `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_USER`, `EMAIL_PASS`, or hardcoded credentials.
-    - If either variable is missing when `ENABLE_REAL_SMTP="true"`, the notification worker fails closed immediately without dequeuing or mutating outbox records.
+- **Endpoint Route:** `/api/worker/notifications`
+- **Supported Methods:** `POST` and `GET` (accommodating automated cron invocations as well as administrative triggers).
+
+### 10.2 Dedicated Course Notification Transport
+- Course application confirmation and lifecycle emails are dispatched via a **dedicated Nodemailer connection pool** (`getCourseNotificationTransporter()` in `src/lib/server/mail.ts`).
+- **Sender Account:** `professionalhome01@gmail.com` (`PathFinder Admissions <professionalhome01@gmail.com>`).
+- **Required Environment Variables:**
+  - `COURSE_NOTIFICATIONS_GMAIL_USER`: The dedicated Gmail account address (`professionalhome01@gmail.com`).
+  - `COURSE_NOTIFICATIONS_GMAIL_APP_PASSWORD`: The dedicated 16-character Google Workspace App Password for course notifications.
+- **Fail-Closed Isolation Guarantee:**
+  - The dedicated course notification transporter strictly requires both variables. It **never** falls back to `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_USER`, `EMAIL_PASS`, or hardcoded credentials.
+  - If either variable is missing when `ENABLE_REAL_SMTP="true"`, the notification worker fails closed immediately without dequeuing or mutating outbox records.
 - **Workflow Separation & Blast Radius Isolation:**
   - Spin Wheel promotional OTPs (`src/lib/server/spin-wheel-security.ts`) and Student Authentication OTPs (`src/lib/auth-server.ts`) continue using the existing shared transporter (`GMAIL_USER`, `GMAIL_APP_PASSWORD`) without disruption.
   - Changes, rotation, or testing of PathFinder course notification credentials cannot affect Spin Wheel or user authentication.
-- **Staging & Preview Deployment Prerequisite:**
-  - Before enabling live email testing (`ENABLE_REAL_SMTP="true"`), both `COURSE_NOTIFICATIONS_GMAIL_USER` and `COURSE_NOTIFICATIONS_GMAIL_APP_PASSWORD` must be added to the Vercel Preview environment variables.
-  - An authenticated diagnostic action (`POST /api/worker/notifications?action=verify-smtp`) is available to test Google SMTP connectivity via `transporter.verify()` without sending emails or mutating the database.
-- **Job Lease Locking:** `SELECT ... FOR UPDATE SKIP LOCKED` with `locked_until = now() + interval '5 minutes'`.
+
+### 10.3 Worker Authentication & Independent Secret Validation (Phase 4)
+- **Authentication Credentials:**
+  1. `NOTIFICATION_WORKER_SECRET`: Custom administrative secret passed via `Authorization: Bearer <secret>` or `x-worker-secret: <secret>`. Used by manual admin triggers, monitoring probes, and external schedulers.
+  2. `CRON_SECRET`: Vercel Cron platform secret passed via `Authorization: Bearer <CRON_SECRET>`.
+- **Independent Validation:**
+  - The worker validates incoming tokens independently against `NOTIFICATION_WORKER_SECRET` and `CRON_SECRET`.
+  - Both secrets are checked if defined; neither can mask or disable the other.
+  - If neither secret is configured on the server, the endpoint returns `HTTP 503 Service Unavailable`.
+  - Unauthenticated, missing, or mismatched tokens return `HTTP 401 Unauthorized`.
+- **Least-Privilege Isolation:**
+  - `SUPABASE_SERVICE_ROLE_KEY` is **strictly excluded** as a general-purpose worker authentication fallback to preserve separation of privileges between database administration and HTTP worker dispatch.
+- **Diagnostic Endpoint Separation:**
+  - `POST /api/worker/notifications?action=verify-smtp` provides authenticated SMTP verification via `transporter.verify()`. It never dequeues jobs, mutates outbox records, or sends emails.
+
+### 10.4 Enrollment-Only Notification Filtering Architecture (Phase 4)
+- **Business Requirement:** Automated scheduling must process **ONLY** `enrollment_confirmed` notifications. Premature dispatch of `application_approved` (or any other unapproved lifecycle emails) is strictly forbidden.
+- **Database Dequeue-Level Filtering:**
+  - Filtering occurs atomically at the database claim level (`rpc_dequeue_notification_batch`), **not** after rows are locked or updated.
+  - Unmatched records (such as `application_approved`) are completely excluded from `locked_rows`. They remain untouched in their existing status (`pending` / `failed`) with zero modification to `attempts` or `locked_until`.
+- **Forward-Only Database Migration:**
+  - Migration script: `supabase_course_applications_v1_notification_filter_migration.sql`.
+  - Drops the previous 2-argument signature (`rpc_dequeue_notification_batch(INT, INT)`) to prevent ambiguous PostgreSQL function overloading.
+  - Creates 3-argument signature with defaults: `rpc_dequeue_notification_batch(p_batch_size INT DEFAULT 10, p_lock_seconds INT DEFAULT 60, p_template_name TEXT DEFAULT NULL)`.
+  - Backward compatible: callers omitting `p_template_name` default to `NULL` (all templates).
+  - Stored procedure execution remains locked down to `service_role` only.
+- **Application-Level Anti-Bypass & Fail-Closed Guardrails:**
+  - The API route handler (`src/server.ts`) inspects the query parameter `template`. If a caller supplies any template other than `enrollment_confirmed`, the request is rejected with `HTTP 400 Bad Request`.
+  - `processNotificationBatch` strictly defaults to `allowedTemplate: "enrollment_confirmed"`.
+  - Live dispatch mode fails closed immediately (`processed: 0, sent: 0`) if `allowedTemplate !== "enrollment_confirmed"`.
+  - An in-loop defense-in-depth check skips and logs any unexpected record whose template does not match `enrollment_confirmed`.
+  - Dry-run simulation mode (`notification-worker.ts`) applies `.eq("template_name", "enrollment_confirmed")`, ensuring simulations reflect only enrollment confirmation emails.
+
+### 10.5 Vercel Cron Scheduling & Verified Plan Compatibility
+- **Verified Vercel Account Plan:** **Hobby** (`team_D7FvsLKDGahGOZty5WacTRFo` / `vrajs-projects-ecf0c974`).
+- **Hobby Schedule Constraints:**
+  - Vercel Hobby plan supports a minimum cron frequency of **once per day** (`0 0 * * *`). Sub-daily frequencies (such as `*/5 * * * *`) are rejected during build/deploy.
+- **Configured Schedule (`vercel.json`):**
+  ```json
+  {
+    "crons": [
+      {
+        "path": "/api/worker/notifications?template=enrollment_confirmed",
+        "schedule": "0 0 * * *"
+      }
+    ]
+  }
+  ```
+- **Platform Execution Boundary (Production-Only):**
+  - By design, Vercel Cron triggers **only fire on Production deployments**. Vercel does **NOT** fire cron triggers on Preview deployments.
+- **Sub-Daily & Staging/Preview Scheduling Strategy:**
+  - For automated sub-daily polling (e.g. every 5 minutes) on Preview or before upgrading to Vercel Pro, an external scheduler (such as Google Apps Script or GitHub Actions) invokes the worker:
+    `GET https://pathfinder-forge-52-...vercel.app/api/worker/notifications?template=enrollment_confirmed`
+    Headers: `x-worker-secret: <NOTIFICATION_WORKER_SECRET>`, `x-vercel-protection-bypass: <BYPASS_TOKEN>`.
+
+### 10.6 Concurrency, Leases, and Error Handling
+- **Job Lease Locking:** `SELECT ... FOR UPDATE SKIP LOCKED` with `locked_until = now() + (lockSeconds || ' seconds')::interval`.
 - **Exponential Backoff:** Retries scheduled at $2^{\text{attempts}} \times 60$ seconds. Maximum 5 attempts before marking as `'dead_letter'`.
+- **Safety Gate:** `ENABLE_REAL_SMTP` remains `"false"` across Preview and local environments. Zero live emails are sent until explicit signoff.
 
 ---
 

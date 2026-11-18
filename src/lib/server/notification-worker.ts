@@ -254,6 +254,7 @@ PathFinder &bull; Micrylis Biotech
 
 export interface ProcessNotificationOptions {
   dryRun?: boolean;
+  allowedTemplate?: string;
 }
 
 export interface SimulatedNotificationItem {
@@ -286,6 +287,8 @@ export async function processNotificationBatch(
   lockSeconds: number = 60,
   options?: ProcessNotificationOptions
 ): Promise<ProcessNotificationResult> {
+  const allowedTemplate = options?.allowedTemplate || "enrollment_confirmed";
+
   const isDryRun =
     Boolean(options?.dryRun) ||
     process.env.NOTIFICATION_DRY_RUN === "true" ||
@@ -298,13 +301,19 @@ export async function processNotificationBatch(
     // Does NOT mutate status to 'sent', does NOT touch attempts, sent_at, or outbox history.
     try {
       const sanitizedBatchSize = Math.min(Math.max(1, batchSize), 100);
-      const { data: candidates, error: fetchErr } = await db
+      let query = db
         .from("notification_outbox")
         .select("*")
         .in("status", ["pending", "failed"])
         .lte("next_attempt_at", new Date().toISOString())
         .order("next_attempt_at", { ascending: true })
         .limit(sanitizedBatchSize);
+
+      if (allowedTemplate) {
+        query = query.eq("template_name", allowedTemplate);
+      }
+
+      const { data: candidates, error: fetchErr } = await query;
 
       if (fetchErr) {
         console.error("[Notification Worker - Dry Run] Fetch error:", fetchErr);
@@ -362,6 +371,21 @@ export async function processNotificationBatch(
   let sent = 0;
   let failed = 0;
 
+  // Phase C: Enrollment-only notification filtering.
+  // Live dispatch strictly fails closed if allowedTemplate is not 'enrollment_confirmed'.
+  if (allowedTemplate !== "enrollment_confirmed") {
+    console.error(
+      `[Notification Worker] Live dispatch rejected: invalid or unapproved template filter '${allowedTemplate}'. Only 'enrollment_confirmed' is permitted.`
+    );
+    return {
+      processed: 0,
+      sent: 0,
+      failed: 0,
+      simulated: 0,
+      dryRun: false,
+    };
+  }
+
   // Resolve dedicated course notification transporter.
   // Fails closed if COURSE_NOTIFICATIONS_GMAIL_USER or COURSE_NOTIFICATIONS_GMAIL_APP_PASSWORD is missing.
   // Never falls back to shared credentials.
@@ -388,6 +412,7 @@ export async function processNotificationBatch(
       {
         p_batch_size: batchSize,
         p_lock_seconds: lockSeconds,
+        p_template_name: allowedTemplate,
       }
     );
 
@@ -403,6 +428,14 @@ export async function processNotificationBatch(
     processed = batch.length;
 
     for (const item of batch) {
+      // In-loop defense-in-depth safety guard:
+      if (item.template_name !== "enrollment_confirmed") {
+        console.warn(
+          `[Notification Worker] Safety skip: unexpected non-enrollment template '${item.template_name}' (ID: ${item.id})`
+        );
+        continue;
+      }
+
       try {
         const { subject, html, text } = renderNotificationEmail(
           item.template_name,
@@ -477,7 +510,9 @@ export function startNotificationWorker(intervalMs: number = 10_000): NodeJS.Tim
   console.log(`[Notification Worker] Started background polling every ${intervalMs}ms`);
   const interval = setInterval(async () => {
     try {
-      const result = await processNotificationBatch(10, 60);
+      const result = await processNotificationBatch(10, 60, {
+        allowedTemplate: "enrollment_confirmed",
+      });
       if (result.processed > 0) {
         console.log(
           `[Notification Worker] Processed: ${result.processed}, Sent: ${result.sent}, Failed: ${result.failed}`

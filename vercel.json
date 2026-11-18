@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/worker/notifications?template=enrollment_confirmed",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
