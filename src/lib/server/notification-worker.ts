@@ -1,5 +1,8 @@
 import { supabaseAdmin } from "./supabase-admin";
-import { transporter, getSenderAddress } from "./mail";
+import {
+  getCourseNotificationTransporter,
+  getCourseNotificationSenderAddress,
+} from "./mail";
 import { resolveCourseTitle } from "../courses/course-identifiers";
 
 const db = supabaseAdmin as any;
@@ -359,6 +362,26 @@ export async function processNotificationBatch(
   let sent = 0;
   let failed = 0;
 
+  // Resolve dedicated course notification transporter.
+  // Fails closed if COURSE_NOTIFICATIONS_GMAIL_USER or COURSE_NOTIFICATIONS_GMAIL_APP_PASSWORD is missing.
+  // Never falls back to shared credentials.
+  let courseTransporter: any;
+  let senderAddress: string;
+
+  try {
+    courseTransporter = getCourseNotificationTransporter();
+    senderAddress = getCourseNotificationSenderAddress();
+  } catch (configErr: any) {
+    console.error("[Notification Worker] Dedicated SMTP configuration error:", configErr?.message || configErr);
+    return {
+      processed: 0,
+      sent: 0,
+      failed: 0,
+      simulated: 0,
+      dryRun: false,
+    };
+  }
+
   try {
     const { data: batch, error: dequeueErr } = await db.rpc(
       "rpc_dequeue_notification_batch",
@@ -387,9 +410,9 @@ export async function processNotificationBatch(
           item.payload || {}
         );
 
-        // Dispatch email via Nodemailer connection pool
-        await transporter.sendMail({
-          from: getSenderAddress(),
+        // Dispatch email via dedicated Nodemailer connection pool
+        await courseTransporter.sendMail({
+          from: senderAddress,
           to: item.recipient_email,
           subject,
           html,

@@ -170,6 +170,23 @@ export async function handleNotificationWorkerRequest(request: Request): Promise
 
   try {
     const url = new URL(request.url);
+    const action = url.searchParams.get("action");
+
+    if (action === "verify-smtp") {
+      const { verifyCourseNotificationSmtp } = await import("./lib/server/mail");
+      const verifyResult = await verifyCourseNotificationSmtp();
+      return new Response(
+        JSON.stringify({
+          ...verifyResult,
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          status: verifyResult.verified ? 200 : 502,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
+
     const batchSize = parseInt(url.searchParams.get("batchSize") || "10", 10);
     const lockSeconds = parseInt(url.searchParams.get("lockSeconds") || "60", 10);
     const dryRun =

@@ -625,7 +625,21 @@ The security architecture must enforce strict separation across three operationa
 ## 10. Notification Worker Architecture
 
 - **Service Location:** Background process or scheduled worker in TanStack Start (`src/server.ts`).
-- **Transport:** Existing Gmail SMTP connection pool (`src/lib/server/mail.ts`).
+- **Dedicated Course Notification Transport:**
+  - Course application confirmation and lifecycle emails are dispatched via a **dedicated Nodemailer connection pool** (`getCourseNotificationTransporter()` in `src/lib/server/mail.ts`).
+  - **Sender Account:** `professionalhome01@gmail.com` (`PathFinder Admissions <professionalhome01@gmail.com>`).
+  - **Required Environment Variables:**
+    - `COURSE_NOTIFICATIONS_GMAIL_USER`: The dedicated Gmail account address (`professionalhome01@gmail.com`).
+    - `COURSE_NOTIFICATIONS_GMAIL_APP_PASSWORD`: The dedicated 16-character Google Workspace App Password for course notifications.
+  - **Fail-Closed Isolation Guarantee:**
+    - The dedicated course notification transporter strictly requires both variables. It **never** falls back to `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_USER`, `EMAIL_PASS`, or hardcoded credentials.
+    - If either variable is missing when `ENABLE_REAL_SMTP="true"`, the notification worker fails closed immediately without dequeuing or mutating outbox records.
+- **Workflow Separation & Blast Radius Isolation:**
+  - Spin Wheel promotional OTPs (`src/lib/server/spin-wheel-security.ts`) and Student Authentication OTPs (`src/lib/auth-server.ts`) continue using the existing shared transporter (`GMAIL_USER`, `GMAIL_APP_PASSWORD`) without disruption.
+  - Changes, rotation, or testing of PathFinder course notification credentials cannot affect Spin Wheel or user authentication.
+- **Staging & Preview Deployment Prerequisite:**
+  - Before enabling live email testing (`ENABLE_REAL_SMTP="true"`), both `COURSE_NOTIFICATIONS_GMAIL_USER` and `COURSE_NOTIFICATIONS_GMAIL_APP_PASSWORD` must be added to the Vercel Preview environment variables.
+  - An authenticated diagnostic action (`POST /api/worker/notifications?action=verify-smtp`) is available to test Google SMTP connectivity via `transporter.verify()` without sending emails or mutating the database.
 - **Job Lease Locking:** `SELECT ... FOR UPDATE SKIP LOCKED` with `locked_until = now() + interval '5 minutes'`.
 - **Exponential Backoff:** Retries scheduled at $2^{\text{attempts}} \times 60$ seconds. Maximum 5 attempts before marking as `'dead_letter'`.
 
