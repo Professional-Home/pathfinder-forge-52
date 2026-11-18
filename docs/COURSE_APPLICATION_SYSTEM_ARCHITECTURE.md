@@ -1,12 +1,12 @@
 # PathFinder Course Application Management System — Approved Architecture Specification
 
-**Document Version:** 1.7.0  
-**Status:** Phase 3 Implementation Completed (Ready for Independent Review & Verification)  
-**Approval Date:** 14 November 2026 (Updated: 15 November 2026)  
-**Project Repository:** `F:/Project/pathfinder-forge-52`  
-**Implementation Branch:** `feature/course-application-management`  
-**Upstream Branching Base Commit:** `0a9d79a95f28942e115bacf10d5166c6441e9267` (`origin/main`, PR #23 merge baseline)  
-**Consolidation Feature Commit:** `43a0e0de277a9eac749bd9c53921ee0db52ea9a3` (`origin/feature/course-application-management`, Phase 3.3.7 repository publication)  
+**Document Version:** 1.7.2
+**Status:** Phase 3 Implementation Completed, Staging Preview Verified & Staging End-to-End Enrollment Verified
+**Approval Date:** 14 November 2026 (Updated: 18 November 2026)
+**Project Repository:** `F:/Project/pathfinder-forge-52`
+**Implementation Branch:** `feature/course-application-management`
+**Upstream Branching Base Commit:** `0a9d79a95f28942e115bacf10d5166c6441e9267` (`origin/main`, PR #23 merge baseline)
+**Verified Preview Commit:** `bed557e4fc160e130944047e21cc307193c9722b` (`origin/feature/course-application-management`, Admin queue applicant identity display)
 **Production Authorization Notice:** Production database migrations, Supabase schema modifications, and deployment changes have **NOT** yet been executed or authorized. This document records approved architectural decisions and specifications for development within the permanent repository `F:/Project/pathfinder-forge-52` (branch: `feature/course-application-management`).
 
 ---
@@ -63,14 +63,14 @@ stateDiagram-v2
     under_review --> resubmission_required: Admin requests document correction
     resubmission_required --> resubmitted: Student uploads updated files
     resubmitted --> under_review: Admin resumes review
-    
+
     under_review --> approved: Academic review passed
     approved --> enrolled: Payment verified & enrollment created
-    
+
     under_review --> rejected: Academic / eligibility criteria failed
     submitted --> cancelled: Student withdraws
     resubmission_required --> cancelled: Student withdraws
-    
+
     enrolled --> [*]
     rejected --> [*]
     cancelled --> [*]
@@ -672,3 +672,72 @@ All Phase 3 workstreams have been fully implemented in the local repository:
 | **Workstream H** | Automated Testing & Verification | `src/test/course-applications/course-applications.test.ts` (168/168 unit, webhook, and lifecycle tests passing) | **Completed** |
 | **Workstream I** | Google Forms Cutover Plan & Manual Runbooks | `docs/COURSE_APPLICATION_GOOGLE_FORMS_CUTOVER.md`, `docs/COURSE_APPLICATION_DATABASE_MIGRATION_RUNBOOK.md` | **Completed** |
 
+---
+
+## 14. Course Applications Verification & Operational Ledger
+
+### 14.1 Admin Queue Applicant Identity Verification Milestone
+- **Verification Date:** 18 November 2026
+- **Fix Commit:** `bed557e4fc160e130944047e21cc307193c9722b`
+- **Commit Message:** `fix(course-applications): display applicant identity in admin queue`
+- **Target Branch:** `feature/course-application-management`
+- **Hosting / Deployment Environment:** Vercel Preview deployment connected to Staging database (`neexbpcvedcfwjxpgede`).
+- **Verification Result:** Ready and visually verified by the operator in live browser inspection.
+
+### 14.2 Live Staging Records Visual Inspection Verification Matrix
+
+| Application Reference | Course | Pre-Fix Behavior | Post-Fix Verified Result | Verification Verdict |
+| :--- | :--- | :--- | :--- | :--- |
+| **APP-2026-01012** | Bioplastic Innovation | Applicant cell was blank | Full Legal Name `PathFinder Webhook Test` and contact email render correctly | **VERIFIED PASS** |
+| **APP-2026-01013** | AI in Drug Discovery | Applicant cell was blank | Full Legal Name `testinf of AI in Drug Discovery` and contact email render correctly | **VERIFIED PASS** |
+| **APP-2026-01014** | Bioinformatics | Displayed `Quarantined` badge only | Displays applicant identity information alongside the red `Quarantined` badge | **VERIFIED PASS** |
+
+### 14.3 Automated Quality Gate Audit
+- **Course Application Tests:** `npx vitest run src/test/course-applications/` passed (168/168 tests passed, 0 failed: 78 webhook security & intake tests + 90 lifecycle, security invariant, and queue hydration tests).
+- **TypeScript Static Analysis:** `npx tsc --noEmit` passed with 0 compile-time errors.
+- **Production Build:** `npm run build` completed successfully (exit code 0; client bundle, SSR server bundle, and Nitro Vercel serverless function generated cleanly).
+
+### 14.4 Environment & Operational Integrity Guarantees
+- **Zero Record Mutation (Admin Queue Verification):** During the admin queue visual verification, zero application records were approved, rejected, reconciled, or enrolled. Intake test applications APP-2026-01012, APP-2026-01013, and APP-2026-01014 strictly remain in their authentic intake states for subsequent test workflows.
+- **Production Isolation:** Production database (`knrmfpgwcdtpwcgkjrnk`) remained strictly untouched; zero production queries, migrations, or data modifications were performed.
+
+### 14.5 End-to-End Staging Enrollment Verification Milestone (APP-2026-01015)
+- **Verification Date:** 18 November 2026
+- **Target Application:** `APP-2026-01015`
+- **Application ID:** `b1c9f70b-c17f-4209-af56-3ff76dd7ea5d`
+- **Enrollment ID:** `81bb36e2-6852-4958-9b55-e5706c571de1`
+- **Target Course:** Bioinformatics & Genomic Data Analysis
+- **Course Slug:** `bioinformatics` (Course UUID: `840fed84-696d-458e-aeee-2df6b88d3428`)
+- **Environment:** Staging Supabase only (`neexbpcvedcfwjxpgede`)
+- **Final Application Status:** `enrolled` (`enrolled_at: 2026-11-18 09:59:37 UTC`)
+- **Payment Status:** `verified` (`payment_reference: "Verified in Google Sheets"`)
+- **Identity Conflict Status:** `false` (`is_identity_conflict: false`, respondent email matches entered email)
+
+#### Complete Tested Workflow (Google Forms $\to$ Approval $\to$ Enrollment)
+The complete end-to-end lifecycle was executed and independently audited across six stages:
+1. **Google Forms Webhook Ingestion:** Submission received via standalone Apps Script webhook; application record initialized with `source = 'google_forms'`, `documents_status = 'not_required'`, and `status = 'submitted'`.
+2. **Admin Board Queue Appearance:** Application surfaced in the administrative review portal (`/admin/applications`) displaying complete applicant identity and course metadata.
+3. **Google Sheets Verification:** Administrator cross-checked candidate identity and payment verification in the linked external Google Sheet.
+4. **Administrative Academic Approval:** Administrator executed academic approval via `rpc_admin_approve_google_forms_application` with `p_confirmed_sheet_verification = true`, updating `status = 'approved'`, `payment_status = 'verified'`.
+5. **Student Enrollment Activation:** Administrator executed enrollment activation via `rpc_admin_transition_application_status` (`p_target_status = 'enrolled'`), creating an operational enrollment record under PostgreSQL transaction-scoped advisory locks.
+6. **Independent Forensic Verification:** Complete relational audit independently confirmed the enrollment row, foreign keys, uniqueness, audit logs, and notification records.
+
+#### Verification Evidence Matrix
+
+| Entity / Domain | Target / Invariant | Verified Staging Record / Evidence | Result |
+| :--- | :--- | :--- | :---: |
+| **Application State** | `status = 'enrolled'` | `status: "enrolled"`, `enrolled_at: 2026-11-18T09:59:37.029393+00:00` | **PASS** |
+| **Payment Invariant (DEC-03)** | `payment_status` verified | `payment_status: "verified"`, reference: `"Verified in Google Sheets"` | **PASS** |
+| **Application $\to$ Enrollment FK** | `app.enrollment_id == enrollment.id` | Application `enrollment_id` matches `81bb36e2-6852-4958-9b55-e5706c571de1` | **PASS** |
+| **Student Identity Linkage** | Student identity matched to auth user | Student identity was successfully matched to the authenticated staging account (`auth.users`) | **PASS** |
+| **Course Identity Linkage** | Canonical course UUID match | `840fed84-696d-458e-aeee-2df6b88d3428` (`Bioinformatics & Genomic Data Analysis`) | **PASS** |
+| **Enrollment Uniqueness** | Exactly 1 enrollment row in `enrollments_users` | `SELECT count(*)` for student email returns exactly `1` row; `0` duplicates found | **PASS** |
+| **Application Events Trail** | Chronological state transitions | 3 events logged: `SUBMITTED` (id: 53), `APPROVED` (id: 54), `ENROLLED` (id: 55) | **PASS** |
+| **Administrative Audit Logs** | Tamper-evident admin actions | 2 logs: `APPROVE_GOOGLE_FORMS_APPLICATION` (id: 59), `ACTIVATE_ENROLLMENT` (id: 60) | **PASS** |
+| **Notification Outbox** | Transactional notification queueing | 2 outbox records: `application_approved` (id: 35), `enrollment_confirmed` (id: 36) | **PASS** |
+
+#### Safety, Isolation & Operational Scope Boundaries
+- **Strictly Read-Only Audit:** All verification queries were executed as read-only queries (`SELECT`). No SQL mutations (`INSERT`, `UPDATE`, `DELETE`) occurred during the independent audit.
+- **Production Supabase Isolation:** Production project `knrmfpgwcdtpwcgkjrnk` was strictly isolated and was never accessed.
+- **Outbox Queue vs Delivery Scope:** Notification records were verified as correctly queued in `public.notification_outbox` with status `pending`. Actual external delivery (via SMTP email or WhatsApp message) was **not** executed or verified as worker operates in safe simulated/dry-run mode during staging. No claim of notification delivery is made.
+- **Staging Acceptance Only:** This milestone establishes staging functional acceptance of the Google Forms ingestion and administrative enrollment activation pipeline; it does not constitute production release approval.
