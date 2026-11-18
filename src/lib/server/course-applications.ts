@@ -1388,6 +1388,9 @@ export async function getAdminApplicationsListCore(data?: AdminApplicationsFilte
       const title = resolveApplicationCourseTitle(row.course_id, courseTitles);
       return {
         ...row,
+        applicant_name: row.student_name,
+        applicant_email: row.student_email,
+        applicant_phone: row.student_phone,
         courses: { title },
         course_title: title,
       };

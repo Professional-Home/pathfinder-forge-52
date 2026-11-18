@@ -24,6 +24,7 @@ import {
   normalizeDocumentType,
   ALLOWED_DATABASE_DOCUMENT_TYPES,
   createDocumentUploadTicketCore,
+  getAdminApplicationsListCore,
 } from "@/lib/server/course-applications";
 import { supabaseAdmin } from "@/lib/server/supabase-admin";
 import * as adminGuard from "@/lib/server/admin-guard";
@@ -1334,6 +1335,141 @@ describe("Course Application Management — Security & Functional Verification",
         const text = await res.text();
         expect(text).not.toContain(sensitiveSecret);
       });
+    });
+  });
+
+  // ─── Admin Applications Queue List — Hydration & Applicant Aliasing ───
+  describe("Admin Applications Queue List — Hydration & Applicant Aliasing", () => {
+    beforeEach(() => {
+      vi.restoreAllMocks();
+      vi.spyOn(adminGuard, "verifyAdminSession").mockResolvedValue({
+        isValid: true,
+        userId: "admin-uuid-1",
+        role: "admin",
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("hydrates applicant_name, applicant_email, and applicant_phone from student fields for normal applications", async () => {
+      const mockRows = [
+        {
+          id: "app-uuid-1012",
+          application_number: "APP-2026-01012",
+          course_id: "course-bioplastic-uuid",
+          student_name: "PathFinder Webhook Test",
+          student_email: "webhook.test@example.com",
+          student_phone: "+919876543210",
+          status: "submitted",
+          payment_status: "pending_verification",
+          is_identity_conflict: false,
+          created_at: "2026-11-18T00:00:00Z",
+        },
+      ];
+
+      vi.spyOn(supabaseAdmin, "from").mockImplementation((table: string) => {
+        if (table === "course_applications") {
+          return {
+            select: () => ({
+              order: () => ({
+                range: async () => ({ data: mockRows, count: 1, error: null }),
+              }),
+            }),
+          } as any;
+        }
+        if (table === "courses") {
+          return {
+            select: async () => ({
+              data: [{ id: "course-bioplastic-uuid", slug: "bioplastic-innovation", title: "Bioplastic Innovation" }],
+              error: null,
+            }),
+          } as any;
+        }
+        return {} as any;
+      });
+
+      const result = await getAdminApplicationsListCore({ authToken: "valid-admin-token" });
+
+      expect(result.success).toBe(true);
+      expect(result.applications).toHaveLength(1);
+      const app = result.applications[0];
+
+      // Verify canonical applicant aliases expected by UI
+      expect(app.applicant_name).toBe("PathFinder Webhook Test");
+      expect(app.applicant_email).toBe("webhook.test@example.com");
+      expect(app.applicant_phone).toBe("+919876543210");
+
+      // Verify raw database fields remain preserved
+      expect(app.student_name).toBe("PathFinder Webhook Test");
+      expect(app.student_email).toBe("webhook.test@example.com");
+      expect(app.student_phone).toBe("+919876543210");
+
+      // Verify course title resolution
+      expect(app.courses?.title).toBe("Bioplastic Innovation");
+      expect(app.course_title).toBe("Bioplastic Innovation");
+      expect(app.is_identity_conflict).toBe(false);
+    });
+
+    it("hydrates applicant aliases and preserves quarantine state for identity-conflict applications", async () => {
+      const mockRows = [
+        {
+          id: "app-uuid-1014",
+          application_number: "APP-2026-01014",
+          course_id: "course-bioinformatics-uuid",
+          student_name: "Jane Quarantined Student",
+          student_email: "entered.student@example.com",
+          student_phone: "+919876543211",
+          status: "submitted",
+          payment_status: "pending_verification",
+          is_identity_conflict: true,
+          academic_background: {
+            google_forms: {
+              respondent_email: "google.account@example.com",
+              identity_conflict: true,
+            },
+          },
+          created_at: "2026-11-18T00:00:00Z",
+        },
+      ];
+
+      vi.spyOn(supabaseAdmin, "from").mockImplementation((table: string) => {
+        if (table === "course_applications") {
+          return {
+            select: () => ({
+              order: () => ({
+                range: async () => ({ data: mockRows, count: 1, error: null }),
+              }),
+            }),
+          } as any;
+        }
+        if (table === "courses") {
+          return {
+            select: async () => ({
+              data: [{ id: "course-bioinformatics-uuid", slug: "bioinformatics", title: "Bioinformatics" }],
+              error: null,
+            }),
+          } as any;
+        }
+        return {} as any;
+      });
+
+      const result = await getAdminApplicationsListCore({ authToken: "valid-admin-token" });
+
+      expect(result.success).toBe(true);
+      expect(result.applications).toHaveLength(1);
+      const app = result.applications[0];
+
+      // Verify canonical applicant aliases are NOT blank even when quarantined
+      expect(app.applicant_name).toBe("Jane Quarantined Student");
+      expect(app.applicant_email).toBe("entered.student@example.com");
+      expect(app.applicant_phone).toBe("+919876543211");
+
+      // Verify identity conflict flag and metadata are preserved
+      expect(app.is_identity_conflict).toBe(true);
+      expect(app.academic_background?.google_forms?.identity_conflict).toBe(true);
+      expect(app.academic_background?.google_forms?.respondent_email).toBe("google.account@example.com");
     });
   });
 });

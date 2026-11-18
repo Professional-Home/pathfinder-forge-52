@@ -652,6 +652,7 @@ The security architecture must enforce strict separation across three operationa
 2. **[`src/routes/dashboard/index.tsx:66`](file:///F:/Project/pathfinder-forge-52/src/routes/dashboard/index.tsx#L66):** Changed `.select("course_id, enrolled_at")` to `.select("course_id, enrollment_date")` and updated line 87 to read `e.enrollment_date`. [COMPLETED]
 3. **[`src/lib/courses/store.ts:349`](file:///F:/Project/pathfinder-forge-52/src/lib/courses/store.ts#L349):** Appended `.select("id").single()` to `syncCourseToSupabase` and updated `saveCourse` to capture real database UUIDs and replace synthetic IDs. [COMPLETED]
 4. **[`src/lib/courses/dashboard-courses.ts:53`](file:///F:/Project/pathfinder-forge-52/src/lib/courses/dashboard-courses.ts#L53):** Normalized ID mapping in `mergeDashboardCourses` to prioritize database identifiers. [COMPLETED]
+5. **[`src/routes/admin/applications/index.tsx:269`](file:///F:/Project/pathfinder-forge-52/src/routes/admin/applications/index.tsx#L269) & [`src/lib/server/course-applications.ts:1391`](file:///F:/Project/pathfinder-forge-52/src/lib/server/course-applications.ts#L1391):** Aligned `getAdminApplicationsListCore` hydration to alias `applicant_name: row.student_name`, `applicant_email: row.student_email`, and `applicant_phone: row.student_phone`, and added defensive fallbacks in the admin table (`app.applicant_name || app.student_name`). [COMPLETED]
 
 ---
 
@@ -665,9 +666,9 @@ All Phase 3 workstreams have been fully implemented in the local repository:
 | **Workstream B** | Storage Bucket & Binary Security | `supabase_course_applications_storage_v1.sql`, `src/lib/server/course-application-storage.ts` | **Completed** |
 | **Workstream C** | Server Functions & Business Logic | `src/lib/server/course-applications.ts` | **Completed** |
 | **Workstream D** | Student Application Submission UI | `src/routes/apply/$courseSlug.tsx`, `src/routes/application/$applicationNumber.tsx`, `src/routes/claim-application.tsx` | **Completed** |
-| **Workstream E** | Administrative Review Portal | `src/routes/admin/applications/index.tsx`, `src/routes/admin/applications/$id.tsx`, `src/components/admin/AdminSidebar.tsx` | **Completed** |
+| **Workstream E** | Administrative Review Portal | `src/routes/admin/applications/index.tsx`, `src/routes/admin/applications/$id.tsx`, `src/components/admin/AdminSidebar.tsx` | **Completed** (Applicant column hydration & fallback verified) |
 | **Workstream F** | Notification Outbox Worker | `src/lib/server/notification-worker.ts` | **Completed** |
 | **Workstream G** | Existing Frontend Query Corrections | `src/routes/admin/dashboard.tsx`, `src/routes/dashboard/index.tsx`, `src/lib/courses/store.ts` | **Completed** |
-| **Workstream H** | Automated Testing & Verification | `src/test/course-applications/course-applications.test.ts` (22/22 unit & integration tests passing) | **Completed** |
+| **Workstream H** | Automated Testing & Verification | `src/test/course-applications/course-applications.test.ts` (168/168 unit, webhook, and lifecycle tests passing) | **Completed** |
 | **Workstream I** | Google Forms Cutover Plan & Manual Runbooks | `docs/COURSE_APPLICATION_GOOGLE_FORMS_CUTOVER.md`, `docs/COURSE_APPLICATION_DATABASE_MIGRATION_RUNBOOK.md` | **Completed** |
 

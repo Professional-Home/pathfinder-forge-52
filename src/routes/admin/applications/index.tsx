@@ -266,14 +266,16 @@ export function AdminApplicationsQueuePage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-medium text-foreground">{app.applicant_name}</span>
+                      <span className="font-medium text-foreground">
+                        {app.applicant_name || app.student_name || "Unknown Applicant"}
+                      </span>
                       {(app.is_identity_conflict || app.academic_background?.google_forms?.identity_conflict) && (
                         <Badge variant="outline" className="border-red-500 bg-red-50 text-red-700 text-[10px] font-bold py-0 h-4">
                           Quarantined
                         </Badge>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">{app.applicant_email}</div>
+                    <div className="text-xs text-muted-foreground">{app.applicant_email || app.student_email || ""}</div>
                   </td>
                   <td className="px-4 py-3 text-xs text-foreground font-medium">
                     {app.courses?.title || app.course_id}
