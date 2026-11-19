@@ -1,40 +1,50 @@
 import nodemailer from "nodemailer";
-import fs from "node:fs";
-import path from "node:path";
 
 /**
  * Server-side Nodemailer transporter using Gmail SMTP + App Password.
  * Configured with pooled connections for lightning-fast email dispatch (<0.5s).
+ *
+ * Security & Environment Contract:
+ * - Credentials must be supplied via host environment variables (e.g. Vercel, .env.local).
+ * - NEVER reads files directly from disk (such as .env).
+ * - Fails closed with zero hardcoded credential fallbacks.
+ * - Supports GMAIL_USER / GMAIL_APP_PASSWORD (with legacy EMAIL_USER / EMAIL_PASS aliases).
  */
 
-// Auto-load .env file if env vars aren't loaded into process.env
-if (!process.env.GMAIL_USER && !process.env.EMAIL_USER) {
-  try {
-    const envPath = path.resolve(process.cwd(), ".env");
-    if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, "utf-8");
-      for (const line of envContent.split("\n")) {
-        const trimmed = line.trim();
-        if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
-          const [key, ...valParts] = trimmed.split("=");
-          const val = valParts.join("=").trim().replace(/^["']|["']$/g, "");
-          if (key.trim() && !process.env[key.trim()]) {
-            process.env[key.trim()] = val;
-          }
-        }
-      }
-    }
-  } catch (e) {
-    // Ignore error loading .env manually
-  }
+export interface SharedMailCredentials {
+  user: string;
+  pass: string;
 }
 
-const GMAIL_USER = (process.env.GMAIL_USER || process.env.EMAIL_USER || "micrylisbiotech@gmail.com").trim();
-const GMAIL_APP_PASSWORD = (process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS || "ukpucdorwtlwxiqo").replace(/\s+/g, "");
+/**
+ * Validates and retrieves the shared application email credentials.
+ * Returns null if either username or password is missing or empty.
+ * Strips whitespace from Google Workspace 4x4 App Passwords ('abcd efgh ijkl mnop').
+ * Never logs or reveals secrets.
+ */
+export function getSharedMailCredentials(): SharedMailCredentials | null {
+  const rawUser = process.env.GMAIL_USER || process.env.EMAIL_USER;
+  const user = rawUser ? rawUser.trim() : "";
+  const rawPass = process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS;
+  const pass = rawPass ? rawPass.replace(/\s+/g, "") : "";
+
+  if (!user || !pass) {
+    return null;
+  }
+  return { user, pass };
+}
 
 let _transporter: nodemailer.Transporter | null = null;
+let isVerified = false;
 
 export function getTransporter(): nodemailer.Transporter {
+  const creds = getSharedMailCredentials();
+  if (!creds) {
+    throw new Error(
+      "Shared application SMTP error: GMAIL_USER (or EMAIL_USER) and GMAIL_APP_PASSWORD (or EMAIL_PASS) environment variables are required. Fallback to hardcoded credentials has been removed."
+    );
+  }
+
   if (!_transporter) {
     _transporter = nodemailer.createTransport({
       service: "gmail",
@@ -42,8 +52,8 @@ export function getTransporter(): nodemailer.Transporter {
       maxConnections: 5,
       maxMessages: 100,
       auth: {
-        user: GMAIL_USER,
-        pass: GMAIL_APP_PASSWORD,
+        user: creds.user,
+        pass: creds.pass,
       },
       connectionTimeout: 5_000,
       greetingTimeout: 5_000,
@@ -61,24 +71,43 @@ export const transporter = new Proxy({} as nodemailer.Transporter, {
   },
 });
 
-let isVerified = false;
-
 export async function ensureMailReady(): Promise<boolean> {
+  const creds = getSharedMailCredentials();
+  if (!creds) {
+    console.warn("[MAIL] Shared application SMTP not configured: GMAIL_USER and GMAIL_APP_PASSWORD are required.");
+    return false;
+  }
+
   if (isVerified) return true;
   // Non-blocking verification check
-  getTransporter().verify((err) => {
-    if (!err) {
-      isVerified = true;
-      console.log(`[MAIL] Gmail SMTP connection pool initialized for ${GMAIL_USER}`);
-    } else {
-      console.warn("[MAIL] Gmail SMTP verification warning:", err.message);
-    }
-  });
+  try {
+    getTransporter().verify((err) => {
+      if (!err) {
+        isVerified = true;
+        console.log(`[MAIL] Gmail SMTP connection pool initialized for ${creds.user}`);
+      } else {
+        console.warn("[MAIL] Gmail SMTP verification warning:", err.message);
+      }
+    });
+  } catch (err: any) {
+    console.warn("[MAIL] Gmail SMTP verification error:", err?.message || err);
+    return false;
+  }
   return true;
 }
 
 export function getSenderAddress(): string {
-  return `Micrylis <${GMAIL_USER}>`;
+  const creds = getSharedMailCredentials();
+  const user = creds?.user || (process.env.GMAIL_USER || process.env.EMAIL_USER)?.trim() || "";
+  return user ? `Micrylis <${user}>` : "Micrylis";
+}
+
+/**
+ * Resets the shared transporter singleton for testing purposes.
+ */
+export function resetSharedTransporterForTesting(): void {
+  _transporter = null;
+  isVerified = false;
 }
 
 /**

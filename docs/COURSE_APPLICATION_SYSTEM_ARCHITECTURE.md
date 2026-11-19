@@ -723,6 +723,25 @@ The security architecture must enforce strict separation across three operationa
   - Strictly **no** website URLs, preview URLs, direct links, CTA buttons, or status tracker links in either HTML or plain-text representations.
   - Eliminates phishing false-positives and preview deployment leakages while guaranteeing clean mailbox inbox placement.
 
+### 10.8 Shared Application Email Transporter Security Hardening (Phase 2 Step 3)
+- **Security Audit Remediations in `src/lib/server/mail.ts`:**
+  1. **Removed Manual `.env` Disk Loader:** Eliminated `fs.readFileSync(path.resolve(process.cwd(), ".env"))` to prevent cross-environment secret contamination (e.g. leaking production `.env` into Staging/Preview).
+  2. **Removed Hardcoded Credentials:** Completely removed plaintext fallback email address and 16-character Google App Password strings.
+  3. **Fail-Closed Shared Transporter:** Implemented `getSharedMailCredentials()` which validates `GMAIL_USER` / `GMAIL_APP_PASSWORD` (and legacy aliases `EMAIL_USER` / `EMAIL_PASS`), strips 4x4 App Password whitespace, and returns `null` when credentials are unconfigured. Calling `getTransporter()` without valid environment variables immediately throws a descriptive, secret-free configuration error.
+  4. **Graceful Degradation:** `ensureMailReady()` returns `false` without throwing when SMTP credentials are not configured, enabling callers in `src/lib/auth-server.ts` to cleanly report `MAIL_ERROR` rather than crashing with unhandled exceptions.
+  5. **Dynamic Sender Identity:** `getSenderAddress()` derives sender formatting strictly from runtime environment variables (`Micrylis <${user}>`), falling back cleanly to `"Micrylis"` without hardcoded email strings.
+- **Single Gmail Account Coexistence with Logical Isolation:**
+  - In accordance with project architecture, **both Workflow A (Shared Application Email) and Workflow B (Course Management Notifications) use the SAME Gmail account and App Password**.
+  - **Logical Transporter Isolation:**
+    - The shared application transporter operates an isolated singleton connection pool (`_transporter`) dedicated to user-facing OTPs and Spin Wheel rewards.
+    - The Course Management transporter operates an isolated singleton connection pool (`_courseNotificationTransporter`) with dedicated socket timeouts and separate admissions sender identity (`PathFinder Admissions <...>`).
+    - The dedicated course notification transporter retains its strict fail-closed contract: it requires `COURSE_NOTIFICATIONS_GMAIL_USER` and `COURSE_NOTIFICATIONS_GMAIL_APP_PASSWORD` and never falls back to `GMAIL_USER` or `GMAIL_APP_PASSWORD`.
+    - No requirement for separate Gmail accounts is introduced.
+- **Verification & Test Coverage:**
+  - Validated via 21 dedicated unit tests in `src/test/course-applications/shared-mail-transporter.test.ts`.
+  - All 236 tests in `src/test/course-applications/` pass with zero regressions.
+  - Strict TypeScript compilation (`tsc --noEmit`) passes with zero errors.
+
 ---
 
 ## 11. Bioinformatics Course Discrepancy & Frontend Alignment
