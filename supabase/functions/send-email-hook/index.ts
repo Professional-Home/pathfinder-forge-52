@@ -5,21 +5,15 @@ import nodemailer from "npm:nodemailer@6.9.13";
  * Supabase Auth Send Email Hook Edge Function (Nodemailer Integration)
  *
  * Required Secrets in Supabase Dashboard (Edge Function Secrets):
- * - SMTP_HOST: SMTP host (e.g., "smtp.gmail.com", "smtp.mailgun.org", "smtp.office365.com", etc.)
+ * - SMTP_HOST: SMTP host (e.g., "smtp.gmail.com")
  * - SMTP_PORT: SMTP port (e.g., 587 or 465)
  * - SMTP_USER: SMTP username / email address
  * - SMTP_PASS: SMTP password / App password
  * - SEND_EMAIL_HOOK_SECRET: Secret for verifying requests from Supabase Auth
- * - SENDER_EMAIL: Verified sender email (e.g., "Micrylis <noreply@micrylis.com>")
+ * - SENDER_EMAIL: Optional verified sender email (defaults to "Micrylis <SMTP_USER>")
+ * - SMTP_SECURE: Optional boolean string ("true" or "false")
+ * - SMTP_IGNORE_TLS: Optional boolean string ("true" or "false")
  */
-
-const SMTP_HOST = Deno.env.get("SMTP_HOST") || "smtp.gmail.com";
-const SMTP_PORT = Number(Deno.env.get("SMTP_PORT") || "465");
-const SMTP_USER = Deno.env.get("SMTP_USER") || "micrylisbiotech@gmail.com";
-const SMTP_PASS = (Deno.env.get("SMTP_PASS") || "ukpu cdor wtlw xiqo").replace(/\s+/g, "");
-const SEND_EMAIL_HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
-const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "Micrylis <micrylisbiotech@gmail.com>";
-const SMTP_SECURE = Deno.env.get("SMTP_SECURE") === "true" || SMTP_PORT === 465;
 
 interface EmailHookPayload {
   user: {
@@ -39,6 +33,21 @@ interface EmailHookPayload {
   };
 }
 
+/**
+ * Constant-time string comparison to prevent timing attacks on authorization secrets.
+ */
+async function timingSafeStringCompare(a: string, b: string): Promise<boolean> {
+  if (!a || !b) return false;
+  const encoder = new TextEncoder();
+  const aHash = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(a)));
+  const bHash = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(b)));
+  let diff = 0;
+  for (let i = 0; i < aHash.length; i++) {
+    diff |= aHash[i] ^ bHash[i];
+  }
+  return diff === 0;
+}
+
 serve(async (req: Request) => {
   // CORS & Method Check
   if (req.method === "OPTIONS") {
@@ -51,53 +60,82 @@ serve(async (req: Request) => {
     });
   }
 
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: { http_code: 405, message: "Method not allowed" } }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    // 1. Secrets Diagnostic Logging
-    console.log("=== Send Email Hook Triggered (Nodemailer) ===");
-    console.log("SMTP Config Check:", {
-      hasHost: !!SMTP_HOST,
-      hasUser: !!SMTP_USER,
-      hasPass: !!SMTP_PASS,
-      port: SMTP_PORT,
-      secure: SMTP_SECURE,
-      hasHookSecret: !!SEND_EMAIL_HOOK_SECRET,
-      senderEmail: SENDER_EMAIL,
-    });
+    // 1. Resolve environment configuration (Fail closed if secrets are missing)
+    const SMTP_HOST = Deno.env.get("SMTP_HOST")?.trim() || "";
+    const rawPort = Deno.env.get("SMTP_PORT")?.trim();
+    const SMTP_PORT = rawPort ? Number(rawPort) : 0;
+    const SMTP_USER = Deno.env.get("SMTP_USER")?.trim() || "";
+    const SMTP_PASS = (Deno.env.get("SMTP_PASS") || "").replace(/\s+/g, "");
+    const SEND_EMAIL_HOOK_SECRET = Deno.env.get("SEND_EMAIL_HOOK_SECRET")?.trim() || "";
+    const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL")?.trim() || (SMTP_USER ? `Micrylis <${SMTP_USER}>` : "");
+    const SMTP_SECURE = Deno.env.get("SMTP_SECURE") === "true" || SMTP_PORT === 465;
 
-    // 2. Hook Secret Signature Verification (optional logging)
-    if (SEND_EMAIL_HOOK_SECRET) {
-      const incomingSecret =
-        req.headers.get("x-supabase-auth-hook-secret") ||
-        req.headers.get("authorization")?.replace("Bearer ", "").trim();
-
-      if (!incomingSecret || incomingSecret !== SEND_EMAIL_HOOK_SECRET) {
-        console.warn("Hook authorization note: Secret mismatch or missing header (proceeding with delivery).");
-      }
-    }
-
-    // 3. Parse and Log Incoming Payload
-    const payload: EmailHookPayload = await req.json();
-    console.log("Incoming Payload Summary:", {
-      userEmail: payload?.user?.email,
-      actionType: payload?.email_data?.email_action_type,
-      hasToken: !!payload?.email_data?.token,
-      redirectTo: payload?.email_data?.redirect_to,
-    });
-
-    const { user, email_data } = payload;
-
-    if (!user || !email_data || !user.email || !email_data.token) {
-      console.error("Invalid payload format:", JSON.stringify(payload));
+    // 2. Mandatory Authorization Check (Fail closed)
+    if (!SEND_EMAIL_HOOK_SECRET) {
+      console.error("Server misconfiguration: SEND_EMAIL_HOOK_SECRET is not configured in Edge Function environment.");
       return new Response(
-        JSON.stringify({ error: { http_code: 400, message: "Invalid payload format: missing user or email_data" } }),
+        JSON.stringify({ error: { http_code: 500, message: "Server misconfiguration: Authentication hook secret missing" } }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-      console.error("Missing SMTP credentials (SMTP_HOST, SMTP_USER, SMTP_PASS) in Edge Function environment.");
+    const incomingSecret =
+      req.headers.get("x-supabase-auth-hook-secret") ||
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ||
+      "";
+
+    if (!incomingSecret) {
+      console.error("Hook authorization failed: Missing authorization header.");
+      return new Response(
+        JSON.stringify({ error: { http_code: 401, message: "Unauthorized" } }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const isAuthorized = await timingSafeStringCompare(incomingSecret, SEND_EMAIL_HOOK_SECRET);
+    if (!isAuthorized) {
+      console.error("Hook authorization failed: Invalid authorization secret.");
+      return new Response(
+        JSON.stringify({ error: { http_code: 401, message: "Unauthorized" } }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 3. Mandatory SMTP Credential Validation (Fail closed)
+    if (!SMTP_HOST || !SMTP_PORT || isNaN(SMTP_PORT) || !SMTP_USER || !SMTP_PASS) {
+      console.error("Server misconfiguration: Incomplete SMTP credentials in Edge Function environment.");
       return new Response(
         JSON.stringify({ error: { http_code: 500, message: "Server misconfiguration: Missing SMTP credentials" } }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 4. Parse and Validate Incoming Payload
+    let payload: EmailHookPayload;
+    try {
+      payload = await req.json();
+    } catch {
+      console.error("Invalid payload format: Unable to parse JSON.");
+      return new Response(
+        JSON.stringify({ error: { http_code: 400, message: "Invalid payload format: Malformed JSON" } }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const { user, email_data } = payload || {};
+
+    if (!user || !email_data || !user.email || !email_data.token) {
+      console.error("Invalid payload format: missing required user or email_data fields.");
+      return new Response(
+        JSON.stringify({ error: { http_code: 400, message: "Invalid payload format: missing user or email_data" } }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -105,6 +143,17 @@ serve(async (req: Request) => {
     const recipientEmail = user.email;
     const fullName = user.user_metadata?.full_name || user.user_metadata?.name || recipientEmail.split("@")[0];
     const actionType = email_data.email_action_type;
+
+    // Log diagnostic summary without sensitive data
+    console.log("=== Send Email Hook Processing ===", {
+      actionType,
+      hasRecipient: !!recipientEmail,
+      hasToken: !!email_data.token,
+      hasRedirectTo: !!email_data.redirect_to,
+      smtpHost: SMTP_HOST,
+      smtpPort: SMTP_PORT,
+      secure: SMTP_SECURE,
+    });
 
     // Build Confirmation Link
     const confirmationUrl = `${email_data.site_url}/auth/callback?token_hash=${email_data.token_hash}&type=${actionType}&redirect_to=${encodeURIComponent(email_data.redirect_to)}`;
@@ -160,7 +209,7 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log(`Delivering email via Nodemailer (SMTP: ${SMTP_HOST}:${SMTP_PORT}) to ${recipientEmail} from ${SENDER_EMAIL}...`);
+    console.log(`Delivering email via Nodemailer (SMTP: ${SMTP_HOST}:${SMTP_PORT}) for action: ${actionType}...`);
 
     // Create Nodemailer Transporter with connection timeout
     const transporter = nodemailer.createTransport({
@@ -188,7 +237,7 @@ serve(async (req: Request) => {
 
     const mailInfo = await transporter.sendMail(mailOptions);
 
-    console.log(`Email delivered successfully via Nodemailer to ${recipientEmail}. MessageId:`, mailInfo.messageId);
+    console.log("Email delivered successfully via Nodemailer. MessageId:", mailInfo.messageId);
 
     // CRITICAL: Supabase Auth Send Email Hook expects an empty JSON object on success.
     // Returning anything else (e.g. { success: true }) causes Supabase to treat it as a hook failure
@@ -198,11 +247,11 @@ serve(async (req: Request) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    console.error("Fatal Hook Handler Error (Nodemailer):", err);
+    console.error("Fatal Hook Handler Error (Nodemailer):", err?.message || err);
     // Supabase Auth hooks must return HTTP 200 even on error, with the error in the body.
     // Returning non-200 causes Supabase to retry and eventually block the auth flow.
     return new Response(
-      JSON.stringify({ error: { http_code: 500, message: err.message || "Internal server error" } }),
+      JSON.stringify({ error: { http_code: 500, message: err?.message || "Internal server error" } }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   }
