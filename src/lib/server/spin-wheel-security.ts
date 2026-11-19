@@ -277,7 +277,7 @@ export async function sendSpinOtpCore(data: { name: string; email: string }): Pr
           <div style="text-align: center; margin-bottom: 24px;">
             <span style="font-size: 28px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, #06b6d4, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">MICRYLIS</span>
             <p style="margin: 4px 0 0; font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px;">Spin & Win Reward Verification</p>
-            <p style="margin: 6px 0 0; font-size: 11px; color: #f59e0b; font-weight: 600;">⚡ Limited Offer Valid Until ${SPIN_EXPIRY_LABEL}</p>
+            <p style="margin: 6px 0 0; font-size: 11px; color: #f59e0b; font-weight: 600;">⚡ Limited Promotional Offer</p>
           </div>
 
           <div style="background-color: #111827; border: 1px solid #1f2937; border-radius: 10px; padding: 24px; text-align: center;">
@@ -291,7 +291,7 @@ export async function sendSpinOtpCore(data: { name: string; email: string }): Pr
             </div>
 
             <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
-              This code is valid for ${OTP_EXPIRY_MINUTES} minutes. Each verified participant is limited to exactly one spin before ${SPIN_EXPIRY_LABEL}.
+              This code is valid for ${OTP_EXPIRY_MINUTES} minutes. Each verified participant is limited to exactly one spin.
             </p>
           </div>
 
@@ -300,7 +300,7 @@ export async function sendSpinOtpCore(data: { name: string; email: string }): Pr
           </p>
         </div>
       `,
-      text: `Your Micrylis Spin & Win Code is: ${otp}. Valid for 10 minutes. Offer ends ${SPIN_EXPIRY_LABEL}.`,
+      text: `Your Micrylis Spin & Win Code is: ${otp}. Valid for 10 minutes. Limited promotional offer.`,
     });
 
     return {
@@ -406,7 +406,7 @@ export async function executeSpinRollCore(data?: {
     return {
       success: false,
       code: "OFFER_EXPIRED",
-      message: `This promotional event concluded on ${SPIN_EXPIRY_LABEL}.`,
+      message: "This promotional event has concluded.",
     };
   }
 
@@ -817,7 +817,7 @@ export async function acceptSpinRewardCore(data: {
     return {
       success: false,
       code: "CAMPAIGN_EXPIRED",
-      message: `The campaign expired on ${SPIN_EXPIRY_LABEL}. Rewards can no longer be accepted.`,
+      message: "The campaign has concluded. Rewards can no longer be accepted.",
     };
   }
 
@@ -939,7 +939,7 @@ export async function redeemSpinRewardAdminCore(data: {
     return {
       success: false,
       code: "CAMPAIGN_EXPIRED",
-      message: `The campaign expired on ${SPIN_EXPIRY_LABEL}. Rewards can no longer be redeemed.`,
+      message: "The campaign has concluded. Rewards can no longer be redeemed.",
     };
   }
 

@@ -74,27 +74,51 @@ describe("PathFinder Spin & Win — Security Lockdown & Privilege Audit (Phase 1
   // ─── Scenario 2: Hardcoded Default Administrator Rejected ───────────────────
   describe("Scenario 2: Hardcoded default administrator rejection", () => {
     it("rejects admin@admin.com when not explicitly configured in server ADMIN_EMAILS", async () => {
-      const savedEnv = process.env.ADMIN_EMAILS;
+      const savedAdminEmails = process.env.ADMIN_EMAILS;
       delete process.env.ADMIN_EMAILS;
 
-      vi.spyOn(supabaseAdmin.auth, "getUser").mockResolvedValueOnce({
-        data: {
-          user: {
-            id: "fake-admin-id",
-            email: "admin@admin.com",
-            app_metadata: {}, // No authoritative admin role
-            user_metadata: {},
-            created_at: new Date().toISOString(),
-          } as any,
-        },
-        error: null,
+      // Isolate environment-loading dependency: prevent loadEnvFromFile() in supabase-admin.ts
+      // from silently re-injecting ADMIN_EMAILS from .env.local while keeping ADMIN_EMAILS genuinely absent.
+      const originalReadFileSync = fs.readFileSync.bind(fs);
+      const fsSpy = vi.spyOn(fs, "readFileSync").mockImplementation((...args: Parameters<typeof fs.readFileSync>) => {
+        const filePathStr = String(args[0]);
+        if (filePathStr.endsWith(".env.local") || filePathStr.endsWith(".env")) {
+          const raw = originalReadFileSync(...args);
+          const rawStr = typeof raw === "string" ? raw : raw.toString("utf-8");
+          return rawStr
+            .split("\n")
+            .filter((line) => !line.trim().startsWith("ADMIN_EMAILS="))
+            .join("\n");
+        }
+        return originalReadFileSync(...args);
       });
 
-      const result = await verifyAdminSession("mock_jwt_for_default_admin");
-      expect(result.isValid).toBe(false);
-      expect(result.error).toContain("Access denied");
+      try {
+        vi.spyOn(supabaseAdmin.auth, "getUser").mockResolvedValueOnce({
+          data: {
+            user: {
+              id: "fake-admin-id",
+              email: "admin@admin.com",
+              app_metadata: {}, // No authoritative admin role
+              user_metadata: {},
+              created_at: new Date().toISOString(),
+            } as any,
+          },
+          error: null,
+        });
 
-      process.env.ADMIN_EMAILS = savedEnv;
+        const result = await verifyAdminSession("mock_jwt_for_default_admin");
+        expect(process.env.ADMIN_EMAILS).toBeUndefined();
+        expect(result.isValid).toBe(false);
+        expect(result.error).toContain("Access denied");
+      } finally {
+        fsSpy.mockRestore();
+        if (savedAdminEmails !== undefined) {
+          process.env.ADMIN_EMAILS = savedAdminEmails;
+        } else {
+          delete process.env.ADMIN_EMAILS;
+        }
+      }
     });
   });
 
@@ -2297,7 +2321,7 @@ describe("PathFinder Spin & Win — Security Lockdown & Privilege Audit (Phase 1
       expect(isSpinOfferExpired()).toBe(true);
       expect(result.success).toBe(false);
       expect(result.code).toBe("OFFER_EXPIRED");
-      expect(result.message).toContain(SPIN_EXPIRY_LABEL);
+      expect(result.message).toBe("This promotional event has concluded.");
       // Ensure zero database access occurred
       expect(dbSpy).not.toHaveBeenCalled();
     });
@@ -2376,7 +2400,7 @@ describe("PathFinder Spin & Win — Security Lockdown & Privilege Audit (Phase 1
 
       expect(res.success).toBe(false);
       expect(res.code).toBe("CAMPAIGN_EXPIRED");
-      expect(res.message).toContain(SPIN_EXPIRY_LABEL);
+      expect(res.message).toBe("The campaign has concluded. Rewards can no longer be accepted.");
     });
   });
 
