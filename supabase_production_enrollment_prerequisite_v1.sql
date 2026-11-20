@@ -100,15 +100,15 @@ BEGIN
             USING ERRCODE = 'datatype_mismatch';
     END IF;
 
-    -- 3c. Column 'course_id' must be TEXT
+    -- 3c. Column 'course_id' must be TEXT or UUID
     SELECT c.data_type INTO v_col_type
     FROM information_schema.columns c
     WHERE c.table_schema = 'public' AND c.table_name = 'enrollments_users' AND c.column_name = 'course_id';
     IF v_col_type IS NULL THEN
         RAISE EXCEPTION 'Precondition Failed: Column public.enrollments_users.course_id is missing.'
             USING ERRCODE = 'undefined_column';
-    ELSIF v_col_type <> 'text' THEN
-        RAISE EXCEPTION 'Precondition Failed: Column public.enrollments_users.course_id has unexpected type "%" (expected text). Aborting migration.', v_col_type
+    ELSIF v_col_type NOT IN ('text', 'uuid') THEN
+        RAISE EXCEPTION 'Precondition Failed: Column public.enrollments_users.course_id has unexpected type "%" (expected text or uuid). Aborting migration.', v_col_type
             USING ERRCODE = 'datatype_mismatch';
     END IF;
 
@@ -645,7 +645,7 @@ BEGIN
         END IF;
 
         IF NOT v_impl_verified THEN
-            RAISE EXCEPTION 'Safety Violation: Function public.sync_enrollment_timestamp_v1() already exists with unexpected or unverified implementation. Aborting migration.',
+            RAISE EXCEPTION 'Safety Violation: Function public.sync_enrollment_timestamp_v1() (OID %) already exists with unexpected or unverified implementation. Aborting migration.',
                 v_fn_oid USING ERRCODE = 'object_not_in_prerequisite_state';
         END IF;
 
@@ -777,6 +777,7 @@ DECLARE
     v_clean_expr1 TEXT;
     v_clean_expr2 TEXT;
     v_existing_name TEXT;
+    v_course_id_type TEXT;
 BEGIN
     -- ----------------------------------------------------------------
     -- Index 1: idx_enrollments_users_email ON (student_email)
@@ -902,7 +903,7 @@ BEGIN
            OR v_natts <> 1
            OR v_att_name <> 'course_id'
            OR v_indoption <> 0 -- ASC
-           OR v_opc1 <> 'text_ops'
+           OR v_opc1 NOT IN ('text_ops', 'uuid_ops')
            OR v_is_unique <> false
            OR v_has_pred <> false
            OR v_is_valid <> true
@@ -926,7 +927,7 @@ BEGIN
           AND i.indexprs IS NULL
           AND att.attname = 'course_id'
           AND (i.indoption[0] & 1) = 0
-          AND op.opcname = 'text_ops'
+          AND op.opcname IN ('text_ops', 'uuid_ops')
           AND i.indpred IS NULL
           AND i.indisvalid = true
           AND i.indisready = true
@@ -1115,10 +1116,21 @@ BEGIN
         IF v_existing_name IS NOT NULL THEN
             RAISE NOTICE 'An equivalent composite normalized index already exists under name "%"; skipping creation.', v_existing_name;
         ELSE
-            EXECUTE 'CREATE INDEX idx_enrollments_users_normalized '
-                 || 'ON public.enrollments_users ('
-                 || 'pg_catalog.lower(pg_catalog.btrim(student_email)), '
-                 || 'public.normalize_course_id(course_id))';
+            SELECT c.data_type INTO v_course_id_type
+            FROM information_schema.columns c
+            WHERE c.table_schema = 'public' AND c.table_name = 'enrollments_users' AND c.column_name = 'course_id';
+
+            IF v_course_id_type = 'uuid' THEN
+                EXECUTE 'CREATE INDEX idx_enrollments_users_normalized '
+                     || 'ON public.enrollments_users ('
+                     || 'pg_catalog.lower(pg_catalog.btrim(student_email)), '
+                     || 'public.normalize_course_id((course_id)::text))';
+            ELSE
+                EXECUTE 'CREATE INDEX idx_enrollments_users_normalized '
+                     || 'ON public.enrollments_users ('
+                     || 'pg_catalog.lower(pg_catalog.btrim(student_email)), '
+                     || 'public.normalize_course_id(course_id))';
+            END IF;
             RAISE NOTICE 'Created index idx_enrollments_users_normalized on public.enrollments_users.';
         END IF;
     END IF;
