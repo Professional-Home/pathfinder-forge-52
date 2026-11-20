@@ -101,22 +101,26 @@ export async function handleCourseApplicationWebhookRequest(request: Request): P
       timestamp,
     });
 
-    const statusCode = result.success
-      ? 200
-      : result.code === "INVALID_SIGNATURE"
-      ? 401
-      : result.code === "CONFIGURATION_ERROR"
-      ? 503
-      : 400;
+    const statusCode = result.httpStatus ?? (
+      result.success
+        ? 200
+        : result.code === "INVALID_SIGNATURE"
+        ? 401
+        : result.code === "CONFIGURATION_ERROR"
+        ? 503
+        : result.code === "DATABASE_LOOKUP_ERROR" || result.code === "DATABASE_ERROR"
+        ? 500
+        : 400
+    );
 
     return new Response(JSON.stringify(result), {
       status: statusCode,
       headers: { "content-type": "application/json" },
     });
   } catch (err: any) {
-    console.error("[COURSE_APP_WEBHOOK] Unhandled server error:", err);
+    console.error("[COURSE_APP_WEBHOOK] Unhandled server error:", err?.name || "ServerError");
     return new Response(
-      JSON.stringify({ success: false, error: err?.message || "Internal server error" }),
+      JSON.stringify({ success: false, error: "Internal server error" }),
       {
         status: 500,
         headers: { "content-type": "application/json" },

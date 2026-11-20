@@ -43,6 +43,7 @@ import {
   CourseIdentifierConfig,
 } from "@/lib/courses/course-identifiers";
 import { normalizeEmail, isValidEmail } from "@/lib/server/otp";
+import { maskEmail } from "@/lib/server/spin-wheel-security";
 
 // ─── Environment Secret Resolution ──────────────────────────────────────────
 
@@ -97,6 +98,7 @@ export interface WebhookProcessingResult {
   courseId?: string | null;
   courseTitle?: string | null;
   timestamp?: number;
+  httpStatus?: number;
 }
 
 // ─── Request Authentication & Timing Verification ───────────────────────────
@@ -168,6 +170,363 @@ export function verifyWebhookTimestamp(
 
 // ─── Course Resolution & Validation ─────────────────────────────────────────
 
+/**
+ * Verified one-to-one legacy course aliases mapping to canonical course slugs.
+ * Used for dynamic database resolution: aliases resolve to their canonical slug,
+ * which is then queried against public.courses in the currently active database.
+ * NEVER maps directly to static UUIDs.
+ */
+export const DOCUMENTED_COURSE_ALIASES: Readonly<Record<string, string>> = {
+  "course-bioplastic-innovation": "bioplastic-innovation",
+  "bioplastic-innovation": "bioplastic-innovation",
+  "course-ai-drug-discovery": "ai-in-drug-discovery",
+  "course-ai-in-drug-discovery": "ai-in-drug-discovery",
+  "ai-in-drug-discovery": "ai-in-drug-discovery",
+  "course-bioinformatics": "bioinformatics",
+  "bioinformatics": "bioinformatics",
+  "bioinformatics-frontend-seed": "bioinformatics",
+};
+
+// UUID syntax: RFC 4122 (8-4-4-4-12 hex digits)
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Detects attempts to supply a UUID structure (e.g. 8-4-4-4-xx or chunks with hyphens)
+export const UUID_STRUCTURE_REGEX = /^[0-9a-z]{8}-[0-9a-z]{4}-/i;
+
+// Course slug format: lowercase alphanumeric words separated by single hyphens
+export const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const CANDIDATE_COURSE_KEYS = ["courseId", "course_id", "courseSlug", "course"] as const;
+
+export interface ExtractedCourseCandidatesResult {
+  valid: boolean;
+  candidates: string[];
+  code?: string;
+  error?: string;
+}
+
+/**
+ * Extracts and validates all supplied course candidates from webhook payload.
+ * Collects courseId, course_id, courseSlug, course.
+ * Rejects non-string and whitespace-only populated fields (fails closed).
+ * Deduplicates distinct candidates case-insensitively.
+ */
+export function extractCourseCandidates(
+  payload: CourseApplicationWebhookPayload
+): ExtractedCourseCandidatesResult {
+  const candidates: string[] = [];
+
+  for (const key of CANDIDATE_COURSE_KEYS) {
+    const rawVal = payload[key];
+    if (rawVal === undefined || rawVal === null) {
+      continue;
+    }
+
+    if (typeof rawVal !== "string") {
+      return {
+        valid: false,
+        candidates: [],
+        code: "MALFORMED_COURSE_IDENTIFIER",
+        error: `Course identifier field '${key}' must be a string, received ${typeof rawVal}.`,
+      };
+    }
+
+    const trimmed = rawVal.trim();
+    if (trimmed.length === 0) {
+      return {
+        valid: false,
+        candidates: [],
+        code: "MALFORMED_COURSE_IDENTIFIER",
+        error: `Course identifier field '${key}' cannot be empty or whitespace only.`,
+      };
+    }
+
+    candidates.push(trimmed);
+  }
+
+  if (candidates.length === 0) {
+    return {
+      valid: false,
+      candidates: [],
+      code: "MISSING_COURSE_IDENTIFIER",
+      error: "Course identifier is required (courseId, course_id, courseSlug, or course).",
+    };
+  }
+
+  // Deduplicate candidates preserving unique trimmed strings (case-insensitive deduplication)
+  const seen = new Set<string>();
+  const deduplicated: string[] = [];
+  for (const c of candidates) {
+    const lower = c.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      deduplicated.push(c);
+    }
+  }
+
+  return {
+    valid: true,
+    candidates: deduplicated,
+  };
+}
+
+export interface SingleCandidateResolutionResult {
+  success: boolean;
+  course?: { id: string; slug: string; title: string };
+  code?: string;
+  error?: string;
+  isDbError?: boolean;
+}
+
+/**
+ * Resolves a single candidate string against public.courses in the active database.
+ * Accepts:
+ *  1. Valid UUID -> exact .eq("id", uuid)
+ *  2. Documented legacy alias -> maps to canonical slug -> exact .eq("slug", slug)
+ *  3. Valid slug format -> exact .eq("slug", slug)
+ * Rejects malformed UUIDs, invalid slug syntax, unknown aliases, or unknown courses.
+ * Fails closed on database exceptions or query errors.
+ */
+export async function resolveSingleCandidateAgainstDatabase(
+  candidate: string,
+  client: any = db
+): Promise<SingleCandidateResolutionResult> {
+  const trimmed = candidate.trim();
+  const lower = trimmed.toLowerCase();
+
+  // 1. UUID Candidate
+  if (UUID_REGEX.test(trimmed)) {
+    try {
+      const { data, error } = await client
+        .from("courses")
+        .select("id, slug, title")
+        .eq("id", lower)
+        .maybeSingle();
+
+      if (error) {
+        console.error(
+          "[COURSE_APP_WEBHOOK] Database error querying course by ID:",
+          error.code || "DB_QUERY_ERROR"
+        );
+        return {
+          success: false,
+          code: "DATABASE_LOOKUP_ERROR",
+          error: "An internal database error occurred while resolving course identity. Please retry shortly.",
+          isDbError: true,
+        };
+      }
+
+      if (!data) {
+        return {
+          success: false,
+          code: "UNKNOWN_COURSE",
+          error: `Course not found for identifier '${trimmed}'.`,
+        };
+      }
+
+      if (!data.id || !data.slug || !data.title) {
+        console.error(
+          "[COURSE_APP_WEBHOOK] Incomplete course record returned from database by ID"
+        );
+        return {
+          success: false,
+          code: "DATABASE_LOOKUP_ERROR",
+          error: "An internal database error occurred while resolving course identity. Please retry shortly.",
+          isDbError: true,
+        };
+      }
+
+      return {
+        success: true,
+        course: { id: data.id, slug: data.slug, title: data.title },
+      };
+    } catch (err: any) {
+      console.error(
+        "[COURSE_APP_WEBHOOK] Exception during course ID database lookup:",
+        err?.name || "NetworkError"
+      );
+      return {
+        success: false,
+        code: "DATABASE_LOOKUP_ERROR",
+        error: "An internal database error occurred while resolving course identity. Please retry shortly.",
+        isDbError: true,
+      };
+    }
+  }
+
+  // 2. Detect Malformed UUID (looks like a UUID attempt but fails valid hex/length check)
+  if (
+    UUID_STRUCTURE_REGEX.test(trimmed) ||
+    (trimmed.includes("-") && trimmed.length >= 25 && /^[0-9a-z-]+$/i.test(trimmed) && trimmed.split("-").length === 5)
+  ) {
+    return {
+      success: false,
+      code: "MALFORMED_COURSE_IDENTIFIER",
+      error: `Malformed UUID course identifier '${trimmed}'.`,
+    };
+  }
+
+  // 3. Documented Legacy Alias or Slug
+  let targetSlug: string | null = null;
+  if (DOCUMENTED_COURSE_ALIASES[lower]) {
+    targetSlug = DOCUMENTED_COURSE_ALIASES[lower];
+  } else if (lower.startsWith("course-")) {
+    // Unknown legacy alias with course- prefix
+    return {
+      success: false,
+      code: "UNKNOWN_COURSE",
+      error: `Unknown course legacy alias '${trimmed}'.`,
+    };
+  } else if (SLUG_REGEX.test(lower)) {
+    targetSlug = lower;
+  } else {
+    // Invalid slug syntax (e.g. spaces, special chars, double hyphens)
+    return {
+      success: false,
+      code: "MALFORMED_COURSE_IDENTIFIER",
+      error: `Invalid course slug format '${trimmed}'. Slugs must contain only lowercase alphanumeric characters and single hyphens.`,
+    };
+  }
+
+  // Query database by resolved slug
+  try {
+    const { data, error } = await client
+      .from("courses")
+      .select("id, slug, title")
+      .eq("slug", targetSlug)
+      .maybeSingle();
+
+    if (error) {
+      console.error(
+        "[COURSE_APP_WEBHOOK] Database error querying course by slug:",
+        error.code || "DB_QUERY_ERROR"
+      );
+      return {
+        success: false,
+        code: "DATABASE_LOOKUP_ERROR",
+        error: "An internal database error occurred while resolving course identity. Please retry shortly.",
+        isDbError: true,
+      };
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        code: "UNKNOWN_COURSE",
+        error: `Course not found for slug '${targetSlug}'.`,
+      };
+    }
+
+    if (!data.id || !data.slug || !data.title) {
+      console.error(
+        "[COURSE_APP_WEBHOOK] Incomplete course record returned from database by slug"
+      );
+      return {
+        success: false,
+        code: "DATABASE_LOOKUP_ERROR",
+        error: "An internal database error occurred while resolving course identity. Please retry shortly.",
+        isDbError: true,
+      };
+    }
+
+    return {
+      success: true,
+      course: { id: data.id, slug: data.slug, title: data.title },
+    };
+  } catch (err: any) {
+    console.error(
+      "[COURSE_APP_WEBHOOK] Exception during course slug database lookup:",
+      err?.name || "NetworkError"
+    );
+    return {
+      success: false,
+      code: "DATABASE_LOOKUP_ERROR",
+      error: "An internal database error occurred while resolving course identity. Please retry shortly.",
+      isDbError: true,
+    };
+  }
+}
+
+export interface CourseDatabaseResolutionResult {
+  success: boolean;
+  course?: { id: string; slug: string; title: string };
+  code?: string;
+  message?: string;
+  httpStatus?: number;
+}
+
+/**
+ * Authoritative environment-aware course resolution engine.
+ * Inspects all supplied candidates in payload, resolves each against public.courses
+ * in the active database, guarantees identical course ID across candidates,
+ * and fails closed on conflicts, invalid identifiers, or database lookup errors.
+ * NEVER falls back to static Staging UUIDs.
+ */
+export async function resolveCourseFromDatabase(
+  payload: CourseApplicationWebhookPayload,
+  client: any = db
+): Promise<CourseDatabaseResolutionResult> {
+  const extraction = extractCourseCandidates(payload);
+  if (!extraction.valid || extraction.candidates.length === 0) {
+    return {
+      success: false,
+      code: extraction.code || "MISSING_COURSE_IDENTIFIER",
+      message: extraction.error || "A course identifier is required.",
+      httpStatus: 400,
+    };
+  }
+
+  const resolvedCourses: Array<{ id: string; slug: string; title: string }> = [];
+
+  for (const candidate of extraction.candidates) {
+    const res = await resolveSingleCandidateAgainstDatabase(candidate, client);
+
+    if (!res.success) {
+      return {
+        success: false,
+        code: res.code || "INVALID_COURSE_IDENTIFIER",
+        message: res.error || "Course resolution failed.",
+        httpStatus: res.isDbError ? 500 : 400,
+      };
+    }
+
+    if (res.course) {
+      resolvedCourses.push(res.course);
+    }
+  }
+
+  if (resolvedCourses.length === 0) {
+    return {
+      success: false,
+      code: "UNKNOWN_COURSE",
+      message: "No matching course found.",
+      httpStatus: 400,
+    };
+  }
+
+  // Compare resolved course IDs
+  const primaryCourse = resolvedCourses[0];
+  const conflicting = resolvedCourses.find((c) => c.id !== primaryCourse.id);
+  if (conflicting) {
+    return {
+      success: false,
+      code: "CONFLICTING_COURSE_IDENTIFIERS",
+      message: `Conflicting course identifiers supplied. Identifiers resolved to different courses: '${primaryCourse.slug}' (${primaryCourse.id}) vs '${conflicting.slug}' (${conflicting.id}).`,
+      httpStatus: 400,
+    };
+  }
+
+  return {
+    success: true,
+    course: primaryCourse,
+    httpStatus: 200,
+  };
+}
+
+/**
+ * @deprecated Legacy course resolution helper. Kept for backward compatibility.
+ * Webhook ingestion paths must use resolveCourseFromDatabase to ensure environment-aware resolution.
+ */
 export function resolveAndValidateCourse(courseIdentifier: string): {
   isValid: boolean;
   course?: CourseIdentifierConfig;
@@ -281,23 +640,30 @@ export async function processCourseApplicationWebhookCore(data: {
     payload &&
     (payload.diagnostic === true || payload.action === "ping" || payload.action === "diagnostic_ping")
   ) {
-    const diagnosticCourseRaw = (
-      payload.courseId ||
-      payload.course_id ||
-      payload.courseSlug ||
-      ""
-    ).toString().trim();
-
-    const courseValidation = diagnosticCourseRaw ? resolveAndValidateCourse(diagnosticCourseRaw) : null;
+    let resolvedCourse: { id: string; title: string } | null = null;
+    const hasAnyCourseField = CANDIDATE_COURSE_KEYS.some(
+      (k) => payload[k] !== undefined && payload[k] !== null && String(payload[k]).trim() !== ""
+    );
+    if (hasAnyCourseField) {
+      try {
+        const courseRes = await resolveCourseFromDatabase(payload, db);
+        if (courseRes.success && courseRes.course) {
+          resolvedCourse = courseRes.course;
+        }
+      } catch {
+        // Diagnostic ping remains safe and resilient even if database is unavailable
+      }
+    }
 
     return {
       success: true,
       code: "DIAGNOSTIC_PONG",
       message: "PathFinder webhook diagnostic ping successful. Endpoint is operational and HMAC authentication verified.",
       isDiagnostic: true,
-      courseId: courseValidation?.canonicalId || null,
-      courseTitle: courseValidation?.courseTitle || null,
+      courseId: resolvedCourse?.id || null,
+      courseTitle: resolvedCourse?.title || null,
       timestamp: Date.now(),
+      httpStatus: 200,
     };
   }
 
@@ -339,20 +705,13 @@ export async function processCourseApplicationWebhookCore(data: {
 
   const rawEmail = rawEntered || rawRespondent;
 
-  const courseRaw = (
-    payload.courseId ||
-    payload.course_id ||
-    payload.courseSlug ||
-    payload.course ||
-    ""
-  ).toString().trim();
-
   // Strict Validation Rules
   if (!responseId || responseId.length < 3) {
     return {
       success: false,
       code: "MISSING_REQUIRED_FIELD",
       message: "External Google Form response ID (responseId) is required for idempotency.",
+      httpStatus: 400,
     };
   }
 
@@ -361,6 +720,7 @@ export async function processCourseApplicationWebhookCore(data: {
       success: false,
       code: "MISSING_REQUIRED_FIELD",
       message: "Student name is required (minimum 2 characters).",
+      httpStatus: 400,
     };
   }
 
@@ -369,6 +729,7 @@ export async function processCourseApplicationWebhookCore(data: {
       success: false,
       code: "INVALID_EMAIL",
       message: "A valid student email address is required.",
+      httpStatus: 400,
     };
   }
 
@@ -383,23 +744,24 @@ export async function processCourseApplicationWebhookCore(data: {
 
   if (isIdentityConflict) {
     console.warn(
-      `[COURSE_APP_WEBHOOK] Identity conflict detected for responseId '${responseId}'. Respondent Google account (${respondentEmailNorm}) does not match entered student email (${enteredEmailNorm}). Quarantining application.`
+      `[COURSE_APP_WEBHOOK] Identity conflict detected for responseId '${responseId}'. Respondent Google account (${maskEmail(respondentEmailNorm)}) does not match entered student email (${maskEmail(enteredEmailNorm)}). Quarantining application.`
     );
   }
 
-  // 7. Validate Course Identity against Canonical Configuration
-  const courseValidation = resolveAndValidateCourse(courseRaw);
-  if (!courseValidation.isValid || !courseValidation.canonicalId) {
+  // 7. Validate Course Identity dynamically against Active Database
+  const courseResolution = await resolveCourseFromDatabase(payload, db);
+  if (!courseResolution.success || !courseResolution.course) {
     return {
       success: false,
-      code: "INVALID_COURSE_IDENTIFIER",
-      message: courseValidation.error || "Invalid course identifier.",
+      code: courseResolution.code || "INVALID_COURSE_IDENTIFIER",
+      message: courseResolution.message || "Invalid course identifier.",
+      httpStatus: courseResolution.httpStatus || 400,
     };
   }
 
-  const resolvedCourseUuid = courseValidation.canonicalId;
-  const courseSlug = courseValidation.courseSlug || "course";
-  const courseTitle = courseValidation.courseTitle || resolveCourseTitle(resolvedCourseUuid);
+  const resolvedCourseUuid = courseResolution.course.id;
+  const courseSlug = courseResolution.course.slug;
+  const courseTitle = courseResolution.course.title;
 
   // 8. Idempotency Check: Prevent duplicate processing for identical responseId
   try {
@@ -549,11 +911,12 @@ export async function processCourseApplicationWebhookCore(data: {
   }
 
   if (insertResult.error || !insertResult.data) {
-    console.error("[COURSE_APP_WEBHOOK] Insert failed:", insertResult.error);
+    console.error("[COURSE_APP_WEBHOOK] Insert failed:", insertResult.error?.code || "DATABASE_ERROR");
     return {
       success: false,
       code: "DATABASE_ERROR",
-      message: "Failed to persist application record: " + (insertResult.error?.message || "Unknown error"),
+      message: "An internal database error occurred while saving the application. Please retry shortly.",
+      httpStatus: 500,
     };
   }
 
@@ -646,5 +1009,6 @@ export async function processCourseApplicationWebhookCore(data: {
     isIdentityConflict,
     courseId: resolvedCourseUuid,
     courseTitle,
+    httpStatus: 200,
   };
 }
