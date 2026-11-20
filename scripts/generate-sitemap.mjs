@@ -39,7 +39,7 @@ function getSiteUrl() {
     return `https://${vercelUrl}`;
   }
 
-  return 'http://localhost:8080';
+  return 'https://project.micrylisbiotech.com';
 }
 
 /**
