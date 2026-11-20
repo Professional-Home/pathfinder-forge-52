@@ -23,7 +23,6 @@ import { SpinWheelCanvas } from "./SpinWheelCanvas";
 import {
   SPIN_REWARDS,
   isSpinOfferExpired,
-  SPIN_EXPIRY_LABEL,
 } from "@/lib/spin-wheel/config";
 import type { SpinReward, SpinWheelEntry } from "@/lib/spin-wheel/types";
 import { fireConfetti } from "@/lib/spin-wheel/confetti";
@@ -493,7 +492,7 @@ export function SpinWinPopupModal() {
               </button>
 
               <div className="p-6 sm:p-8">
-                {/* ─── EXPIRED STATE (AFTER 20 NOV 2026) ─── */}
+                {/* ─── EXPIRED STATE ─── */}
                 {isSpinOfferExpired() ? (
                   <div className="text-center py-6">
                     <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -503,8 +502,7 @@ export function SpinWinPopupModal() {
                       Campaign Concluded
                     </h2>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      The Spin & Win promotional event ended on{" "}
-                      <strong className="text-foreground">{SPIN_EXPIRY_LABEL}</strong>.
+                      The Spin & Win promotional event has concluded.
                     </p>
                     <button
                       type="button"
@@ -521,8 +519,8 @@ export function SpinWinPopupModal() {
                       <div>
                         <div className="text-center">
                           <div className="mx-auto mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-startup/30 bg-startup-soft px-3 py-0.5 text-[11px] font-semibold text-startup">
-                            <Clock className="h-3 w-3" />
-                            Valid Until {SPIN_EXPIRY_LABEL}
+                            <Sparkles className="h-3 w-3" />
+                            Limited Promotional Offer
                           </div>
 
                           <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">

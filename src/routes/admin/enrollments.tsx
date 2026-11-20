@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/utils/supabase";
+import { resolveCourseTitle } from "@/lib/courses/course-identifiers";
 import { Eye, GraduationCap } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
@@ -52,11 +53,44 @@ function AdminEnrollmentsPage() {
   }, []);
 
   async function fetchEnrollments() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("enrollments_users")
-      .select("*, courses(title)")
+      .select("*")
       .order("enrollment_date", { ascending: false });
-    if (data) setEnrollments(data);
+
+    if (error) {
+      console.warn("[Admin Enrollments] Fetch note:", error);
+    }
+
+    if (data) {
+      // Supplementary dynamic course map to support custom/future courses from DB
+      const { data: coursesData } = await supabase
+        .from("courses")
+        .select("id, slug, title");
+
+      const coursesMap = new Map<string, string>();
+      if (coursesData) {
+        coursesData.forEach((c) => {
+          if (c.title) {
+            coursesMap.set(c.id, c.title);
+            if (c.slug) coursesMap.set(c.slug, c.title);
+          }
+        });
+      }
+
+      const decorated: AdminEnrollment[] = data.map((item: any) => {
+        const fallbackTitle = coursesMap.get(item.course_id) || item.courses?.title;
+        const resolvedTitle = resolveCourseTitle(item.course_id, fallbackTitle || "—");
+        return {
+          ...item,
+          courses: {
+            title: resolvedTitle,
+          },
+        };
+      });
+
+      setEnrollments(decorated);
+    }
   }
 
   function openDetail(enrollment: AdminEnrollment) {

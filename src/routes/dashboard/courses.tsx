@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Play, Lock, MessageCircle, BookOpen, ArrowRight } from "lucide-react";
 import { mergeDashboardCourses, type DashboardCourse } from "@/lib/courses/dashboard-courses";
+import { isStudentEnrolledInCourse } from "@/lib/courses/course-identifiers";
 import { supabase } from "../../utils/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { generateWhatsAppLink } from "@/utils/whatsapp";
@@ -93,7 +94,7 @@ function CoursesPage() {
           <div className="mb-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">Available Courses</div>
           <div className="grid gap-4 md:grid-cols-2">
             {courses.map(course => {
-              const isEnrolled = enrolledIds.includes(String(course.id));
+              const isEnrolled = isStudentEnrolledInCourse(enrolledIds, String(course.id), course.slug);
               const whatsappLink = isEnrolled
                 ? generateWhatsAppLink(undefined, course.title, userEmail)
                 : "";

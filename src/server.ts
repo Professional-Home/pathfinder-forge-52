@@ -68,6 +68,189 @@ async function handleSpinWebhookRequest(request: Request): Promise<Response> {
   }
 }
 
+export async function handleCourseApplicationWebhookRequest(request: Request): Promise<Response> {
+  if (request.method !== "POST") {
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed. Use POST." }),
+      {
+        status: 405,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+
+  try {
+    const rawBody = await request.text();
+    const signature =
+      request.headers.get("x-webhook-signature") ||
+      request.headers.get("X-Webhook-Signature") ||
+      request.headers.get("x-course-app-signature") ||
+      request.headers.get("X-Course-App-Signature");
+    const timestamp =
+      request.headers.get("x-webhook-timestamp") ||
+      request.headers.get("X-Webhook-Timestamp") ||
+      request.headers.get("x-course-app-timestamp") ||
+      request.headers.get("X-Course-App-Timestamp");
+
+    const { processCourseApplicationWebhookCore } = await import(
+      "./lib/server/course-applications-webhook"
+    );
+    const result = await processCourseApplicationWebhookCore({
+      rawBody,
+      signature,
+      timestamp,
+    });
+
+    const statusCode = result.httpStatus ?? (
+      result.success
+        ? 200
+        : result.code === "INVALID_SIGNATURE"
+        ? 401
+        : result.code === "CONFIGURATION_ERROR"
+        ? 503
+        : result.code === "DATABASE_LOOKUP_ERROR" || result.code === "DATABASE_ERROR"
+        ? 500
+        : 400
+    );
+
+    return new Response(JSON.stringify(result), {
+      status: statusCode,
+      headers: { "content-type": "application/json" },
+    });
+  } catch (err: any) {
+    console.error("[COURSE_APP_WEBHOOK] Unhandled server error:", err?.name || "ServerError");
+    return new Response(
+      JSON.stringify({ success: false, error: "Internal server error" }),
+      {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+}
+
+export async function handleNotificationWorkerRequest(request: Request): Promise<Response> {
+  if (request.method !== "POST" && request.method !== "GET") {
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed. Use POST or GET." }),
+      {
+        status: 405,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+
+  const authHeader = request.headers.get("authorization") || "";
+  const workerSecretHeader = request.headers.get("x-worker-secret")?.trim() || "";
+  const bearerToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+  // Phase B: Independent validation of NOTIFICATION_WORKER_SECRET and CRON_SECRET.
+  // Note: SUPABASE_SERVICE_ROLE_KEY is strictly excluded as a general-purpose worker authentication fallback.
+  const configuredWorkerSecret = process.env.NOTIFICATION_WORKER_SECRET?.trim() || "";
+  const configuredCronSecret = process.env.CRON_SECRET?.trim() || "";
+
+  if (!configuredWorkerSecret && !configuredCronSecret) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Notification worker authentication is not configured on this server.",
+      }),
+      {
+        status: 503,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+
+  const isAuthorized =
+    (Boolean(configuredWorkerSecret) &&
+      (bearerToken === configuredWorkerSecret || workerSecretHeader === configuredWorkerSecret)) ||
+    (Boolean(configuredCronSecret) &&
+      (bearerToken === configuredCronSecret || workerSecretHeader === configuredCronSecret));
+
+  if (!isAuthorized) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized. Valid worker secret required." }),
+      {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+
+  try {
+    const url = new URL(request.url);
+    const action = url.searchParams.get("action");
+
+    if (action === "verify-smtp") {
+      const { verifyCourseNotificationSmtp } = await import("./lib/server/mail");
+      const verifyResult = await verifyCourseNotificationSmtp();
+      return new Response(
+        JSON.stringify({
+          ...verifyResult,
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          status: verifyResult.verified ? 200 : 502,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
+
+    // Phase C: Enrollment-only notification filtering.
+    // Callers cannot bypass the enrollment-only constraint through query parameters.
+    const requestedTemplate = url.searchParams.get("template");
+    if (requestedTemplate && requestedTemplate !== "enrollment_confirmed") {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Invalid template filter. Only 'enrollment_confirmed' notifications are permitted for worker execution.",
+        }),
+        {
+          status: 400,
+          headers: { "content-type": "application/json" },
+        }
+      );
+    }
+
+    const batchSize = parseInt(url.searchParams.get("batchSize") || "10", 10);
+    const lockSeconds = parseInt(url.searchParams.get("lockSeconds") || "60", 10);
+    const dryRun =
+      url.searchParams.get("dryRun") === "true" ||
+      request.headers.get("x-worker-dry-run") === "true";
+
+    const { processNotificationBatch } = await import("./lib/server/notification-worker");
+    const result = await processNotificationBatch(
+      Number.isFinite(batchSize) ? Math.min(Math.max(1, batchSize), 100) : 10,
+      Number.isFinite(lockSeconds) ? Math.min(Math.max(10, lockSeconds), 300) : 60,
+      {
+        dryRun,
+        allowedTemplate: "enrollment_confirmed",
+      }
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        ...result,
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ success: false, error: err?.message || "Internal server error" }),
+      {
+        status: 500,
+        headers: { "content-type": "application/json" },
+      }
+    );
+  }
+}
+
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
@@ -99,6 +282,15 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/spin-webhook") {
       return handleSpinWebhookRequest(request);
+    }
+    if (
+      url.pathname === "/api/course-applications/webhook" ||
+      url.pathname === "/api/webhooks/course-applications"
+    ) {
+      return handleCourseApplicationWebhookRequest(request);
+    }
+    if (url.pathname === "/api/worker/notifications") {
+      return handleNotificationWorkerRequest(request);
     }
 
     try {

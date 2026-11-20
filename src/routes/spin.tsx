@@ -23,8 +23,6 @@ import { SpinWheelCanvas } from "@/components/spin-wheel/SpinWheelCanvas";
 import {
   SPIN_REWARDS,
   isSpinOfferExpired,
-  SPIN_EXPIRY_LABEL,
-  getExpiryCountdown,
 } from "@/lib/spin-wheel/config";
 import type { SpinReward, SpinWheelEntry } from "@/lib/spin-wheel/types";
 import { fireConfetti } from "@/lib/spin-wheel/confetti";
@@ -424,7 +422,7 @@ function SpinPage() {
           </div>
           <div className="mb-3">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-startup/40 bg-startup-soft px-3 py-1 text-xs font-bold text-startup">
-              ⚡ Limited Offer Valid Until {SPIN_EXPIRY_LABEL}
+              ⚡ Limited Promotional Offer
             </span>
           </div>
           <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-foreground">
@@ -437,7 +435,7 @@ function SpinPage() {
 
         {/* Content Card */}
         <div className="rounded-2xl border border-border/90 bg-card text-card-foreground shadow-2xl p-6 sm:p-10 max-w-xl mx-auto">
-          {/* EXPIRED STATE (AFTER 20 NOV 2026) */}
+          {/* EXPIRED STATE */}
           {isSpinOfferExpired() ? (
             <div className="text-center py-6">
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -445,7 +443,7 @@ function SpinPage() {
               </div>
               <h2 className="font-display text-2xl font-bold text-foreground">Promotional Offer Ended</h2>
               <p className="mt-2 text-xs text-muted-foreground">
-                This Spin & Win promotional event expired on <strong className="text-foreground">{SPIN_EXPIRY_LABEL}</strong>.
+                This Spin & Win promotional event has concluded.
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Thank you for your interest! Keep an eye on our website for future scholarships and workshop announcements.

@@ -52,16 +52,56 @@ DROP POLICY IF EXISTS "Users can view own profile" ON public.profile;
 CREATE POLICY "Users can view own profile" ON public.profile
     FOR SELECT USING (auth.uid() = id);
 
--- Users can INSERT their own profile
+-- Users can INSERT their own profile (Strict: cannot self-assign privileged role)
 DROP POLICY IF EXISTS "Users can insert own profile" ON public.profile;
 CREATE POLICY "Users can insert own profile" ON public.profile
-    FOR INSERT WITH CHECK (auth.uid() = id);
+    FOR INSERT WITH CHECK (
+        auth.uid() = id
+        AND (role IS NULL OR lower(role) = 'user')
+    );
 
--- Users can UPDATE their own profile (excluding role modifications via WITH CHECK / trigger)
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profile;
-CREATE POLICY "Users can update own profile" ON public.profile
-    FOR UPDATE USING (auth.uid() = id)
-    WITH CHECK (auth.uid() = id AND (role IS NOT DISTINCT FROM (SELECT role FROM public.profile WHERE id = auth.uid())));
+-- Users can UPDATE their own profile (row ownership verified via auth.uid() = id)
+-- Role escalation prevention is enforced by the database trigger prevent_profile_role_escalation()
+DROP POLICY IF EXISTS "Users can update own profile"
+ON public.profile;
+
+CREATE POLICY "Users can update own profile"
+ON public.profile
+FOR UPDATE
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
+
+-- Hard enforcement trigger: prevents role escalation on public.profile
+CREATE OR REPLACE FUNCTION public.prevent_profile_role_escalation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+    IF auth.role() = 'service_role' THEN
+        RETURN NEW;
+    END IF;
+
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.role IS NULL OR lower(NEW.role) <> 'user' THEN
+            NEW.role := 'user';
+        END IF;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF NEW.role IS DISTINCT FROM OLD.role THEN
+            NEW.role := OLD.role;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_prevent_profile_role_escalation ON public.profile;
+CREATE TRIGGER trg_prevent_profile_role_escalation
+    BEFORE INSERT OR UPDATE ON public.profile
+    FOR EACH ROW
+    EXECUTE FUNCTION public.prevent_profile_role_escalation();
 
 -- 5. RLS POLICIES FOR public.users
 DROP POLICY IF EXISTS "Users can view own user record" ON public.users;
@@ -78,7 +118,11 @@ CREATE POLICY "Users can update own user record" ON public.users
 
 -- 6. AUTOMATIC NEW USER SYNC TRIGGER (FALLBACK)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
 BEGIN
     INSERT INTO public.profile (id, email, name, mobile, college, degree)
     VALUES (
@@ -107,7 +151,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Re-create trigger on auth.users
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -115,35 +159,7 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 7. ADMIN USER DELETION & LISTING PROCEDURES
-CREATE OR REPLACE FUNCTION public.delete_user(target_user_id UUID)
-RETURNS void AS $$
-BEGIN
-    DELETE FROM public.profile WHERE id = target_user_id;
-    DELETE FROM public.users WHERE id = target_user_id;
-    DELETE FROM auth.users WHERE id = target_user_id;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION public.get_all_users()
-RETURNS TABLE (
-    id UUID,
-    email TEXT,
-    full_name TEXT,
-    provider TEXT,
-    created_at TIMESTAMP WITH TIME ZONE
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        u.id,
-        u.email::text,
-        COALESCE(p.name, (u.raw_user_meta_data->>'full_name'), u.email::text) AS full_name,
-        COALESCE(u.raw_app_meta_data->>'provider', 'email') AS provider,
-        u.created_at
-    FROM auth.users u
-    LEFT JOIN public.profile p ON p.id = u.id
-    ORDER BY u.created_at DESC;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Revoke execute on trigger functions from public
+REVOKE EXECUTE ON FUNCTION public.prevent_profile_role_escalation() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 

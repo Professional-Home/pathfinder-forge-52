@@ -344,9 +344,9 @@ export async function fetchCoursesFromSupabase(): Promise<CourseRecord[]> {
   }
 }
 
-async function syncCourseToSupabase(course: CourseRecord) {
+async function syncCourseToSupabase(course: CourseRecord): Promise<string | null> {
   try {
-    const { error } = await supabase.from("courses").upsert(
+    const { data, error } = await supabase.from("courses").upsert(
       {
         slug: course.slug,
         title: course.name,
@@ -373,12 +373,15 @@ async function syncCourseToSupabase(course: CourseRecord) {
         updated_at: new Date().toISOString(),
       },
       { onConflict: "slug" },
-    );
+    ).select("id").single();
     if (error) {
       console.error("[Supabase Store] Failed to sync course:", error.message || error);
+      return null;
     }
+    return data?.id || null;
   } catch (e) {
     console.warn("[Store] Supabase sync note:", e);
+    return null;
   }
 }
 
@@ -394,7 +397,12 @@ export async function saveCourse(data: CourseFormData, id?: string): Promise<Cou
       targetCourse = { ...data, id, lastUpdated: now };
       courses[index] = targetCourse;
       writeStorage(courses);
-      await syncCourseToSupabase(targetCourse);
+      const dbId = await syncCourseToSupabase(targetCourse);
+      if (dbId && dbId !== id) {
+        targetCourse.id = dbId;
+        courses[index] = targetCourse;
+        writeStorage(courses);
+      }
       return targetCourse;
     }
   }
@@ -406,7 +414,12 @@ export async function saveCourse(data: CourseFormData, id?: string): Promise<Cou
   };
   courses.unshift(targetCourse);
   writeStorage(courses);
-  await syncCourseToSupabase(targetCourse);
+  const dbId = await syncCourseToSupabase(targetCourse);
+  if (dbId) {
+    targetCourse.id = dbId;
+    courses[0] = targetCourse;
+    writeStorage(courses);
+  }
   return targetCourse;
 }
 
