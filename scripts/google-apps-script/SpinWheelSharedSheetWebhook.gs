@@ -345,6 +345,8 @@ function onFormSubmit(e) {
 
     // 7. DISPATCH HTTP POST REQUEST
     var headers = {
+      "x-webhook-signature": signatureHex,
+      "x-webhook-timestamp": String(timestamp),
       "X-Spin-Signature": signatureHex,
       "X-Spin-Timestamp": String(timestamp),
       "User-Agent": "PathFinder-GoogleAppsScript-SpinWheelSync/3.0",
@@ -430,6 +432,8 @@ function testWebhookConnection() {
   var signatureHex = bytesToHex(signatureBytes);
 
   var headers = {
+    "x-webhook-signature": signatureHex,
+    "x-webhook-timestamp": String(timestamp),
     "X-Spin-Signature": signatureHex,
     "X-Spin-Timestamp": String(timestamp),
     "User-Agent": "PathFinder-GoogleAppsScript-SpinWheelSync/3.0",
