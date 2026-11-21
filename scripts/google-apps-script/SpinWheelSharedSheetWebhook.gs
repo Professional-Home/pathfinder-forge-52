@@ -466,6 +466,34 @@ function testWebhookConnection() {
 }
 
 /**
+ * Test & Process the latest row directly from the active sheet tab.
+ * Select this function in the toolbar and click "Run" to test without re-submitting the form!
+ */
+function processLatestRow() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var sheetName = sheet.getName();
+  var lastRow = sheet.getLastRow();
+  Logger.log("[TEST_LATEST] Active sheet tab: '" + sheetName + "', Last Row: " + lastRow);
+
+  if (lastRow <= 1) {
+    Logger.log("[TEST_LATEST] No data rows found in tab '" + sheetName + "'. Please open the tab with submissions.");
+    return;
+  }
+
+  // Clear previous status on the last row so it can be re-tested
+  var statusCol = getOrCreateStatusColumn(sheet);
+  sheet.getRange(lastRow, statusCol).setValue("");
+
+  var simulatedEvent = {
+    range: sheet.getRange(lastRow, 1, 1, sheet.getLastColumn())
+  };
+
+  Logger.log("[TEST_LATEST] Triggering onFormSubmit for row " + lastRow + "...");
+  onFormSubmit(simulatedEvent);
+  Logger.log("[TEST_LATEST] Completed. Webhook Status in sheet: " + sheet.getRange(lastRow, statusCol).getValue());
+}
+
+/**
  * Converts byte array to lowercase hexadecimal string.
  */
 function bytesToHex(bytes) {
