@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/utils/supabase";
 import { getAdminApplicationsList } from "@/lib/course-applications-server";
+import { resolveCourseTitle } from "@/lib/courses/course-identifiers";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { SearchBar } from "@/components/admin/SearchBar";
 import { FilterDropdown } from "@/components/admin/FilterDropdown";
@@ -278,7 +279,13 @@ export function AdminApplicationsQueuePage() {
                     <div className="text-xs text-muted-foreground">{app.applicant_email || app.student_email || ""}</div>
                   </td>
                   <td className="px-4 py-3 text-xs text-foreground font-medium">
-                    {app.courses?.title || app.course_id}
+                    <div>{app.courses?.title || resolveCourseTitle(app.course_id)}</div>
+                    {app.academic_background?.google_forms?.voucher_code && (
+                      <div className="text-[10px] text-primary/80 font-mono mt-0.5">
+                        {app.academic_background.google_forms.voucher_code}
+                        {app.academic_background.google_forms.reward_title && ` • ${app.academic_background.google_forms.reward_title}`}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">{getStatusBadge(app.status)}</td>
                   <td className="px-4 py-3">{getPaymentBadge(app.payment_status)}</td>

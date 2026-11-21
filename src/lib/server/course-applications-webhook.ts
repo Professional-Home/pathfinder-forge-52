@@ -179,12 +179,17 @@ export function verifyWebhookTimestamp(
 export const DOCUMENTED_COURSE_ALIASES: Readonly<Record<string, string>> = {
   "course-bioplastic-innovation": "bioplastic-innovation",
   "bioplastic-innovation": "bioplastic-innovation",
+  "bioplastic innovation": "bioplastic-innovation",
   "course-ai-drug-discovery": "ai-in-drug-discovery",
   "course-ai-in-drug-discovery": "ai-in-drug-discovery",
   "ai-in-drug-discovery": "ai-in-drug-discovery",
+  "ai in drug discovery": "ai-in-drug-discovery",
   "course-bioinformatics": "bioinformatics",
   "bioinformatics": "bioinformatics",
   "bioinformatics-frontend-seed": "bioinformatics",
+  "bioinformatics & computational biology": "bioinformatics",
+  "bioinformatics and computational biology": "bioinformatics",
+  "bioinformatics & genomic data analysis": "bioinformatics",
 };
 
 // UUID syntax: RFC 4122 (8-4-4-4-12 hex digits)
@@ -821,6 +826,9 @@ export async function processCourseApplicationWebhookCore(data: {
       identity_conflict_reason: isIdentityConflict
         ? `Google respondent email (${respondentEmailNorm}) does not match entered student contact email (${enteredEmailNorm}). Application quarantined.`
         : null,
+      voucher_code: payload.voucherCode || payload.voucher_code || null,
+      reward_title: payload.rewardTitle || payload.reward_title || payload.reward || null,
+      qualification: payload.qualification || null,
     },
   };
 
@@ -830,12 +838,13 @@ export async function processCourseApplicationWebhookCore(data: {
   // - payment_status: 'pending_verification' (admin opens Google Sheet to verify payment proof)
   // - documents_status: 'not_required' (honest state: documents are handled externally in Google Sheets)
   // - is_identity_conflict: true/false (quarantined if respondent Google email differs from entered email)
+  const phoneValue = (payload.studentPhone || payload.phone || payload.contactNumber || null)?.toString().trim() || null;
   const insertPayload: Record<string, any> = {
     course_id: resolvedCourseUuid,
     user_id: null, // Submissions from Google Forms are guest/unauthenticated until claimed/enrolled
     student_name: studentName,
     student_email: enteredEmailNorm,
-    student_phone: null,
+    student_phone: phoneValue,
     academic_background: academicBackground,
     statement_of_purpose: null,
     status: "submitted",

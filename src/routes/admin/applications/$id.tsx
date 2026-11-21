@@ -9,6 +9,7 @@ import {
   adminApproveGoogleFormsApplication,
   adminReconcileIdentityConflict,
 } from "@/lib/course-applications-server";
+import { resolveCourseTitle } from "@/lib/courses/course-identifiers";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -319,7 +320,7 @@ export function AdminApplicationDetailPage() {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Course: <strong>{appData.courses?.title || appData.course_id}</strong>
+              Course: <strong>{appData.courses?.title || resolveCourseTitle(appData.course_id)}</strong>
             </p>
           </div>
         </div>
@@ -452,6 +453,12 @@ export function AdminApplicationDetailPage() {
                   <p>
                     Candidate responses, questionnaire answers, and payment receipts are managed directly in the linked Google Sheet and Google Drive.
                   </p>
+                  {appData.academic_background?.google_forms?.voucher_code && (
+                    <p className="font-mono text-sky-700 font-semibold pt-1">
+                      Voucher Code: {appData.academic_background.google_forms.voucher_code}
+                      {appData.academic_background.google_forms.reward_title && ` • ${appData.academic_background.google_forms.reward_title}`}
+                    </p>
+                  )}
                 </div>
               ) : !appData.documents || appData.documents.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-2">No documents attached.</p>
