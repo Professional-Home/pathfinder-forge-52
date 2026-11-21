@@ -62,8 +62,14 @@ export function renderNotificationEmail(
   payload: Record<string, any>
 ): RenderedEmail {
   const appNumber = payload.application_number || "Application";
+  const rawTitle = (payload.course_title || "").trim();
+  const isRawTitleUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawTitle);
+  const resolvedFromTitle = rawTitle ? resolveCourseTitle(rawTitle) : null;
+  const isResolvedTitleUuid = resolvedFromTitle ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedFromTitle.trim()) : true;
+
   const courseTitle =
-    payload.course_title ||
+    (!isRawTitleUuid && resolvedFromTitle && !isResolvedTitleUuid ? resolvedFromTitle : null) ||
+    (!isResolvedTitleUuid && resolvedFromTitle ? resolvedFromTitle : null) ||
     resolveCourseTitle(payload.course_id) ||
     "Course Program";
   const portalUrl = (process.env.APP_URL || "https://project.micrylisbiotech.com").replace(/\/+$/, "");

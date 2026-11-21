@@ -85,12 +85,16 @@ export async function handleCourseApplicationWebhookRequest(request: Request): P
       request.headers.get("x-webhook-signature") ||
       request.headers.get("X-Webhook-Signature") ||
       request.headers.get("x-course-app-signature") ||
-      request.headers.get("X-Course-App-Signature");
+      request.headers.get("X-Course-App-Signature") ||
+      request.headers.get("x-spin-signature") ||
+      request.headers.get("X-Spin-Signature");
     const timestamp =
       request.headers.get("x-webhook-timestamp") ||
       request.headers.get("X-Webhook-Timestamp") ||
       request.headers.get("x-course-app-timestamp") ||
-      request.headers.get("X-Course-App-Timestamp");
+      request.headers.get("X-Course-App-Timestamp") ||
+      request.headers.get("x-spin-timestamp") ||
+      request.headers.get("X-Spin-Timestamp");
 
     const { processCourseApplicationWebhookCore } = await import(
       "./lib/server/course-applications-webhook"

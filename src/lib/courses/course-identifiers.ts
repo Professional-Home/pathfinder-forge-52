@@ -27,7 +27,12 @@ export const CANONICAL_COURSES: readonly CourseIdentifierConfig[] = [
     canonicalId: "d2756643-0b82-4ebe-a123-9fa3be97bd13",
     slug: "bioplastic-innovation",
     title: "BioPlastic Innovation",
-    legacyIds: ["course-bioplastic-innovation", "bioplastic-innovation"],
+    legacyIds: [
+      "course-bioplastic-innovation",
+      "bioplastic-innovation",
+      "bioplastic innovation",
+      "6801f93f-2d3b-4841-81c2-fa4b1a27fc64", // Production Supabase UUID
+    ],
   },
   {
     canonicalId: "d6a21b1f-2682-4cf2-a83d-2c030f476625",
@@ -37,6 +42,8 @@ export const CANONICAL_COURSES: readonly CourseIdentifierConfig[] = [
       "course-ai-drug-discovery",
       "course-ai-in-drug-discovery",
       "ai-in-drug-discovery",
+      "ai in drug discovery",
+      "16dcf034-13c7-49dd-adfe-6d927e4e7ec5", // Production Supabase UUID
     ],
   },
   {
@@ -47,6 +54,10 @@ export const CANONICAL_COURSES: readonly CourseIdentifierConfig[] = [
       "course-bioinformatics",
       "bioinformatics",
       "bioinformatics-frontend-seed",
+      "bioinformatics & computational biology",
+      "bioinformatics and computational biology",
+      "bioinformatics & genomic data analysis",
+      "619be200-832d-41e8-97b8-d0515031ae76", // Production Supabase UUID
     ],
   },
 ] as const;
@@ -65,6 +76,7 @@ CANONICAL_COURSES.forEach((course) => {
 
   course.legacyIds.forEach((alias) => {
     ALIAS_TO_CANONICAL.set(alias.toLowerCase(), course.canonicalId);
+    CANONICAL_TO_TITLE.set(alias.toLowerCase(), course.title);
   });
 });
 

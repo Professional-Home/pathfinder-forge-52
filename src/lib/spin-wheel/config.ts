@@ -85,33 +85,29 @@ export const SPIN_REWARDS: SpinReward[] = [
 ];
 
 /**
- * Offer Expiry Date: 20 November 2026, 23:59:59 IST
+ * Offer Expiry Date: Active promotion (ongoing, no fixed deadline).
  */
-export const SPIN_WHEEL_EXPIRY_DATE = new Date("2026-11-20T23:59:59+05:30");
-export const SPIN_EXPIRY_LABEL = "20 November 2026";
+export const SPIN_WHEEL_EXPIRY_DATE = new Date("2099-12-31T23:59:59+05:30");
+export const SPIN_EXPIRY_LABEL = "Active Promotion";
 
 /**
- * Returns true if the promotional spin offer has passed 20 November 2026.
+ * Returns true if the promotional spin offer has expired.
+ * Set to continuously active (no deadline).
  */
 export function isSpinOfferExpired(): boolean {
   return Date.now() > SPIN_WHEEL_EXPIRY_DATE.getTime();
 }
 
 /**
- * Calculates remaining days/hours until expiry
+ * Calculates remaining days/hours until expiry.
+ * Always active.
  */
 export function getExpiryCountdown(): {
   days: number;
   hours: number;
   isExpired: boolean;
 } {
-  const diff = SPIN_WHEEL_EXPIRY_DATE.getTime() - Date.now();
-  if (diff <= 0) {
-    return { days: 0, hours: 0, isExpired: true };
-  }
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  return { days, hours, isExpired: false };
+  return { days: 30, hours: 0, isExpired: false };
 }
 
 /** Total slices count */
