@@ -518,7 +518,7 @@ BEGIN
                 'student_name', v_app.student_name,
                 'student_email', v_app.student_email,
                 'course_id', v_app.course_id,
-                'course_title', COALESCE((SELECT title FROM public.courses WHERE id::text = v_app.course_id::text OR public.normalize_course_id(id::text) = public.normalize_course_id(v_app.course_id::text) LIMIT 1), 'Course Program'),
+                'course_title', COALESCE(public.resolve_course_title(v_app.course_id::text), (SELECT title FROM public.courses WHERE id::text = v_app.course_id::text LIMIT 1), 'Course Program'),
                 'status', p_target_status,
                 'enrollment_id', v_app.enrollment_id,
                 'occurrence_seq', v_occurrence_seq,
