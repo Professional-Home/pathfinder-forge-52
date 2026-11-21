@@ -56,7 +56,9 @@
  * ==============================================================================
  */
 
-/** Dedicated column header for recording synchronization receipts */
+/**
+ * Dedicated column header for recording synchronization receipts
+ */
 var STATUS_COLUMN_HEADER = "Webhook Status";
 
 /** Default production endpoint */
@@ -64,6 +66,31 @@ var DEFAULT_WEBHOOK_URL = "https://project.micrylisbiotech.com/api/course-applic
 
 /** Non-course reward tab keywords (strictly skipped from CMS application intake) */
 var NON_COURSE_KEYWORDS = ["mentorship", "founder", "ielts", "interview", "call"];
+
+/**
+ * Resolves the target Spreadsheet instance supporting both container-bound
+ * and standalone Apps Script execution contexts.
+ */
+function resolveSpreadsheet(e) {
+  if (e && e.source) {
+    return e.source;
+  }
+  try {
+    var active = SpreadsheetApp.getActiveSpreadsheet();
+    if (active) return active;
+  } catch (err) {}
+
+  var props = PropertiesService.getScriptProperties();
+  var spreadsheetId = (props.getProperty("SPREADSHEET_ID") || "").trim();
+  if (spreadsheetId) {
+    try {
+      return SpreadsheetApp.openById(spreadsheetId);
+    } catch (openErr) {
+      Logger.log("WARNING: Could not open spreadsheet via SPREADSHEET_ID: " + openErr.message);
+    }
+  }
+  return null;
+}
 
 /**
  * Normalizes course selection title into authoritative canonical track slug.
@@ -234,10 +261,21 @@ function onFormSubmit(e) {
     return;
   }
 
-  // Identify active sheet and row
+  // Identify target spreadsheet, active sheet and row
+  var ss = resolveSpreadsheet(e);
+  if (!ss) {
+    Logger.log("ERROR: Could not resolve target Spreadsheet. Please add SPREADSHEET_ID to Script Properties.");
+    return;
+  }
+
   var range = e ? e.range : null;
-  var sheet = range ? range.getSheet() : SpreadsheetApp.getActiveSheet();
-  var row = range ? range.getRow() : 0;
+  var sheet = null;
+  if (range) {
+    sheet = range.getSheet();
+  } else {
+    sheet = ss.getActiveSheet();
+  }
+  var row = range ? range.getRow() : (sheet ? sheet.getLastRow() : 0);
 
   if (!sheet || row <= 1) {
     Logger.log("WARNING: Invalid sheet or row <= 1. Aborting.");
@@ -470,27 +508,48 @@ function testWebhookConnection() {
  * Select this function in the toolbar and click "Run" to test without re-submitting the form!
  */
 function processLatestRow() {
-  var sheet = SpreadsheetApp.getActiveSheet();
-  var sheetName = sheet.getName();
-  var lastRow = sheet.getLastRow();
-  Logger.log("[TEST_LATEST] Active sheet tab: '" + sheetName + "', Last Row: " + lastRow);
-
-  if (lastRow <= 1) {
-    Logger.log("[TEST_LATEST] No data rows found in tab '" + sheetName + "'. Please open the tab with submissions.");
+  var ss = resolveSpreadsheet();
+  if (!ss) {
+    Logger.log("ERROR: Could not find active spreadsheet.");
+    Logger.log("If your Apps Script was opened standalone or from Google Form, please add your Google Sheet ID to Script Properties as 'SPREADSHEET_ID'.");
+    Logger.log("You can copy the ID from your Google Sheet URL: https://docs.google.com/spreadsheets/d/<SPREADSHEET_ID>/edit");
     return;
   }
 
+  // Find the tab that has response data
+  var targetSheet = ss.getActiveSheet();
+  var sheets = ss.getSheets();
+
+  for (var i = 0; i < sheets.length; i++) {
+    var s = sheets[i];
+    var sName = s.getName();
+    if (!isNonCourseRewardTab(sName) && s.getLastRow() > 1) {
+      targetSheet = s;
+      break;
+    }
+  }
+
+  if (!targetSheet || targetSheet.getLastRow() <= 1) {
+    Logger.log("[TEST_LATEST] No response rows found in any course tabs of spreadsheet '" + ss.getName() + "'.");
+    return;
+  }
+
+  var sheetName = targetSheet.getName();
+  var lastRow = targetSheet.getLastRow();
+  Logger.log("[TEST_LATEST] Found response in tab: '" + sheetName + "', Row: " + lastRow);
+
   // Clear previous status on the last row so it can be re-tested
-  var statusCol = getOrCreateStatusColumn(sheet);
-  sheet.getRange(lastRow, statusCol).setValue("");
+  var statusCol = getOrCreateStatusColumn(targetSheet);
+  targetSheet.getRange(lastRow, statusCol).setValue("");
 
   var simulatedEvent = {
-    range: sheet.getRange(lastRow, 1, 1, sheet.getLastColumn())
+    source: ss,
+    range: targetSheet.getRange(lastRow, 1, 1, targetSheet.getLastColumn())
   };
 
-  Logger.log("[TEST_LATEST] Triggering onFormSubmit for row " + lastRow + "...");
+  Logger.log("[TEST_LATEST] Triggering onFormSubmit for row " + lastRow + " in tab '" + sheetName + "'...");
   onFormSubmit(simulatedEvent);
-  Logger.log("[TEST_LATEST] Completed. Webhook Status in sheet: " + sheet.getRange(lastRow, statusCol).getValue());
+  Logger.log("[TEST_LATEST] Completed. Status: " + targetSheet.getRange(lastRow, statusCol).getValue());
 }
 
 /**
